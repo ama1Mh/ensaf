@@ -1,4 +1,4 @@
-// Calibration system for eye tracking
+// Calibration system for eye tracking - Simplified
 const Calibration = (() => {
   let isActive = false;
   let currentPointIndex = 0;
@@ -6,25 +6,24 @@ const Calibration = (() => {
   let onCompleteCallback = null;
   let onCancelCallback = null;
   let overlay = null;
-  let pointsContainer = null;
   let statusSpan = null;
   let progressFill = null;
+  let calibrationInterval = null;
   
   const CALIBRATION_POINTS = [
-    {x: 0.1, y: 0.1},  // top-left
-    {x: 0.5, y: 0.1},  // top-center
-    {x: 0.9, y: 0.1},  // top-right
-    {x: 0.1, y: 0.5},  // center-left
-    {x: 0.5, y: 0.5},  // center
-    {x: 0.9, y: 0.5},  // center-right
-    {x: 0.1, y: 0.9},  // bottom-left
-    {x: 0.5, y: 0.9},  // bottom-center
-    {x: 0.9, y: 0.9}   // bottom-right
+    {x: 0.15, y: 0.15},  // top-left
+    {x: 0.5, y: 0.15},   // top-center
+    {x: 0.85, y: 0.15},  // top-right
+    {x: 0.15, y: 0.5},   // center-left
+    {x: 0.5, y: 0.5},    // center
+    {x: 0.85, y: 0.5},   // center-right
+    {x: 0.15, y: 0.85},  // bottom-left
+    {x: 0.5, y: 0.85},   // bottom-center
+    {x: 0.85, y: 0.85}   // bottom-right
   ];
   
   function init() {
     overlay = document.getElementById('calibration-overlay');
-    pointsContainer = document.getElementById('cal-points');
     statusSpan = document.getElementById('cal-status');
     progressFill = document.getElementById('cal-progress-fill');
     
@@ -37,23 +36,29 @@ const Calibration = (() => {
     const div = document.createElement('div');
     div.id = 'calibration-overlay';
     div.innerHTML = `
-      <div style="font-size:24px;font-weight:700;">🎯 معايرة تتبع العين</div>
-      <div style="font-size:14px;color:var(--t2);text-align:center;max-width:400px;">
-        انظر إلى كل نقطة وثبّت نظرك عليها حتى تختفي
+      <div style="font-size:24px;font-weight:700;margin-bottom:10px;">🎯 معايرة تتبع العين</div>
+      <div style="font-size:14px;color:var(--t2);text-align:center;max-width:400px;margin-bottom:20px;">
+        انظر إلى كل نقطة وثبّت نظرك عليها
       </div>
-      <div class="cal-points" id="cal-points"></div>
-      <div class="cal-status" id="cal-status">0 / 9 نقاط</div>
-      <div class="cal-progress"><div class="cal-progress-fill" id="cal-progress-fill"></div></div>
-      <button class="bout" id="cal-cancel" style="margin-top:10px;">إلغاء</button>
+      <div class="cal-points" id="cal-points" style="display:grid;grid-template-columns:repeat(3,1fr);gap:40px;width:80%;max-width:500px;margin:20px auto;">
+        <!-- Points will be added here -->
+      </div>
+      <div class="cal-status" id="cal-status" style="font-size:14px;color:var(--t2);text-align:center;margin:10px;">0 / 9 نقاط</div>
+      <div class="cal-progress" style="width:200px;height:4px;background:var(--c2);border-radius:2px;overflow:hidden;margin:10px auto;">
+        <div class="cal-progress-fill" id="cal-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--vi),var(--cy));width:0%;transition:width .3s;"></div>
+      </div>
+      <button class="bout" id="cal-cancel" style="margin-top:10px;padding:8px 20px;">إلغاء</button>
     `;
     document.body.appendChild(div);
     
     overlay = div;
-    pointsContainer = div.querySelector('#cal-points');
     statusSpan = div.querySelector('#cal-status');
     progressFill = div.querySelector('#cal-progress-fill');
     
-    document.getElementById('cal-cancel').addEventListener('click', () => cancel());
+    const cancelBtn = div.querySelector('#cal-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => cancel());
+    }
   }
   
   function start(onComplete, onCancel) {
@@ -68,14 +73,19 @@ const Calibration = (() => {
     currentPointIndex = 0;
     isActive = true;
     
-    // Build visual points
-    pointsContainer.innerHTML = points.map((_, i) => 
-      `<div class="cal-point" data-idx="${i}"></div>`
-    ).join('');
+    // Build visual points grid
+    const pointsContainer = overlay.querySelector('#cal-points');
+    if (pointsContainer) {
+      pointsContainer.innerHTML = points.map((_, i) => `
+        <div class="cal-point" data-idx="${i}" style="width:30px;height:30px;border-radius:50%;background:rgba(0,240,255,0.3);border:2px solid #00f0ff;margin:auto;transition:all .3s;cursor:pointer;"></div>
+      `).join('');
+    }
     
     overlay.classList.add('on');
-    document.getElementById('cursor').classList.add('calibrating');
+    const cursor = document.getElementById('cursor');
+    if (cursor) cursor.classList.add('calibrating');
     
+    // Start calibration process
     calibrateNextPoint();
   }
   
@@ -86,50 +96,84 @@ const Calibration = (() => {
     }
     
     const point = points[currentPointIndex];
-    statusSpan.textContent = `${currentPointIndex + 1} / ${points.length} نقاط`;
-    progressFill.style.width = `${(currentPointIndex / points.length) * 100}%`;
+    if (statusSpan) statusSpan.textContent = `${currentPointIndex + 1} / ${points.length} نقاط`;
+    if (progressFill) progressFill.style.width = `${(currentPointIndex / points.length) * 100}%`;
     
     // Highlight current point
-    document.querySelectorAll('.cal-point').forEach((el, i) => {
-      el.style.opacity = i === currentPointIndex ? '1' : '0.3';
-      el.style.transform = i === currentPointIndex ? 'scale(1.3)' : 'scale(1)';
+    const allPoints = overlay.querySelectorAll('.cal-point');
+    allPoints.forEach((el, i) => {
+      if (i === currentPointIndex) {
+        el.style.transform = 'scale(1.5)';
+        el.style.background = 'rgba(139,92,246,0.8)';
+        el.style.boxShadow = '0 0 20px #8b5cf6';
+      } else {
+        el.style.transform = 'scale(1)';
+        el.style.background = 'rgba(0,240,255,0.3)';
+        el.style.boxShadow = 'none';
+      }
     });
     
     // Create temporary visual point for user to look at
     const tempPoint = document.createElement('div');
     tempPoint.style.cssText = `
       position:fixed;
-      left:${point.x - 20}px;
-      top:${point.y - 20}px;
-      width:40px;
-      height:40px;
+      left:${point.x - 25}px;
+      top:${point.y - 25}px;
+      width:50px;
+      height:50px;
       border-radius:50%;
       background:radial-gradient(circle, #00f0ff, #6d28d9);
       box-shadow:0 0 30px #00f0ff;
       z-index:10001;
       pointer-events:none;
-      animation: pulse 0.5s ease infinite;
+      animation: pulse 0.5s ease-in-out infinite;
     `;
     document.body.appendChild(tempPoint);
     
-    // Wait 2 seconds for user to focus, then record calibration
-    setTimeout(() => {
-      tempPoint.remove();
-      
-      // Record calibration point with WebGazer
-      if (typeof webgazer !== 'undefined') {
-        webgazer.recordScreenPosition(point.x, point.y, 'click');
+    // Show countdown
+    let countdown = 2;
+    const countdownText = document.createElement('div');
+    countdownText.style.cssText = `
+      position:fixed;
+      left:${point.x - 15}px;
+      top:${point.y - 40}px;
+      font-size:24px;
+      font-weight:bold;
+      color:#00f0ff;
+      z-index:10002;
+      pointer-events:none;
+    `;
+    countdownText.textContent = countdown;
+    document.body.appendChild(countdownText);
+    
+    // Countdown and calibrate
+    if (calibrationInterval) clearInterval(calibrationInterval);
+    calibrationInterval = setInterval(() => {
+      countdown--;
+      countdownText.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(calibrationInterval);
+        tempPoint.remove();
+        countdownText.remove();
+        
+        // Record calibration point with WebGazer
+        if (typeof webgazer !== 'undefined' && webgazer) {
+          webgazer.recordScreenPosition(point.x, point.y, 'click');
+        }
+        
+        currentPointIndex++;
+        calibrateNextPoint();
       }
-      
-      currentPointIndex++;
-      calibrateNextPoint();
-    }, 2000);
+    }, 1000);
   }
   
   function complete() {
+    if (calibrationInterval) clearInterval(calibrationInterval);
     isActive = false;
-    overlay.classList.remove('on');
-    document.getElementById('cursor').classList.remove('calibrating');
+    if (overlay) overlay.classList.remove('on');
+    
+    const cursor = document.getElementById('cursor');
+    if (cursor) cursor.classList.remove('calibrating');
     
     if (onCompleteCallback) {
       onCompleteCallback(true);
@@ -137,9 +181,12 @@ const Calibration = (() => {
   }
   
   function cancel() {
+    if (calibrationInterval) clearInterval(calibrationInterval);
     isActive = false;
-    overlay.classList.remove('on');
-    document.getElementById('cursor').classList.remove('calibrating');
+    if (overlay) overlay.classList.remove('on');
+    
+    const cursor = document.getElementById('cursor');
+    if (cursor) cursor.classList.remove('calibrating');
     
     if (onCancelCallback) {
       onCancelCallback();

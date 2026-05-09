@@ -5,12 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إنصاف — تتبع العين (Eye Tracking)</title>
 
-<!-- WebGazer for eye tracking -->
-<script src="https://cdn.jsdelivr.net/npm/webgazer@3.5.3/dist/webgazer.min.js"></script>
+<!-- MediaPipe for eye tracking -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 
 <!-- Styles -->
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/eye-tracking.css">
+
+<style>
+/* Additional styles */
+#iris-canvas {
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  width: 200px;
+  height: 150px;
+  border-radius: 20px;
+  z-index: 802;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#iris-canvas.show {
+  opacity: 0.7;
+}
+</style>
 </head>
 <body>
 
@@ -19,6 +39,7 @@
 
 <!-- Video Elements -->
 <video id="vcam" autoplay playsinline muted></video>
+<canvas id="iris-canvas" width="200" height="150"></canvas>
 
 <!-- Cursor -->
 <div id="cursor"></div>
@@ -37,7 +58,6 @@
     <span id="dv">3.5s</span>
     <button id="dp">+</button>
   </div>
-  <button id="calib-btn">🎯 معايرة العين</button>
   <button class="bhome" onclick="EyeTrackingApp.goHome()">⌂ الرئيسية</button>
 </div>
 
@@ -55,7 +75,7 @@
     <div class="wtag">منصة التعلم بتتبع حركة العين</div>
     <div class="wpills">
       <div class="pill">👁️ تتبع العين</div>
-      <div class="pill">🎯 معايرة مدمجة</div>
+      <div class="pill">🎯 تتبع القزحية</div>
       <div class="pill">🧠 تلميحات ذكية</div>
       <div class="pill">🔊 قراءة صوتية</div>
     </div>
@@ -76,7 +96,7 @@
       <div class="pstep"><div class="psn">1</div>انقر "السماح" للوصول إلى الكاميرا</div>
       <div class="pstep"><div class="psn">2</div>إضاءة جيدة - وجهك بحاجة لأن يكون مرئياً</div>
       <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50-70 سم من الشاشة</div>
-      <div class="pstep"><div class="psn">4</div>قم بمعايرة العين بعد الإذن</div>
+      <div class="pstep"><div class="psn">4</div>حرّك عينيك لتحريك المؤشر</div>
     </div>
     <button class="cta" onclick="EyeTrackingApp.requestCamera()">السماح بالكاميرا</button>
   </div>
@@ -124,11 +144,11 @@
 </div>
 
 <!-- Scripts -->
+<script src="js/shared/utils.js"></script>
 <script src="js/shared/database.js"></script>
 <script src="js/shared/dwell.js"></script>
 <script src="js/shared/voice.js"></script>
-<script src="js/eye-tracking/calibration.js"></script>
-<script src="js/eye-tracking/webgazer-init.js"></script>
+<script src="js/eye-tracking/eye-tracker.js"></script>
 <script src="js/eye-tracking/main.js"></script>
 
 </body>
