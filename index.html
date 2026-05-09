@@ -3,1002 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إنصاف — التعلم بتتبع العين (Eye Tracking)</title>
-
-<!-- MediaPipe for face detection (fallback) -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-
-<!-- WebGazer for eye tracking -->
-<script src="https://cdn.jsdelivr.net/npm/webgazer@3.5.3/dist/webgazer.min.js"></script>
-
+<title>إنصاف — منصة التعلم التكيفي</title>
+<link rel="stylesheet" href="css/main.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
-
-:root {
-  --bg:#03050d;
-  --s:#0b1122;
-  --c:#0f1730;
-  --c2:#141f3d;
-  --b:rgba(80,120,255,.1);
-  --b2:rgba(80,120,255,.22);
-  --cy:#00f0ff;
-  --cy2:rgba(0,240,255,.12);
-  --cy3:rgba(0,240,255,.06);
-  --vi:#6d28d9;
-  --vi2:#8b5cf6;
-  --vi3:rgba(109,40,217,.18);
-  --go:#fbbf24;
-  --gr:#10b981;
-  --gr2:rgba(16,185,129,.12);
-  --re:#f43f5e;
-  --re2:rgba(244,63,94,.12);
-  --t1:#eef2ff;
-  --t2:#8899cc;
-  --t3:#3d4f7a;
-  --ff:'IBM Plex Sans Arabic',sans-serif;
-  --fh:'Syne',sans-serif;
-  --r:12px;
-  --r2:20px;
-  --r3:28px;
+.mode-selector {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 40px 0;
 }
-
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-family:var(--ff);overflow:hidden;user-select:none;}
-
-/* SCREENS */
-.scr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s ease;z-index:10;}
-.scr.on{opacity:1;pointer-events:all;}
-
-/* Calibration Screen */
-#calibration-overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(3,5,13,.98);
-  z-index:5000;
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:20px;
+.mode-card {
+  background: var(--c);
+  border: 2px solid var(--b2);
+  border-radius: var(--r3);
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 300px;
 }
-#calibration-overlay.on {
-  display:flex;
+.mode-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--cy);
+  box-shadow: 0 20px 40px rgba(0,240,255,.1);
 }
-.cal-points {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:60px;
-  width:80%;
-  max-width:600px;
-  aspect-ratio:1;
-  margin:20px auto;
+.mode-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
 }
-.cal-point {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:var(--cy);
-  box-shadow:0 0 20px var(--cy);
-  cursor:pointer;
-  transition:all .3s;
-  margin:auto;
+.mode-title {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--fh);
+  margin-bottom: 10px;
 }
-.cal-point:hover {
-  transform:scale(1.3);
-  background:var(--vi2);
+.mode-desc {
+  font-size: 14px;
+  color: var(--t3);
+  line-height: 1.6;
 }
-.cal-status {
-  font-size:14px;
-  color:var(--t2);
-  text-align:center;
-  margin-top:10px;
+.mode-features {
+  margin-top: 20px;
+  text-align: right;
 }
-.cal-progress {
-  width:200px;
-  height:4px;
-  background:var(--c2);
-  border-radius:2px;
-  overflow:hidden;
+.mode-features li {
+  font-size: 12px;
+  color: var(--t2);
+  margin: 8px 0;
+  list-style: none;
 }
-.cal-progress-fill {
-  height:100%;
-  background:linear-gradient(90deg,var(--vi),var(--cy));
-  width:0%;
-  transition:width .3s;
+.version-badge {
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  font-size: 10px;
+  color: var(--t3);
+  background: var(--c);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
-
-/* WEBCAM PREVIEW */
-#vcam{position:fixed;bottom:14px;left:14px;width:200px;height:150px;border-radius:var(--r2);border:1.5px solid var(--b2);opacity:0;z-index:800;transform:scaleX(-1);object-fit:cover;transition:opacity .5s;}
-#vcam.show{opacity:.7;}
-#webgazerVideoContainer {
-  position:fixed !important;
-  bottom:14px !important;
-  left:14px !important;
-  width:200px !important;
-  height:150px !important;
-  border-radius:var(--r2) !important;
-  border:1.5px solid var(--vi2) !important;
-  z-index:801 !important;
-  opacity:0.7 !important;
-  overflow:hidden !important;
-}
-#webgazerVideoContainer video {
-  transform:scaleX(-1) !important;
-}
-#webgazerFaceFeedbackBox {
-  display:none !important;
-}
-
-/* CURSOR */
-#cursor{
-  position:fixed;
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:9999;
-  transform:translate(-50%,-50%);
-  display:none;
-  background:radial-gradient(circle,rgba(0,240,255,.9) 0%,rgba(0,240,255,.15) 65%,transparent 100%);
-  border:2px solid var(--cy);
-  box-shadow:0 0 18px var(--cy),0 0 36px rgba(0,240,255,.2);
-  transition:all .2s;
-}
-#cursor.on{display:block;}
-#cursor.calibrating {
-  width:40px;
-  height:40px;
-  background:radial-gradient(circle,rgba(139,92,246,.9) 0%,rgba(139,92,246,.15) 65%,transparent 100%);
-  border-color:var(--vi2);
-  animation:pulse 1s ease infinite;
-}
-@keyframes pulse {
-  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
-  50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7;}
-}
-
-/* TOPBAR */
-#bar{position:fixed;top:0;left:0;right:0;height:48px;background:rgba(7,11,24,.93);border-bottom:1px solid var(--b);display:none;align-items:center;padding:0 18px;gap:12px;z-index:700;backdrop-filter:blur(24px);}
-#bar.show{display:flex;}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--re);box-shadow:0 0 6px var(--re);transition:all .3s;flex-shrink:0;}
-.dot.ok{background:var(--gr);box-shadow:0 0 6px var(--gr);}
-.dot.wn{background:var(--go);box-shadow:0 0 6px var(--go);}
-.bst{font-size:11px;color:var(--t2);letter-spacing:.3px;}
-.bsep{flex:1;}
-.cfw{display:flex;align-items:center;gap:7px;}
-.cfl{font-size:10px;color:var(--t3);}
-.cfb{width:72px;height:3px;background:var(--c2);border-radius:2px;overflow:hidden;}
-.cff{height:100%;background:linear-gradient(90deg,var(--vi2),var(--cy));border-radius:2px;transition:width .25s;}
-.dctrl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
-.dctrl button{width:18px;height:18px;border-radius:4px;border:1px solid var(--b2);background:var(--c);color:var(--cy);cursor:pointer;font-size:11px;transition:all .2s;}
-.dctrl button:hover{background:var(--cy2);}
-.bhome{padding:4px 10px;border-radius:6px;border:1px solid var(--b2);background:var(--c);color:var(--t2);font-size:11px;cursor:pointer;}
-.bhome:hover{border-color:var(--cy);color:var(--cy);}
-#calib-btn {
-  padding:4px 12px;
-  border-radius:6px;
-  border:1px solid var(--vi2);
-  background:var(--vi3);
-  color:var(--vi2);
-  font-size:11px;
-  cursor:pointer;
-  transition:all .2s;
-}
-#calib-btn:hover {
-  background:var(--vi2);
-  color:#fff;
-}
-
-/* VOICE */
-#vi{position:fixed;bottom:14px;right:84px;width:36px;height:36px;border-radius:50%;background:var(--c);border:1px solid var(--b2);align-items:center;justify-content:center;font-size:16px;z-index:800;display:none;}
-#vi.on{display:flex;border-color:var(--cy);background:var(--cy2);animation:vp .8s ease infinite;}
-@keyframes vp{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
-
-/* HINT */
-#hint{position:fixed;bottom:14px;right:14px;max-width:250px;padding:12px 16px;border-radius:var(--r2);background:var(--c2);border:1px solid var(--vi2);font-size:13px;color:var(--t1);z-index:600;opacity:0;transform:translateY(8px);transition:all .4s;pointer-events:none;}
-#hint.on{opacity:1;transform:translateY(0);}
-.hh{display:flex;align-items:center;gap:5px;color:var(--vi2);font-size:10px;font-weight:700;margin-bottom:6px;}
-
-/* LOADING */
-#load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:2000;transition:opacity .5s;}
-#load.out{opacity:0;pointer-events:none;}
-.spin{width:44px;height:44px;border-radius:50%;border:3px solid var(--c2);border-top-color:var(--cy);border-right-color:var(--vi2);animation:spin 1s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* Welcome Screen */
-#sw{flex-direction:column;background:radial-gradient(ellipse 70% 55% at 25% 30%,rgba(109,40,217,.12) 0%,transparent 70%),radial-gradient(ellipse 55% 45% at 80% 75%,rgba(0,240,255,.06) 0%,transparent 70%),var(--bg);}
-.wlogo{font-family:var(--fh);font-size:88px;font-weight:800;letter-spacing:-4px;background:linear-gradient(135deg,var(--cy) 0%,var(--vi2) 45%,var(--go) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.wsub{font-size:13px;color:var(--vi2);letter-spacing:4px;font-family:var(--fh);text-transform:uppercase;margin:4px 0 6px;}
-.wtag{font-size:17px;color:var(--t2);margin-bottom:40px;font-weight:300;}
-.wpills{display:flex;gap:9px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;}
-.pill{padding:5px 13px;border-radius:100px;border:1px solid var(--b2);background:var(--c);font-size:12px;color:var(--t2);display:flex;align-items:center;gap:5px;}
-.wmodes{display:flex;gap:9px;margin-bottom:26px;}
-.mbtn{padding:9px 20px;border-radius:var(--r);border:1px solid var(--b2);background:var(--c);color:var(--t2);font-size:13px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:6px;}
-.mbtn:hover,.mbtn.act{border-color:var(--cy);color:var(--cy);background:var(--cy3);}
-.cta{padding:16px 50px;border-radius:var(--r2);border:none;background:linear-gradient(135deg,var(--vi),var(--vi2));color:#fff;font-size:17px;font-family:var(--fh);font-weight:600;cursor:pointer;box-shadow:0 8px 28px rgba(109,40,217,.4);}
-
-/* Permission Screen */
-#sp{flex-direction:column;gap:18px;text-align:center;}
-.pico{font-size:68px;animation:fl 3s ease-in-out infinite;}
-@keyframes fl{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
-.ptit{font-size:28px;font-weight:700;font-family:var(--fh);}
-.pdesc{font-size:15px;color:var(--t2);max-width:380px;}
-.psteps{display:flex;flex-direction:column;gap:9px;max-width:340px;}
-.pstep{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:var(--r);background:var(--c);border:1px solid var(--b);font-size:13px;color:var(--t2);}
-.psn{width:24px;height:24px;border-radius:50%;background:var(--vi3);border:1px solid var(--vi2);color:var(--vi2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;}
-
-/* Subjects, Questions, Results screens (same as original) */
-/* ... (I'll include the complete CSS from your original file here) ... */
 </style>
 </head>
 <body>
 
-<div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل نظام تتبع العين…</div></div>
+<div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل المنصة…</div></div>
 
-<video id="vcam" autoplay playsinline muted></video>
-
-<div id="cursor"></div>
-
-<div id="bar">
-  <div class="dot" id="bdot"></div>
-  <span class="bst" id="bst">جاري التهيئة…</span>
-  <div class="bsep"></div>
-  <div class="cfw"><span class="cfl">Conf</span><div class="cfb"><div class="cff" id="cff"></div></div></div>
-  <button id="calib-btn">🎯 معايرة العين</button>
-  <button class="bhome" onclick="App.home()">⌂ Home</button>
-</div>
-
-<div id="vi">🔊</div>
-<div id="hint"><div class="hh">✦ تلميح</div><div id="htxt"></div></div>
-
-<!-- Calibration Overlay -->
-<div id="calibration-overlay">
-  <div style="font-size:24px;font-weight:700;">🎯 معايرة تتبع العين</div>
-  <div style="font-size:14px;color:var(--t2);text-align:center;max-width:400px;">انظر إلى كل نقطة وثبّت نظرك عليها حتى تختفي</div>
-  <div class="cal-points" id="cal-points"></div>
-  <div class="cal-status" id="cal-status">0 / 9 نقاط</div>
-  <div class="cal-progress"><div class="cal-progress-fill" id="cal-progress-fill"></div></div>
-  <button class="bout" onclick="App.cancelCalibration()" style="margin-top:10px;">إلغاء</button>
-</div>
-
-<!-- Welcome Screen -->
 <div class="scr on" id="sw">
-  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;">
+  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;padding:20px;">
     <div class="wlogo">ENSAF</div>
-    <div class="wsub">إنصاف · التعلم بتتبع العين</div>
-    <div class="wtag">منصة التعلم بتتبع حركة العين للطلاب ذوي الإعاقة الحركية</div>
-    <div class="wpills">
-      <div class="pill">👁️ تتبع حركة العين</div>
-      <div class="pill">🎯 معايرة مدمجة</div>
+    <div class="wsub">إنصاف · التعلم التكيفي</div>
+    <div class="wtag">منصة تعليمية ذكية للطلاب ذوي الإعاقة الحركية</div>
+    
+    <div class="mode-selector">
+      <div class="mode-card" onclick="location.href='eye-tracking.html'">
+        <div class="mode-icon">👁️</div>
+        <div class="mode-title">تتبع العين</div>
+        <div class="mode-desc">تحكم كامل باستخدام حركة العينين<br>دقة عالية - تفاعل طبيعي</div>
+        <div class="mode-features">
+          <li>✓ معايرة 9 نقاط</li>
+          <li>✓ دقة sub-degree</li>
+          <li>✓ أقل إجهاد</li>
+        </div>
+      </div>
+      
+      <div class="mode-card" onclick="location.href='head-tracking.html'">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-title">تتبع الرأس</div>
+        <div class="mode-desc">تحكم باستخدام حركة الرأس<br>بدون معايرة - يعمل فوراً</div>
+        <div class="mode-features">
+          <li>✓ بدون معايرة</li>
+          <li>✓ يعمل في الإضاءة المنخفضة</li>
+          <li>✓ للاستخدام العام</li>
+        </div>
+      </div>
+    </div>
+    
+    <div class="wpills" style="margin-top:20px;">
       <div class="pill">🧠 تلميحات ذكية</div>
       <div class="pill">🔊 قراءة صوتية</div>
+      <div class="pill">📊 تقارير مفصلة</div>
+      <div class="pill">🛡️ خصوصية تامة</div>
     </div>
-    <button class="cta" onclick="App.start()">ابدأ التعلم ←</button>
-    <div class="wnote" style="font-size:11px;color:var(--t3);max-width:360px;margin-top:14px;">يتطلب كاميرا ويب وإضاءة جيدة. حرّك عينيك للتحكم في المؤشر.</div>
   </div>
 </div>
 
-<!-- Permission Screen -->
-<div class="scr" id="sp">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;">
-    <div class="pico">👁️</div>
-    <div class="ptit">إذن الكاميرا مطلوب</div>
-    <div class="pdesc">يستخدم تتبع العين الكاميرا لتحريك المؤشر بنظرك.</div>
-    <div class="psteps">
-      <div class="pstep"><div class="psn">1</div>انقر "السماح" للوصول إلى الكاميرا</div>
-      <div class="pstep"><div class="psn">2</div>إضاءة جيدة - وجهك بحاجة لأن يكون مرئياً</div>
-      <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50-70 سم من الشاشة</div>
-      <div class="pstep"><div class="psn">4</div>انظر إلى النقاط للمعايرة بعد الإذن</div>
-    </div>
-    <button class="cta" onclick="App.requestCam()">السماح بالكاميرا</button>
-  </div>
-</div>
-
-<!-- Other screens (subjects, question, lesson, result) remain the same -->
-<!-- I'll include the complete HTML for these from your original -->
+<div class="version-badge">ENSAF v4.0 | تعلم بتقنيات الذكاء الاصطناعي</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   ENSAF v4 — Eye Tracking with WebGazer
-   Uses pure eye tracking to control cursor
-═══════════════════════════════════════════════════════════ */
-
-// Content Database (same as original)
-const DB = {
-  subjects:[
-    {id:'math', name:'الرياضيات',emoji:'🔢',color:'cy'},
-    {id:'sci',  name:'العلوم',    emoji:'🔬',color:'gr'},
-    {id:'hist', name:'التاريخ',    emoji:'🏛️',color:'vi'},
-    {id:'geo',  name:'الجغرافيا',  emoji:'🌍',color:'bl'},
-    {id:'lit',  name:'الأدب', emoji:'📖',color:'go'},
-    {id:'bio',  name:'الأحياء',    emoji:'🧬',color:'re'},
-  ],
-  q:{
-    math:[
-      {q:'ما ناتج 7 × 8؟',opts:['54','56','48','63'],ans:1,hint:'فكّر في 7 مجموعات كل منها 8 عناصر.'},
-      {q:'ما الجذر التربيعي للعدد 144؟',opts:['11','14','12','13'],ans:2,hint:'أي عدد مضروب في نفسه يساوي 144؟'},
-      {q:'ما ثلث العدد 90؟',opts:['25','30','45','20'],ans:1,hint:'اقسم 90 على 3.'},
-      {q:'ما مجموع زوايا المثلث؟',opts:['90°','360°','180°','270°'],ans:2,hint:'قاعدة أساسية في الهندسة المستوية.'},
-      {q:'ما العدد الأولي الذي يلي 17؟',opts:['18','19','21','23'],ans:1,hint:'لا يقبل القسمة إلا على 1 وعلى نفسه.'},
-    ],
-    sci:[
-      {q:'ما أكبر كوكب في المجموعة الشمسية؟',opts:['زحل','المريخ','المشتري','نبتون'],ans:2,hint:'الكوكب الخامس من الشمس.'},
-      {q:'ما الرمز الكيميائي للذهب؟',opts:['Go','Gd','Au','Ag'],ans:2,hint:'مشتق من الكلمة اللاتينية "aurum".'},
-      {q:'كم عدد عظام جسم الإنسان البالغ؟',opts:['206','186','256','300'],ans:0,hint:'206 عظمة.'},
-      {q:'ما وحدة قياس المقاومة الكهربائية؟',opts:['فولت','واط','أوم','أمبير'],ans:2,hint:'سميت نسبة للعالم أوم.'},
-      {q:'ما الغاز الذي تمتصه النباتات؟',opts:['الأكسجين','الهيدروجين','ثاني أكسيد الكربون','النيتروجين'],ans:2,hint:'لعملية التمثيل الضوئي.'},
-    ],
-    hist:[{q:'في أي عام سقط جدار برلين؟',opts:['1987','1989','1991','1993'],ans:1,hint:'1989'},
-          {q:'من كتب الإلياذة؟',opts:['سقراط','أفلاطون','هوميروس','فيرجيل'],ans:2,hint:'هوميروس'},
-          {q:'أول دولة منحت المرأة حق التصويت؟',opts:['أمريكا','بريطانيا','نيوزيلندا','فرنسا'],ans:2,hint:'نيوزيلندا 1893'},
-          {q:'من بنى الكولوسيوم؟',opts:['اليونان','العثمانيون','الرومان','البيزنطيون'],ans:2,hint:'الإمبراطورية الرومانية'},
-          {q:'في أي عام انتهت الحرب العالمية الثانية؟',opts:['1943','1944','1945','1946'],ans:2,hint:'1945'}],
-    geo:[{q:'ما أطول نهر في العالم؟',opts:['الأمازون','النيل','المسيسيبي','الكونغو'],ans:1,hint:'نهر النيل'},
-         {q:'ما عاصمة أستراليا؟',opts:['سيدني','ملبورن','كانبيرا','بيرث'],ans:2,hint:'كانبيرا'},
-         {q:'ما أعلى قمة جبلية؟',opts:['كي2','كانشنجانغا','إيفرست','لوتسه'],ans:2,hint:'إيفرست 8848م'},
-         {q:'كم عدد قارات العالم؟',opts:['5','6','7','8'],ans:2,hint:'7 قارات'},
-         {q:'أكبر محيط في العالم؟',opts:['الأطلسي','الهندي','المتجمد الشمالي','الهادئ'],ans:3,hint:'المحيط الهادئ'}],
-    lit:[{q:'من ألّف "كليلة ودمنة"؟',opts:['ابن المقفع','الجاحظ','ابن رشد','المتنبي'],ans:0,hint:'ابن المقفع'},
-         {q:'ما معنى الفصاحة؟',opts:['الكذب','وضوح التعبير','قصر الجملة','كثرة الكلام'],ans:1,hint:'وضوح وسلامة اللغة'},
-         {q:'أشهر مؤلفات الجاحظ؟',opts:['المقامات','البخلاء','الأغاني','الحماسة'],ans:1,hint:'البخلاء'},
-         {q:'من هو شاعر المتنبي؟',opts:['أمير الشعراء','نبي الشعراء','ملك الشعراء','شاعر العصر'],ans:0,hint:'أمير الشعراء'},
-         {q:'بحر قصيدة "أنا البحر"؟',opts:['الطويل','الكامل','البسيط','الوافر'],ans:1,hint:'الكامل'}],
-    bio:[{q:'محطة الطاقة في الخلية؟',opts:['النواة','الريبوسوم','الميتوكوندريا','الفجوة'],ans:2,hint:'الميتوكوندريا'},
-         {q:'عدد الكروموسومات في الإنسان؟',opts:['23','44','46','48'],ans:2,hint:'46 كروموسوماً'},
-         {q:'فصيلة الدم المانحة العالمية؟',opts:['A+','O-','AB+','B-'],ans:1,hint:'O-'},
-         {q:'العملية التي تنتج الأمشاج؟',opts:['الانقسام المتساوي','التناضح','الانقسام الاختزالي','الانشطار'],ans:2,hint:'الانقسام الاختزالي'},
-         {q:'الجزيء الحامل للمعلومات الوراثية؟',opts:['RNA','ATP','DNA','البروتين'],ans:2,hint:'DNA'}],
-  },
-  lessons:{
-    math:[{title:'أساسيات الضرب',body:'الضرب هو <span class="lhl">جمع متكرر</span>. 7 × 8 = 56.'},{title:'الأعداد الأولية',body:'العدد الأولي لا يقبل القسمة إلا على 1 وعلى نفسه.'}],
-    sci:[{title:'المجموعة الشمسية',body:'8 كواكب: عطارد، الزهرة، الأرض، المريخ، المشتري، زحل، أورانوس، نبتون.'}],
-    hist:[{title:'نهاية الحرب الباردة',body:'سقوط جدار برلين 1989، توحيد ألمانيا 1990.'}],
-    geo:[{title:'أنهار العالم',body:'النيل أطول أنهار العالم (~6,650 كم).'}],
-    lit:[{title:'ابن المقفع',body:'عبد الله بن المقفع مترجم كليلة ودمنة.'}],
-    bio:[{title:'الخلية',body:'الخلية هي وحدة بناء الكائنات الحية.'}],
-  }
-};
-
-// ───── STATE ───────────────────────────────────────────────
-const ST = {
-  mode:'eye',
-  screen:'welcome',
-  subject:null,
-  questions:[],
-  qIdx:0,
-  score:0,
-  hesitations:0,
-  t0:0,
-  dwellMs:3500,
-  lesIdx:0,
-  eyeTrackingReady:false,
-  webgazerInitialized:false
-};
-
-// ───── VOICE ───────────────────────────────────────────────
-const Voice = (() => {
-  const sy = window.speechSynthesis;
-  function speak(t) {
-    if (!sy) return;
-    sy.cancel();
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang='ar-SA';
-    u.rate=0.92;
-    u.pitch=1.04;
-    const vi = document.getElementById('vi');
-    u.onstart=()=>vi.classList.add('on');
-    u.onend=()=>vi.classList.remove('on');
-    sy.speak(u);
-  }
-  function stop() { sy && sy.cancel(); }
-  return {speak,stop};
-})();
-
-// ───── DWELL ───────────────────────────────────────────────
-class Dwell {
-  constructor(onSel, onProg) {
-    this.onSel = onSel;
-    this.onProg = onProg;
-    this.items = new Map();
-    this.ms = ST.dwellMs;
-  }
-  set(arr) {
-    this.items.clear();
-    arr.forEach(({id,el}) => this.items.set(id,{el,t0:null,active:false,done:false}));
-  }
-  update(x,y) {
-    let hit = null;
-    this.items.forEach((d,id) => {
-      if (d.done) return;
-      const r = d.el.getBoundingClientRect();
-      if (x >= r.left-30 && x <= r.right+30 && y >= r.top-24 && y <= r.bottom+24 && !hit) hit = id;
-    });
-    this.items.forEach((d,id) => {
-      if (id !== hit && d.active) {
-        d.active=false;
-        d.t0=null;
-        this.onProg(id,0,false);
-      }
-    });
-    if (hit) {
-      const d = this.items.get(hit);
-      if (!d.active) {
-        d.active=true;
-        d.t0=performance.now();
-      }
-      const p = Math.min(1,(performance.now()-d.t0)/this.ms);
-      this.onProg(hit,p,true);
-      if (p>=1 && !d.done) {
-        d.done=true;
-        this.onSel(hit);
-      }
-    }
-  }
-  reset() {
-    this.items.forEach((d,id) => {
-      d.t0=null;
-      d.active=false;
-      d.done=false;
-      this.onProg(id,0,false);
-    });
-  }
-}
-
-// ───── EYE TRACKING WITH WEBGAZER ─────────────────────────
-const EyeTracker = (() => {
-  let isRunning = false;
-  let gazeX = window.innerWidth/2;
-  let gazeY = window.innerHeight/2;
-  let confidence = 0;
-  let listeners = [];
-  let calibrationPoints = [];
-  let currentCalibrationIndex = 0;
-  
-  async function init() {
-    if (ST.webgazerInitialized) return;
-    
-    return new Promise((resolve, reject) => {
-      // Wait for webgazer to load
-      if (typeof webgazer === 'undefined') {
-        reject('WebGazer not loaded');
-        return;
-      }
-      
-      // Configure webgazer
-      webgazer.setRegression('ridge')
-        .setTracker('clmtrackr')
-        .setGazeListener(function(data, elapsedTime) {
-          if (!isRunning) return;
-          
-          if (data != null) {
-            // data.x, data.y are gaze coordinates relative to viewport
-            gazeX = Math.max(0, Math.min(window.innerWidth, data.x));
-            gazeY = Math.max(0, Math.min(window.innerHeight, data.y));
-            confidence = 0.85; // WebGazer doesn't provide confidence, use stable value
-            
-            // Notify listeners
-            listeners.forEach(fn => fn(gazeX, gazeY, confidence, true));
-          }
-        })
-        .begin();
-      
-      // Hide webgazer's default video (we'll use our own container)
-      webgazer.showVideoPreview(true);
-      
-      // Move video to our container
-      setTimeout(() => {
-        const videoContainer = document.querySelector('#webgazerVideoContainer');
-        if (videoContainer) {
-          videoContainer.style.position = 'fixed';
-          videoContainer.style.bottom = '14px';
-          videoContainer.style.left = '14px';
-          videoContainer.style.width = '200px';
-          videoContainer.style.height = '150px';
-          videoContainer.style.borderRadius = '20px';
-          videoContainer.style.border = '1.5px solid rgba(139,92,246,.3)';
-          videoContainer.style.opacity = '0.7';
-        }
-      }, 1000);
-      
-      ST.webgazerInitialized = true;
-      isRunning = true;
-      resolve();
-    });
-  }
-  
-  function start() {
-    isRunning = true;
-  }
-  
-  function stop() {
-    isRunning = false;
-  }
-  
-  function onGaze(fn) {
-    listeners.push(fn);
-  }
-  
-  function offGaze(fn) {
-    listeners = listeners.filter(l => l !== fn);
-  }
-  
-  async function calibrate() {
-    stop();
-    return new Promise(async (resolve) => {
-      // Define 9 calibration points (grid)
-      const points = [
-        {x: window.innerWidth * 0.1, y: window.innerHeight * 0.1},
-        {x: window.innerWidth * 0.5, y: window.innerHeight * 0.1},
-        {x: window.innerWidth * 0.9, y: window.innerHeight * 0.1},
-        {x: window.innerWidth * 0.1, y: window.innerHeight * 0.5},
-        {x: window.innerWidth * 0.5, y: window.innerHeight * 0.5},
-        {x: window.innerWidth * 0.9, y: window.innerHeight * 0.5},
-        {x: window.innerWidth * 0.1, y: window.innerHeight * 0.9},
-        {x: window.innerWidth * 0.5, y: window.innerHeight * 0.9},
-        {x: window.innerWidth * 0.9, y: window.innerHeight * 0.9}
-      ];
-      
-      currentCalibrationIndex = 0;
-      
-      // Show calibration UI
-      const overlay = document.getElementById('calibration-overlay');
-      const pointsContainer = document.getElementById('cal-points');
-      const statusSpan = document.getElementById('cal-status');
-      const progressFill = document.getElementById('cal-progress-fill');
-      
-      // Create visual points
-      pointsContainer.innerHTML = points.map((p, i) => 
-        `<div class="cal-point" data-idx="${i}" style="opacity:${i === 0 ? '1' : '0.3'}"></div>`
-      ).join('');
-      
-      overlay.classList.add('on');
-      
-      // Show cursor as calibrating
-      document.getElementById('cursor').classList.add('calibrating');
-      
-      // Function to calibrate at current point
-      const calibrateAtPoint = (index) => {
-        if (index >= points.length) {
-          // Calibration complete
-          overlay.classList.remove('on');
-          document.getElementById('cursor').classList.remove('calibrating');
-          statusSpan.textContent = `اكتملت المعايرة!`;
-          setTimeout(() => {
-            start();
-            resolve(true);
-          }, 1000);
-          return;
-        }
-        
-        const point = points[index];
-        statusSpan.textContent = `${index + 1} / ${points.length} نقاط`;
-        progressFill.style.width = `${(index / points.length) * 100}%`;
-        
-        // Highlight current point
-        document.querySelectorAll('.cal-point').forEach((el, i) => {
-          el.style.opacity = i === index ? '1' : '0.3';
-          el.style.transform = i === index ? 'scale(1.3)' : 'scale(1)';
-        });
-        
-        // Create temporary point on screen for user to look at
-        const tempPoint = document.createElement('div');
-        tempPoint.style.cssText = `
-          position:fixed;
-          left:${point.x - 15}px;
-          top:${point.y - 15}px;
-          width:30px;
-          height:30px;
-          border-radius:50%;
-          background:radial-gradient(circle, #00f0ff, #6d28d9);
-          box-shadow:0 0 30px #00f0ff;
-          z-index:10000;
-          pointer-events:none;
-          animation:pulse 0.5s ease infinite;
-        `;
-        document.body.appendChild(tempPoint);
-        
-        // Wait 2 seconds for user to look at point, then calibrate
-        setTimeout(() => {
-          // Use webgazer's calibration
-          if (typeof webgazer !== 'undefined') {
-            webgazer.recordScreenPosition(point.x, point.y, 'click');
-          }
-          tempPoint.remove();
-          
-          // Move to next point
-          currentCalibrationIndex++;
-          calibrateAtPoint(currentCalibrationIndex);
-        }, 2000);
-      };
-      
-      calibrateAtPoint(0);
-    });
-  }
-  
-  function cancelCalibration() {
-    document.getElementById('calibration-overlay').classList.remove('on');
-    document.getElementById('cursor').classList.remove('calibrating');
-    start();
-  }
-  
-  return { init, start, stop, onGaze, offGaze, calibrate, cancelCalibration };
-})();
-
-// ───── APP ─────────────────────────────────────────────────
-const App = (() => {
-  let gx = window.innerWidth/2, gy = window.innerHeight/2;
-  let dwell = null;
-  let hesT = null;
-  let currentSubjects = [];
-  
-  function show(id) {
-    document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
-    const el = document.getElementById(`s${id}`);
-    if (el) el.classList.add('on');
-    ST.screen = id;
-  }
-  
-  // Gaze handler
-  function onGaze(x, y, conf, tracking) {
-    gx = x;
-    gy = y;
-    
-    // Update cursor position
-    const cur = document.getElementById('cursor');
-    cur.style.left = x + 'px';
-    cur.style.top = y + 'px';
-    
-    // Update status bar
-    const bd = document.getElementById('bdot');
-    const bs = document.getElementById('bst');
-    const cf = document.getElementById('cff');
-    cf.style.width = (conf * 100) + '%';
-    
-    if (tracking && conf > 0.5) {
-      bd.className = 'dot ok';
-      bs.textContent = 'تتبع العين نشط';
-      cur.classList.remove('calibrating');
-    } else if (tracking) {
-      bd.className = 'dot wn';
-      bs.textContent = 'تتبع غير مستقر';
-    } else {
-      bd.className = 'dot';
-      bs.textContent = 'جاري التهيئة...';
-    }
-    
-    // Update dwell
-    if (dwell) dwell.update(x, y);
-  }
-  
-  // Start / Camera
-  async function start() {
-    show('p');
-  }
-  
-  async function requestCam() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' }
-      });
-      const vid = document.getElementById('vcam');
-      vid.srcObject = stream;
-      vid.classList.add('show');
-      
-      // Show bar
-      document.getElementById('bar').classList.add('show');
-      document.getElementById('vi').style.display = 'flex';
-      
-      // Initialize eye tracking
-      await EyeTracker.init();
-      EyeTracker.onGaze(onGaze);
-      EyeTracker.start();
-      
-      document.getElementById('cursor').classList.add('on');
-      
-      // Ask for calibration
-      Voice.speak('تم تفعيل تتبع العين. يرجى إجراء المعايرة للحصول على أفضل دقة.');
-      
-      setTimeout(async () => {
-        const shouldCalibrate = confirm('هل تريد إجراء معايرة للعين الآن؟ (يوصى بها للحصول على أفضل دقة)');
-        if (shouldCalibrate) {
-          await EyeTracker.calibrate();
-        }
-        showSubjects();
-      }, 1500);
-      
-    } catch(e) {
-      console.error(e);
-      alert('فشل الوصول للكاميرا. تأكد من منح الإذن.');
-    }
-  }
-  
-  function showSubjects() {
-    show('s');
-    buildSubjects();
-    Voice.speak('اختر مادة دراسية. انظر إلى البطاقة وثبّت نظرك للاختيار.');
-  }
-  
-  function buildSubjects() {
-    const grid = document.getElementById('sgrid');
-    if (!grid) {
-      // Create grid if it doesn't exist
-      const ssDiv = document.getElementById('ss');
-      if (ssDiv) {
-        ssDiv.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;">
-            <div class="stit">اختر مادة دراسية</div>
-            <div class="shint">انظر إلى البطاقة وثبّت نظرك للاختيار</div>
-            <div class="sgrid" id="sgrid"></div>
-          </div>
-        `;
-      }
-    }
-    
-    const g = document.getElementById('sgrid');
-    if (!g) return;
-    
-    g.innerHTML = DB.subjects.map(s => `
-      <div class="scard" data-c="${s.color}" data-id="${s.id}">
-        <div class="sem">${s.emoji}</div>
-        <div class="snm">${s.name}</div>
-        <div class="sct">5 أسئلة</div>
-      </div>
-    `).join('');
-    
-    const cards = Array.from(g.querySelectorAll('.scard'));
-    dwell = new Dwell(
-      (id) => selectSubject(id),
-      (id, p, active) => {
-        const el = g.querySelector(`[data-id="${id}"]`);
-        if (el) el.classList.toggle('gz', active);
-      }
-    );
-    dwell.set(cards.map(el => ({ id: el.dataset.id, el })));
-  }
-  
-  function selectSubject(id) {
-    ST.subject = id;
-    dwell = null;
-    
-    // Get questions
-    const qs = [...DB.q[id]];
-    for(let i = qs.length-1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i+1));
-      [qs[i], qs[j]] = [qs[j], qs[i]];
-    }
-    ST.questions = qs;
-    ST.qIdx = 0;
-    ST.score = 0;
-    ST.hesitations = 0;
-    ST.t0 = Date.now();
-    
-    const subject = DB.subjects.find(x => x.id === id);
-    Voice.speak(`لقد اخترت ${subject.name}. سيبدأ الاختبار الآن.`);
-    setTimeout(() => showQuestion(), 500);
-  }
-  
-  function showQuestion() {
-    if (ST.qIdx >= ST.questions.length) {
-      showResult();
-      return;
-    }
-    
-    show('q');
-    hideHint();
-    
-    const q = ST.questions[ST.qIdx];
-    const subject = DB.subjects.find(x => x.id === ST.subject);
-    const total = ST.questions.length;
-    
-    document.getElementById('qc').textContent = `السؤال ${ST.qIdx+1} من ${total}`;
-    document.getElementById('qpf').style.width = `${(ST.qIdx/total)*100}%`;
-    document.getElementById('qpts').textContent = `⭐ ${ST.score}`;
-    document.getElementById('qtag').innerHTML = `${subject.emoji} ${subject.name}`;
-    document.getElementById('qtxt').textContent = q.q;
-    
-    const ag = document.getElementById('agrid');
-    const letters = ['أ', 'ب', 'ج', 'د'];
-    ag.innerHTML = q.opts.map((opt, i) => `
-      <div class="abtn" data-i="${i}">
-        <div class="altr">${letters[i]}</div>
-        <div class="atxt">${opt}</div>
-        <div class="adw"><div class="adwf" id="df${i}"></div></div>
-      </div>
-    `).join('');
-    
-    Voice.speak(q.q);
-    
-    if (dwell) dwell.reset();
-    const btns = Array.from(ag.querySelectorAll('.abtn'));
-    dwell = new Dwell(
-      (idx) => selectAnswer(parseInt(idx)),
-      (idx, p, active) => {
-        const btn = ag.querySelector(`[data-i="${idx}"]`);
-        if (btn) {
-          btn.classList.toggle('gz', active && p < 1);
-          const fill = document.getElementById(`df${idx}`);
-          if (fill) fill.style.width = active ? (p * 100) + '%' : '0%';
-        }
-      }
-    );
-    dwell.set(btns.map(btn => ({ id: btn.dataset.i, el: btn })));
-    
-    clearTimeout(hesT);
-    hesT = setTimeout(() => {
-      if (ST.screen === 'q') {
-        ST.hesitations++;
-        showHint(q.hint);
-      }
-    }, 6000);
-  }
-  
-  function selectAnswer(idx) {
-    clearTimeout(hesT);
-    dwell = null;
-    
-    const q = ST.questions[ST.qIdx];
-    const isCorrect = idx === q.ans;
-    
-    document.querySelectorAll('.abtn').forEach((btn, i) => {
-      if (i === q.ans) btn.classList.add('ok');
-      else if (i === idx && !isCorrect) btn.classList.add('no');
-    });
-    
-    if (isCorrect) {
-      ST.score++;
-      Voice.speak('إجابة صحيحة! أحسنت.');
-    } else {
-      Voice.speak(`إجابة خاطئة. الإجابة الصحيحة هي: ${q.opts[q.ans]}`);
-    }
-    
-    setTimeout(() => {
-      ST.qIdx++;
-      showQuestion();
-    }, 2000);
-  }
-  
-  function showHint(hint) {
-    document.getElementById('htxt').textContent = hint;
-    document.getElementById('hint').classList.add('on');
-    Voice.speak('تلميح: ' + hint);
-  }
-  
-  function hideHint() {
-    document.getElementById('hint').classList.remove('on');
-  }
-  
-  function showResult() {
-    show('r');
-    dwell = null;
-    
-    const total = ST.questions.length;
-    const percent = Math.round((ST.score / total) * 100);
-    const duration = Math.round((Date.now() - ST.t0) / 1000);
-    const subject = DB.subjects.find(x => x.id === ST.subject);
-    
-    let emoji, message;
-    if (percent >= 90) { emoji = '🏆'; message = 'أداء استثنائي!'; }
-    else if (percent >= 70) { emoji = '⭐'; message = 'ممتاز!'; }
-    else if (percent >= 50) { emoji = '👍'; message = 'جيد!'; }
-    else { emoji = '💪'; message = 'استمر في المحاولة!'; }
-    
-    document.getElementById('rb').textContent = emoji;
-    document.getElementById('rs').textContent = percent + '%';
-    document.getElementById('rl').textContent = message;
-    document.getElementById('ru').textContent = `أجبت على ${ST.score} من ${total} بشكل صحيح`;
-    document.getElementById('rst').innerHTML = `
-      <div class="rstat"><div class="rsv">${ST.score}/${total}</div><div class="rsl">صحيح</div></div>
-      <div class="rstat"><div class="rsv">${duration}ث</div><div class="rsl">المدة</div></div>
-      <div class="rstat"><div class="rsv">${ST.hesitations}</div><div class="rsl">تلميحات</div></div>
-    `;
-    
-    Voice.speak(`انتهى الاختبار. حصلت على ${percent} بالمئة. ${message}`);
-  }
-  
-  function home() {
-    dwell = null;
-    Voice.stop();
-    clearTimeout(hesT);
-    hideHint();
-    show('w');
-  }
-  
-  function retry() {
-    if (!ST.subject) return;
-    const qs = [...DB.q[ST.subject]];
-    for(let i = qs.length-1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i+1));
-      [qs[i], qs[j]] = [qs[j], qs[i]];
-    }
-    ST.questions = qs;
-    ST.qIdx = 0;
-    ST.score = 0;
-    ST.hesitations = 0;
-    ST.t0 = Date.now();
-    showQuestion();
-  }
-  
-  async function calibrate() {
-    await EyeTracker.calibrate();
-  }
-  
-  function cancelCalibration() {
-    EyeTracker.cancelCalibration();
-  }
-  
-  // Add missing elements to DOM
-  function ensureElements() {
-    // Add subjects screen if missing
-    if (!document.getElementById('ss')) {
-      const ss = document.createElement('div');
-      ss.id = 'ss';
-      ss.className = 'scr';
-      ss.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;">
-          <div class="stit">اختر مادة دراسية</div>
-          <div class="shint">انظر إلى البطاقة وثبّت نظرك للاختيار</div>
-          <div class="sgrid" id="sgrid"></div>
-        </div>
-      `;
-      document.body.appendChild(ss);
-    }
-    
-    // Add question screen if missing
-    if (!document.getElementById('sq')) {
-      const sq = document.createElement('div');
-      sq.id = 'sq';
-      sq.className = 'scr';
-      sq.innerHTML = `
-        <div class="qwrap">
-          <div class="qmeta">
-            <span class="qctr" id="qc">Question 1 of 5</span>
-            <div class="qprog"><div class="qpf" id="qpf"></div></div>
-            <span class="qpts" id="qpts">⭐ 0</span>
-          </div>
-          <div class="qbox">
-            <div class="qtag" id="qtag">📚 Subject</div>
-            <div class="qtxt" id="qtxt">...</div>
-          </div>
-          <div class="agrid" id="agrid"></div>
-        </div>
-      `;
-      document.body.appendChild(sq);
-    }
-    
-    // Add result screen if missing
-    if (!document.getElementById('sr')) {
-      const sr = document.createElement('div');
-      sr.id = 'sr';
-      sr.className = 'scr';
-      sr.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;text-align:center;">
-          <div class="rbadge" id="rb">🏆</div>
-          <div class="rscore" id="rs">80%</div>
-          <div class="rlbl" id="rl">Excellent!</div>
-          <div class="rsub" id="ru">You answered 4 of 5 correctly</div>
-          <div class="rstats" id="rst"></div>
-          <div class="racts">
-            <button class="bpri" onclick="App.retry()">إعادة المحاولة 🔄</button>
-            <button class="bout" onclick="App.home()">الرئيسية 🏠</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(sr);
-    }
-  }
-  
-  function init() {
-    ensureElements();
-    setTimeout(() => document.getElementById('load').classList.add('out'), 1600);
-    document.getElementById('calib-btn').onclick = () => calibrate();
-  }
-  
-  return { init, start, requestCam, home, retry, calibrate, cancelCalibration };
-})();
-
-// Start the app
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    document.getElementById('load').classList.add('out');
+  }, 1600);
+});
 </script>
 </body>
 </html>

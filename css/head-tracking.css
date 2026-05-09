@@ -1,0 +1,230 @@
+/* Head Tracking Specific Styles */
+
+/* Video preview customization */
+#vcam {
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  width: 200px;
+  height: 150px;
+  border-radius: var(--r2);
+  border: 1.5px solid var(--b2);
+  opacity: 0;
+  z-index: 800;
+  transform: scaleX(-1);
+  object-fit: cover;
+  transition: opacity 0.5s;
+}
+#vcam.show {
+  opacity: 0.7;
+}
+
+#ov {
+  position: fixed;
+  bottom: 14px;
+  left: 14px;
+  width: 200px;
+  height: 150px;
+  border-radius: var(--r2);
+  z-index: 801;
+  pointer-events: none;
+}
+
+/* Cursor states for head tracking */
+#cursor.low {
+  border-color: var(--go);
+  box-shadow: 0 0 18px var(--go), 0 0 36px rgba(251,191,36,.2);
+  background: radial-gradient(circle, rgba(251,191,36,.9) 0%, rgba(251,191,36,.15) 65%, transparent 100%);
+}
+
+#cursor.dwg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Fallback mode indicator */
+#fb {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: rgba(251,191,36,.1);
+  border: 1px solid var(--go);
+  color: var(--go);
+  font-size: 12px;
+  z-index: 650;
+  display: none;
+}
+#fb.on {
+  display: block;
+}
+
+/* SOS Button */
+#sos {
+  position: fixed;
+  top: 58px;
+  right: 14px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid var(--re);
+  background: var(--re2);
+  color: var(--re);
+  font-size: 19px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 690;
+  cursor: pointer;
+  gap: 1px;
+}
+#sos.show {
+  display: flex;
+}
+#sos span {
+  font-size: 7.5px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+#sosa {
+  position: fixed;
+  top: 58px;
+  right: 14px;
+  width: 58px;
+  height: 58px;
+  z-index: 691;
+  pointer-events: none;
+  display: none;
+}
+#sosa.show {
+  display: block;
+}
+
+#sosc {
+  stroke-dasharray: 164;
+  stroke-dashoffset: 164;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+/* SOS Modal */
+#sosm {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(3,5,13,.96);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+#sosm.on {
+  display: flex;
+}
+
+/* Lesson Screen */
+#sl {
+  flex-direction: column;
+  padding-top: 58px;
+  align-items: stretch;
+}
+.lwrap {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 58px);
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 20px 22px 14px;
+  gap: 14px;
+}
+.lbox {
+  flex: 1;
+  background: var(--c);
+  border: 1.5px solid var(--b2);
+  border-radius: var(--r3);
+  padding: 28px;
+  overflow-y: auto;
+  position: relative;
+}
+.lbox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--go), var(--cy));
+}
+.ltit {
+  font-size: 23px;
+  font-weight: 700;
+  font-family: var(--fh);
+  margin-bottom: 16px;
+}
+.lp {
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--t2);
+  margin-bottom: 14px;
+}
+.lhl {
+  background: linear-gradient(135deg, var(--vi3), var(--cy2));
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--t1);
+}
+.lnav {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.lbtn {
+  padding: 10px 24px;
+  border-radius: var(--r);
+  border: 1px solid var(--b2);
+  background: var(--c);
+  color: var(--t2);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .3s;
+}
+.lbtn:hover, .lbtn.gz {
+  border-color: var(--cy);
+  color: var(--cy);
+  background: var(--cy3);
+}
+.lbtn.pri {
+  background: var(--vi);
+  border-color: var(--vi2);
+  color: #fff;
+}
+.lbtn.pri:hover, .lbtn.pri.gz {
+  background: var(--vi2);
+}
+.lsep {
+  flex: 1;
+}
+
+/* Card drawing effect for subjects */
+.dsvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.drect {
+  fill: none;
+  stroke: var(--cy);
+  stroke-width: 2.5;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  rx: 18;
+  transition: stroke-dashoffset 0.06s linear;
+}
