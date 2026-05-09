@@ -9,9 +9,9 @@ class Dwell {
   
   setItems(items) {
     this.items.clear();
-    items.forEach(({id, element}) => {
-      this.items.set(id, {
-        element: element,
+    items.forEach((item) => {
+      this.items.set(item.id, {
+        element: item.element,
         startTime: null,
         active: false,
         completed: false
@@ -27,8 +27,8 @@ class Dwell {
     let hoveredId = null;
     
     // Find which item is being hovered
-    this.items.forEach((item, id) => {
-      if (item.completed) return;
+    for (const [id, item] of this.items) {
+      if (item.completed) continue;
       
       const rect = item.element.getBoundingClientRect();
       const padding = 30;
@@ -38,18 +38,19 @@ class Dwell {
           y >= rect.top - padding && 
           y <= rect.bottom + padding) {
         hoveredId = id;
+        break;
       }
-    });
+    }
     
     // Update all items
-    this.items.forEach((item, id) => {
+    for (const [id, item] of this.items) {
       if (id !== hoveredId && item.active) {
         // Lost focus
         item.active = false;
         item.startTime = null;
         this.onProgress(id, 0, false);
       }
-    });
+    }
     
     if (hoveredId) {
       const item = this.items.get(hoveredId);
@@ -73,12 +74,12 @@ class Dwell {
   }
   
   reset() {
-    this.items.forEach((item, id) => {
+    for (const [id, item] of this.items) {
       item.startTime = null;
       item.active = false;
       item.completed = false;
       this.onProgress(id, 0, false);
-    });
+    }
   }
   
   destroy() {

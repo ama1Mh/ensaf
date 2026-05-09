@@ -45,9 +45,13 @@ const HeadTrackingApp = (() => {
     Voice.init();
     
     // Setup event listeners
-    document.getElementById('dm')?.addEventListener('click', () => adjustDwellTime(-500));
-    document.getElementById('dp')?.addEventListener('click', () => adjustDwellTime(500));
-    document.getElementById('sos')?.addEventListener('click', () => triggerSOS());
+    const dmBtn = document.getElementById('dm');
+    const dpBtn = document.getElementById('dp');
+    const sosBtn = document.getElementById('sos');
+    
+    if (dmBtn) dmBtn.addEventListener('click', () => adjustDwellTime(-500));
+    if (dpBtn) dpBtn.addEventListener('click', () => adjustDwellTime(500));
+    if (sosBtn) sosBtn.addEventListener('click', () => triggerSOS());
     
     // Hide loading screen
     setTimeout(() => {
@@ -56,7 +60,9 @@ const HeadTrackingApp = (() => {
     }, 1600);
     
     // Initialize particles
-    Utils.createParticles('pts', 30);
+    if (typeof Utils !== 'undefined') {
+      Utils.createParticles('pts', 30);
+    }
   }
   
   function showScreen(screenId) {
@@ -154,18 +160,29 @@ const HeadTrackingApp = (() => {
       }
       
       // Show UI elements
-      document.getElementById('bar')?.classList.add('show');
-      document.getElementById('sos')?.classList.add('show');
-      document.getElementById('sosa')?.classList.add('show');
-      document.getElementById('vi')?.style.display = 'flex';
+      const bar = document.getElementById('bar');
+      const sos = document.getElementById('sos');
+      const sosa = document.getElementById('sosa');
+      const vi = document.getElementById('vi');
+      
+      if (bar) bar.classList.add('show');
+      if (sos) sos.classList.add('show');
+      if (sosa) sosa.classList.add('show');
+      if (vi) vi.style.display = 'flex';
       if (cursor) cursor.classList.add('on');
       
       // Initialize head tracking
-      await HeadTracker.init();
-      await HeadTracker.startCamera(video);
-      HeadTracker.onGaze(onGaze);
-      HeadTracker.setSensitivity(sensitivityX, sensitivityY);
-      HeadTracker.setSmoothing(smoothingAlpha);
+      if (typeof HeadTracker !== 'undefined') {
+        await HeadTracker.init();
+        await HeadTracker.startCamera(video);
+        HeadTracker.addListener(onGaze);
+        HeadTracker.setSensitivity(sensitivityX, sensitivityY);
+        HeadTracker.setSmoothing(smoothingAlpha);
+      } else {
+        console.error('HeadTracker not loaded');
+        useMouseFallback();
+        return;
+      }
       
       Voice.speak('نظام تتبع الرأس جاهز. وجه رأسك نحو بطاقة المادة وثبته للاختيار.');
       
@@ -173,7 +190,11 @@ const HeadTrackingApp = (() => {
       
     } catch (error) {
       console.error('Camera error:', error);
-      Utils.showToast('فشل الوصول للكاميرا. سيتم التبديل لوضع الماوس.', 'error');
+      if (typeof Utils !== 'undefined') {
+        Utils.showToast('فشل الوصول للكاميرا. سيتم التبديل لوضع الماوس.', 'error');
+      } else {
+        alert('فشل الوصول للكاميرا. سيتم التبديل لوضع الماوس.');
+      }
       useMouseFallback();
     }
   }
@@ -190,9 +211,13 @@ const HeadTrackingApp = (() => {
       onGaze(e.clientX, e.clientY, 0.9, true);
     });
     
-    document.getElementById('bar')?.classList.add('show');
-    document.getElementById('sos')?.classList.add('show');
-    document.getElementById('vi')?.style.display = 'flex';
+    const bar = document.getElementById('bar');
+    const sos = document.getElementById('sos');
+    const vi = document.getElementById('vi');
+    
+    if (bar) bar.classList.add('show');
+    if (sos) sos.classList.add('show');
+    if (vi) vi.style.display = 'flex';
     if (cursor) cursor.classList.add('on');
     
     Voice.speak('وضع الماوس البديل نشط. حرك الماوس للتفاعل.');
@@ -208,6 +233,11 @@ const HeadTrackingApp = (() => {
   function buildSubjectsGrid() {
     const grid = document.getElementById('sgrid');
     if (!grid) return;
+    
+    if (typeof DB === 'undefined') {
+      console.error('Database not loaded');
+      return;
+    }
     
     grid.innerHTML = DB.subjects.map(subject => `
       <div class="scard" data-id="${subject.id}" data-c="${subject.color}">
@@ -244,10 +274,12 @@ const HeadTrackingApp = (() => {
       }
     );
     
-    dwell.setItems(cards.map(card => ({
+    const items = cards.map(card => ({
       id: card.dataset.id,
       element: card
-    })));
+    }));
+    
+    dwell.setItems(items);
   }
   
   function selectSubject(subjectId) {
@@ -255,22 +287,24 @@ const HeadTrackingApp = (() => {
     if (dwell) dwell.destroy();
     
     // Load questions
-    currentQuestions = DB.getQuestions(subjectId);
+    if (typeof DB !== 'undefined') {
+      currentQuestions = DB.getQuestions(subjectId);
+    }
     currentQuestionIndex = 0;
     currentScore = 0;
     currentHesitations = 0;
     startTime = Date.now();
     
-    const subject = DB.getSubject(subjectId);
-    Voice.speak(`رائع! لقد اخترت ${subject.name}. هل تريد قراءة الدرس أولاً أم البدء بالاختبار مباشرة؟`);
+    const subject = typeof DB !== 'undefined' ? DB.getSubject(subjectId) : null;
+    Voice.speak(`رائع! لقد اخترت ${subject ? subject.name : 'المادة'}. هل تريد قراءة الدرس أولاً أم البدء بالاختبار مباشرة؟`);
     
     // Show lesson or quiz choice
     showLessonOrQuiz();
   }
   
   function showLessonOrQuiz() {
-    const subject = DB.getSubject(currentSubject);
-    const choice = confirm(`📖 ${subject.name}\n\nهل تريد قراءة الدرس التعليمي أولاً؟\n\n• OK = قراءة الدرس\n• Cancel = البدء بالاختبار مباشرة`);
+    const subject = typeof DB !== 'undefined' ? DB.getSubject(currentSubject) : null;
+    const choice = confirm(`📖 ${subject ? subject.name : 'المادة'}\n\nهل تريد قراءة الدرس التعليمي أولاً؟\n\n• OK = قراءة الدرس\n• Cancel = البدء بالاختبار مباشرة`);
     
     if (choice) {
       showLesson();
@@ -280,6 +314,11 @@ const HeadTrackingApp = (() => {
   }
   
   function showLesson() {
+    if (typeof DB === 'undefined') {
+      startQuiz();
+      return;
+    }
+    
     const lessons = DB.getLessons(currentSubject);
     let lessonIndex = 0;
     
@@ -289,26 +328,34 @@ const HeadTrackingApp = (() => {
       const lesson = lessons[lessonIndex];
       const total = lessons.length;
       
-      document.getElementById('lc').textContent = `الدرس ${lessonIndex + 1} من ${total}`;
-      document.getElementById('lpf').style.width = `${((lessonIndex + 1) / total) * 100}%`;
-      document.getElementById('lbox').innerHTML = `
-        <div class="ltit">${lesson.title}</div>
-        <div class="lp">${lesson.body}</div>
-      `;
+      const lcElement = document.getElementById('lc');
+      const lpfElement = document.getElementById('lpf');
+      const lboxElement = document.getElementById('lbox');
+      const navElement = document.getElementById('lnav');
       
-      const nav = document.getElementById('lnav');
-      nav.innerHTML = `
-        ${lessonIndex > 0 ? '<button class="lbtn" data-action="prev">← السابق</button>' : ''}
-        <div class="lsep"></div>
-        ${lessonIndex < total - 1 ? 
-          '<button class="lbtn pri" data-action="next">التالي →</button>' : 
-          '<button class="lbtn pri" data-action="quiz">ابدأ الاختبار ✏️</button>'}
-      `;
+      if (lcElement) lcElement.textContent = `الدرس ${lessonIndex + 1} من ${total}`;
+      if (lpfElement) lpfElement.style.width = `${((lessonIndex + 1) / total) * 100}%`;
+      if (lboxElement) {
+        lboxElement.innerHTML = `
+          <div class="ltit">${lesson.title}</div>
+          <div class="lp">${lesson.body}</div>
+        `;
+      }
+      
+      if (navElement) {
+        navElement.innerHTML = `
+          ${lessonIndex > 0 ? '<button class="lbtn" data-action="prev">← السابق</button>' : ''}
+          <div class="lsep"></div>
+          ${lessonIndex < total - 1 ? 
+            '<button class="lbtn pri" data-action="next">التالي →</button>' : 
+            '<button class="lbtn pri" data-action="quiz">ابدأ الاختبار ✏️</button>'}
+        `;
+      }
       
       Voice.speak(lesson.title);
       
       if (dwell) dwell.destroy();
-      const buttons = Array.from(nav.querySelectorAll('.lbtn'));
+      const buttons = Array.from(navElement.querySelectorAll('.lbtn'));
       dwell = new Dwell(
         (action) => {
           if (action === 'next') {
@@ -322,22 +369,28 @@ const HeadTrackingApp = (() => {
           }
         },
         (action, progress, active) => {
-          const btn = nav.querySelector(`[data-action="${action}"]`);
+          const btn = navElement.querySelector(`[data-action="${action}"]`);
           if (btn) {
             btn.classList.toggle('gz', active);
           }
         }
       );
-      dwell.setItems(buttons.map(btn => ({
+      
+      const items = buttons.map(btn => ({
         id: btn.dataset.action,
         element: btn
-      })));
+      }));
+      
+      dwell.setItems(items);
     }
     
     renderLesson();
   }
   
   function startQuiz() {
+    if (typeof DB !== 'undefined') {
+      currentQuestions = DB.getQuestions(currentSubject);
+    }
     currentQuestionIndex = 0;
     currentScore = 0;
     currentHesitations = 0;
@@ -355,26 +408,34 @@ const HeadTrackingApp = (() => {
     hideHint();
     
     const question = currentQuestions[currentQuestionIndex];
-    const subject = DB.getSubject(currentSubject);
+    const subject = typeof DB !== 'undefined' ? DB.getSubject(currentSubject) : null;
     const total = currentQuestions.length;
     
     // Update UI
-    document.getElementById('qc').textContent = `السؤال ${currentQuestionIndex + 1} من ${total}`;
-    document.getElementById('qpf').style.width = `${(currentQuestionIndex / total) * 100}%`;
-    document.getElementById('qpts').textContent = `⭐ ${currentScore}`;
-    document.getElementById('qtag').innerHTML = `${subject.emoji} ${subject.name}`;
-    document.getElementById('qtxt').textContent = question.q;
+    const qcElement = document.getElementById('qc');
+    const qpfElement = document.getElementById('qpf');
+    const qptsElement = document.getElementById('qpts');
+    const qtagElement = document.getElementById('qtag');
+    const qtxtElement = document.getElementById('qtxt');
+    const answersGrid = document.getElementById('agrid');
+    
+    if (qcElement) qcElement.textContent = `السؤال ${currentQuestionIndex + 1} من ${total}`;
+    if (qpfElement) qpfElement.style.width = `${(currentQuestionIndex / total) * 100}%`;
+    if (qptsElement) qptsElement.textContent = `⭐ ${currentScore}`;
+    if (qtagElement) qtagElement.innerHTML = `${subject ? subject.emoji : '📚'} ${subject ? subject.name : 'المادة'}`;
+    if (qtxtElement) qtxtElement.textContent = question.q;
     
     // Build answers grid
-    const answersGrid = document.getElementById('agrid');
     const letters = ['أ', 'ب', 'ج', 'د'];
-    answersGrid.innerHTML = question.opts.map((opt, i) => `
-      <div class="abtn" data-index="${i}">
-        <div class="altr">${letters[i]}</div>
-        <div class="atxt">${opt}</div>
-        <div class="adw"><div class="adwf" id="progress-${i}"></div></div>
-      </div>
-    `).join('');
+    if (answersGrid) {
+      answersGrid.innerHTML = question.opts.map((opt, i) => `
+        <div class="abtn" data-index="${i}">
+          <div class="altr">${letters[i]}</div>
+          <div class="atxt">${opt}</div>
+          <div class="adw"><div class="adwf" id="progress-${i}"></div></div>
+        </div>
+      `).join('');
+    }
     
     Voice.speak(question.q);
     
@@ -399,10 +460,12 @@ const HeadTrackingApp = (() => {
       }
     );
     
-    dwell.setItems(answerButtons.map(btn => ({
+    const items = answerButtons.map(btn => ({
       id: btn.dataset.index,
       element: btn
-    })));
+    }));
+    
+    dwell.setItems(items);
     
     // Set hesitation timeout
     if (hesitationTimeout) clearTimeout(hesitationTimeout);
@@ -465,7 +528,7 @@ const HeadTrackingApp = (() => {
     const total = currentQuestions.length;
     const percent = Math.round((currentScore / total) * 100);
     const duration = Math.round((Date.now() - startTime) / 1000);
-    const subject = DB.getSubject(currentSubject);
+    const subject = typeof DB !== 'undefined' ? DB.getSubject(currentSubject) : null;
     
     let emoji, title, message;
     if (percent >= 90) {
@@ -486,23 +549,34 @@ const HeadTrackingApp = (() => {
       message = 'راجع المادة وحاول مرة أخرى. أنت قادر على تحسين أدائك.';
     }
     
-    document.getElementById('rb').textContent = emoji;
-    document.getElementById('rs').textContent = percent + '%';
-    document.getElementById('rl').textContent = title;
-    document.getElementById('ru').textContent = `أجبت على ${currentScore} من ${total} بشكل صحيح`;
+    const rbElement = document.getElementById('rb');
+    const rsElement = document.getElementById('rs');
+    const rlElement = document.getElementById('rl');
+    const ruElement = document.getElementById('ru');
+    const rstElement = document.getElementById('rst');
+    const rrepElement = document.getElementById('rrep');
     
-    document.getElementById('rst').innerHTML = `
-      <div class="rstat"><div class="rsv">${currentScore}/${total}</div><div class="rsl">صحيح</div></div>
-      <div class="rstat"><div class="rsv">${duration}ث</div><div class="rsl">المدة</div></div>
-      <div class="rstat"><div class="rsv">${currentHesitations}</div><div class="rsl">تلميحات</div></div>
-    `;
+    if (rbElement) rbElement.textContent = emoji;
+    if (rsElement) rsElement.textContent = percent + '%';
+    if (rlElement) rlElement.textContent = title;
+    if (ruElement) ruElement.textContent = `أجبت على ${currentScore} من ${total} بشكل صحيح`;
     
-    document.getElementById('rrep').innerHTML = `
-      <div class="rrow"><span class="rlb">المادة</span><span class="rvl">${subject.emoji} ${subject.name}</span></div>
-      <div class="rrow"><span class="rlb">النتيجة</span><span class="rvl ${percent >= 70 ? 'g' : 'w'}">${percent}%</span></div>
-      <div class="rrow"><span class="rlb">متوسط وقت السؤال</span><span class="rvl">${Math.round(duration / total)}ث</span></div>
-      <div class="rrow"><span class="rlb">طريقة التفاعل</span><span class="rvl">🎯 تتبع الرأس</span></div>
-    `;
+    if (rstElement) {
+      rstElement.innerHTML = `
+        <div class="rstat"><div class="rsv">${currentScore}/${total}</div><div class="rsl">صحيح</div></div>
+        <div class="rstat"><div class="rsv">${duration}ث</div><div class="rsl">المدة</div></div>
+        <div class="rstat"><div class="rsv">${currentHesitations}</div><div class="rsl">تلميحات</div></div>
+      `;
+    }
+    
+    if (rrepElement) {
+      rrepElement.innerHTML = `
+        <div class="rrow"><span class="rlb">المادة</span><span class="rvl">${subject ? subject.emoji : '📚'} ${subject ? subject.name : 'المادة'}</span></div>
+        <div class="rrow"><span class="rlb">النتيجة</span><span class="rvl ${percent >= 70 ? 'g' : 'w'}">${percent}%</span></div>
+        <div class="rrow"><span class="rlb">متوسط وقت السؤال</span><span class="rvl">${Math.round(duration / total)}ث</span></div>
+        <div class="rrow"><span class="rlb">طريقة التفاعل</span><span class="rvl">🎯 تتبع الرأس</span></div>
+      `;
+    }
     
     Voice.speak(`انتهى الاختبار. حصلت على ${percent} بالمئة. ${message}`);
     
@@ -512,32 +586,38 @@ const HeadTrackingApp = (() => {
       if (!actions) return;
       
       const buttons = Array.from(actions.querySelectorAll('button'));
-      const btnMap = buttons.map(btn => {
+      const btnMap = [];
+      
+      buttons.forEach(btn => {
         const text = btn.textContent.trim();
         let id = '';
         if (text.includes('إعادة')) id = 'retry';
         else if (text.includes('الرئيسية')) id = 'home';
         else if (text.includes('محتوى')) id = 'lesson';
-        btn.dataset.action = id;
-        return { id, element: btn };
-      }).filter(b => b.id);
-      
-      dwell = new Dwell(
-        (action) => {
-          dwell = null;
-          if (action === 'retry') retry();
-          else if (action === 'home') goHome();
-          else if (action === 'lesson') showLesson();
-        },
-        (action, progress, active) => {
-          const btn = actions.querySelector(`[data-action="${action}"]`);
-          if (btn) {
-            btn.style.outline = active ? `2px solid rgba(0,240,255,${progress.toFixed(2)})` : '';
-            btn.style.transform = active ? `scale(${1 + progress * 0.05})` : '';
-          }
+        if (id) {
+          btn.dataset.action = id;
+          btnMap.push({ id: id, element: btn });
         }
-      );
-      dwell.setItems(btnMap);
+      });
+      
+      if (btnMap.length > 0) {
+        dwell = new Dwell(
+          (action) => {
+            dwell = null;
+            if (action === 'retry') retry();
+            else if (action === 'home') goHome();
+            else if (action === 'lesson') showLesson();
+          },
+          (action, progress, active) => {
+            const btn = actions.querySelector(`[data-action="${action}"]`);
+            if (btn) {
+              btn.style.outline = active ? `2px solid rgba(0,240,255,${progress.toFixed(2)})` : '';
+              btn.style.transform = active ? `scale(${1 + progress * 0.05})` : '';
+            }
+          }
+        );
+        dwell.setItems(btnMap);
+      }
     }, 150);
   }
   
@@ -559,9 +639,11 @@ const HeadTrackingApp = (() => {
   }
   
   function adjustDwellTime(delta) {
-    const newTime = Math.max(1000, Math.min(8000, (dwell?.dwellTime || 3500) + delta));
+    const currentTime = dwell ? dwell.dwellTime : 3500;
+    const newTime = Math.max(1000, Math.min(8000, currentTime + delta));
     if (dwell) dwell.setDwellTime(newTime);
-    document.getElementById('dv').textContent = (newTime / 1000).toFixed(1) + 's';
+    const dvElement = document.getElementById('dv');
+    if (dvElement) dvElement.textContent = (newTime / 1000).toFixed(1) + 's';
   }
   
   function goHome() {
@@ -575,7 +657,9 @@ const HeadTrackingApp = (() => {
   
   function retry() {
     if (!currentSubject) return;
-    currentQuestions = DB.getQuestions(currentSubject);
+    if (typeof DB !== 'undefined') {
+      currentQuestions = DB.getQuestions(currentSubject);
+    }
     currentQuestionIndex = 0;
     currentScore = 0;
     currentHesitations = 0;
@@ -586,7 +670,9 @@ const HeadTrackingApp = (() => {
   function setSensitivity(x, y) {
     sensitivityX = x;
     sensitivityY = y;
-    HeadTracker.setSensitivity(x, y);
+    if (typeof HeadTracker !== 'undefined') {
+      HeadTracker.setSensitivity(x, y);
+    }
   }
   
   // Public API
@@ -604,5 +690,7 @@ const HeadTrackingApp = (() => {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  HeadTrackingApp.init();
+  if (typeof HeadTrackingApp !== 'undefined') {
+    HeadTrackingApp.init();
+  }
 });
