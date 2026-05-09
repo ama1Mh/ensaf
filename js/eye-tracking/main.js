@@ -9,6 +9,7 @@ const EyeTrackingApp = (() => {
   let currentHesitations = 0;
   let startTime = 0;
   let dwell = null;
+  let dwellTime = 3500;  // Store user's dwell time setting
   let hesitationTimeout = null;
   let eyeTracker = null;
   
@@ -126,12 +127,18 @@ const EyeTrackingApp = (() => {
         console.error('EyeTracker not loaded');
         throw new Error('EyeTracker not available');
       }
-      
-      if (typeof Voice !== 'undefined') {
-        Voice.speak('تم تفعيل تتبع العين. حرك عينيك لتحريك المؤشر.');
+
+      // Initialise calibration UI
+      if (typeof Calibration !== 'undefined') {
+        Calibration.init();
       }
-      
-      showSubjects();
+
+      if (typeof Voice !== 'undefined') {
+        Voice.speak('سيبدأ الآن ضبط معايرة تتبع العين. انظر إلى كل نقطة وثبّت نظرك.');
+      }
+
+      // Run calibration, then show subjects
+      startCalibrationFlow();
       
     } catch (error) {
       console.error('Camera error:', error);
@@ -143,6 +150,34 @@ const EyeTrackingApp = (() => {
     }
   }
   
+  function startCalibrationFlow() {
+    if (typeof Calibration === 'undefined') { showSubjects(); return; }
+    Calibration.start(
+      (success, quality) => {
+        const qPct = Math.round((quality || 0) * 100);
+        if (success) {
+          if (typeof Voice !== 'undefined')
+            Voice.speak('اكتملت المعايرة بنجاح. جودة التتبع ' + qPct + ' بالمئة.');
+          if (typeof Utils !== 'undefined')
+            Utils.showToast('✅ معايرة ناجحة — الجودة ' + qPct + '%', 'success');
+        } else {
+          if (typeof Utils !== 'undefined')
+            Utils.showToast('⚠️ معايرة جزئية — يمكنك إعادتها لاحقاً', 'info');
+        }
+        showSubjects();
+      },
+      () => {
+        if (typeof Utils !== 'undefined')
+          Utils.showToast('تم تخطي المعايرة', 'info');
+        showSubjects();
+      }
+    );
+  }
+
+  function recalibrate() {
+    if (typeof Calibration !== 'undefined') startCalibrationFlow();
+  }
+
   function showSubjects() {
     showScreen('subjects');
     buildSubjectsGrid();
@@ -187,6 +222,8 @@ const EyeTrackingApp = (() => {
           }
         }
       );
+      
+      dwell.setDwellTime(dwellTime);
       
       const items = cards.map(card => ({
         id: card.dataset.id,
@@ -283,6 +320,8 @@ const EyeTrackingApp = (() => {
           }
         }
       );
+      
+      dwell.setDwellTime(dwellTime);
       
       const items = answerButtons.map(btn => ({
         id: btn.dataset.index,
@@ -447,17 +486,17 @@ const EyeTrackingApp = (() => {
             }
           }
         );
+        dwell.setDwellTime(dwellTime);
         dwell.setItems(btnMap);
       }
     }, 150);
   }
   
   function adjustDwellTime(delta) {
-    const currentTime = dwell ? dwell.dwellTime : 3500;
-    const newTime = Math.max(1000, Math.min(8000, currentTime + delta));
-    if (dwell) dwell.setDwellTime(newTime);
+    dwellTime = Math.max(1000, Math.min(8000, dwellTime + delta));
+    if (dwell) dwell.setDwellTime(dwellTime);
     const dvElement = document.getElementById('dv');
-    if (dvElement) dvElement.textContent = (newTime / 1000).toFixed(1) + 's';
+    if (dvElement) dvElement.textContent = (dwellTime / 1000).toFixed(1) + 's';
   }
   
   function goHome() {
@@ -488,7 +527,8 @@ const EyeTrackingApp = (() => {
     start,
     requestCamera,
     goHome,
-    retry
+    retry,
+    recalibrate
   };
 })();
 

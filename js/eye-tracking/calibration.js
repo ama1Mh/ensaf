@@ -1,201 +1,223 @@
-// Calibration system for eye tracking - Simplified
+/**
+ * ENSAF Calibration v2
+ *
+ * Drives the EyeTracker.recordCalibrationPoint() API.
+ * Shows a visual dot grid, waits for the user to fixate each dot,
+ * collects frames, fits the model, and reports quality.
+ *
+ * Usage:
+ *   Calibration.init();
+ *   Calibration.start(onComplete, onCancel);
+ */
 const Calibration = (() => {
-  let isActive = false;
-  let currentPointIndex = 0;
-  let points = [];
-  let onCompleteCallback = null;
-  let onCancelCallback = null;
-  let overlay = null;
-  let statusSpan = null;
-  let progressFill = null;
-  let calibrationInterval = null;
-  
-  const CALIBRATION_POINTS = [
-    {x: 0.15, y: 0.15},  // top-left
-    {x: 0.5, y: 0.15},   // top-center
-    {x: 0.85, y: 0.15},  // top-right
-    {x: 0.15, y: 0.5},   // center-left
-    {x: 0.5, y: 0.5},    // center
-    {x: 0.85, y: 0.5},   // center-right
-    {x: 0.15, y: 0.85},  // bottom-left
-    {x: 0.5, y: 0.85},   // bottom-center
-    {x: 0.85, y: 0.85}   // bottom-right
+  let isActive       = false;
+  let pointIndex     = 0;
+  let onCompleteCb   = null;
+  let onCancelCb     = null;
+  let overlay        = null;
+  let statusEl       = null;
+  let progressFillEl = null;
+  let pointsEl       = null;
+  let dotEl          = null;   // animated floating dot
+
+  /* 9-point grid (fractional screen coords) */
+  const GRID = [
+    {x:0.15,y:0.15},{x:0.50,y:0.15},{x:0.85,y:0.15},
+    {x:0.15,y:0.50},{x:0.50,y:0.50},{x:0.85,y:0.50},
+    {x:0.15,y:0.85},{x:0.50,y:0.85},{x:0.85,y:0.85},
   ];
-  
-  function init() {
-    overlay = document.getElementById('calibration-overlay');
-    statusSpan = document.getElementById('cal-status');
-    progressFill = document.getElementById('cal-progress-fill');
-    
-    if (!overlay) {
-      createCalibrationUI();
-    }
-  }
-  
-  function createCalibrationUI() {
-    const div = document.createElement('div');
-    div.id = 'calibration-overlay';
-    div.innerHTML = `
-      <div style="font-size:24px;font-weight:700;margin-bottom:10px;">🎯 معايرة تتبع العين</div>
-      <div style="font-size:14px;color:var(--t2);text-align:center;max-width:400px;margin-bottom:20px;">
-        انظر إلى كل نقطة وثبّت نظرك عليها
-      </div>
-      <div class="cal-points" id="cal-points" style="display:grid;grid-template-columns:repeat(3,1fr);gap:40px;width:80%;max-width:500px;margin:20px auto;">
-        <!-- Points will be added here -->
-      </div>
-      <div class="cal-status" id="cal-status" style="font-size:14px;color:var(--t2);text-align:center;margin:10px;">0 / 9 نقاط</div>
-      <div class="cal-progress" style="width:200px;height:4px;background:var(--c2);border-radius:2px;overflow:hidden;margin:10px auto;">
-        <div class="cal-progress-fill" id="cal-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--vi),var(--cy));width:0%;transition:width .3s;"></div>
-      </div>
-      <button class="bout" id="cal-cancel" style="margin-top:10px;padding:8px 20px;">إلغاء</button>
+
+  /* Frames to collect per calibration point */
+  const FRAMES_PER_POINT = 25;
+
+  /* Hold time (ms) that user must fixate before capture starts */
+  const HOLD_MS = 900;
+
+  /* ─── UI creation ────────────────────────────────────────────────────── */
+  function createUI() {
+    overlay = document.createElement('div');
+    overlay.id = 'calibration-overlay';
+    overlay.style.cssText = `
+      display:none;
+      position:fixed;inset:0;z-index:9999;
+      background:rgba(0,0,0,0.92);
+      flex-direction:column;align-items:center;justify-content:center;
     `;
-    document.body.appendChild(div);
-    
-    overlay = div;
-    statusSpan = div.querySelector('#cal-status');
-    progressFill = div.querySelector('#cal-progress-fill');
-    
-    const cancelBtn = div.querySelector('#cal-cancel');
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', () => cancel());
-    }
+
+    overlay.innerHTML = `
+      <div style="text-align:center;color:#fff;margin-bottom:28px;">
+        <div style="font-size:22px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">
+          🎯 معايرة تتبع العين
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);">
+          انظر إلى كل نقطة وثبّت نظرك حتى تكتمل الدائرة
+        </div>
+      </div>
+
+      <div id="cal-grid" style="
+        display:grid;grid-template-columns:repeat(3,1fr);
+        gap:56px;width:min(70vw,420px);margin-bottom:28px;">
+      </div>
+
+      <div id="cal-status" style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;">
+        0 / 9 نقاط
+      </div>
+
+      <div style="width:200px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;margin-bottom:20px;">
+        <div id="cal-prog" style="
+          height:100%;width:0%;transition:width .35s;
+          background:linear-gradient(90deg,#00f0ff,#8b5cf6);"></div>
+      </div>
+
+      <button id="cal-cancel" style="
+        padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.25);
+        background:transparent;color:rgba(255,255,255,.6);
+        font-size:13px;cursor:pointer;transition:all .2s;">
+        إلغاء
+      </button>
+    `;
+
+    document.body.appendChild(overlay);
+    statusEl       = overlay.querySelector('#cal-status');
+    progressFillEl = overlay.querySelector('#cal-prog');
+    pointsEl       = overlay.querySelector('#cal-grid');
+
+    overlay.querySelector('#cal-cancel').addEventListener('click', cancel);
+
+    // Floating animated dot (appears over everything)
+    dotEl = document.createElement('div');
+    dotEl.style.cssText = `
+      position:fixed;z-index:10000;pointer-events:none;
+      width:48px;height:48px;border-radius:50%;
+      background:radial-gradient(circle at 40% 35%, #fff 10%, #00f0ff 45%, #6d28d9 100%);
+      box-shadow:0 0 24px 6px rgba(0,240,255,.6);
+      transform:translate(-50%,-50%);
+      transition:left .45s cubic-bezier(.4,0,.2,1),top .45s cubic-bezier(.4,0,.2,1);
+      display:none;
+    `;
+    document.body.appendChild(dotEl);
   }
-  
+
+  /* ─── Public API ─────────────────────────────────────────────────────── */
+  function init() {
+    if (!document.getElementById('calibration-overlay')) createUI();
+  }
+
   function start(onComplete, onCancel) {
-    onCompleteCallback = onComplete;
-    onCancelCallback = onCancel;
-    
-    points = CALIBRATION_POINTS.map(p => ({
-      x: p.x * window.innerWidth,
-      y: p.y * window.innerHeight
-    }));
-    
-    currentPointIndex = 0;
-    isActive = true;
-    
-    // Build visual points grid
-    const pointsContainer = overlay.querySelector('#cal-points');
-    if (pointsContainer) {
-      pointsContainer.innerHTML = points.map((_, i) => `
-        <div class="cal-point" data-idx="${i}" style="width:30px;height:30px;border-radius:50%;background:rgba(0,240,255,0.3);border:2px solid #00f0ff;margin:auto;transition:all .3s;cursor:pointer;"></div>
-      `).join('');
+    onCompleteCb = onComplete;
+    onCancelCb   = onCancel;
+    pointIndex   = 0;
+    isActive     = true;
+
+    // Build grid dots
+    pointsEl.innerHTML = GRID.map((_, i) => `
+      <div class="cal-pt" data-i="${i}" style="
+        width:28px;height:28px;border-radius:50%;margin:auto;
+        border:2px solid rgba(0,240,255,.35);
+        background:rgba(0,240,255,.08);
+        transition:all .3s;">
+      </div>
+    `).join('');
+
+    overlay.style.display = 'flex';
+    dotEl.style.display   = 'block';
+
+    // Tell EyeTracker to start collecting
+    if (typeof EyeTracker !== 'undefined') {
+      EyeTracker.startCalibration();
     }
-    
-    overlay.classList.add('on');
-    const cursor = document.getElementById('cursor');
-    if (cursor) cursor.classList.add('calibrating');
-    
-    // Start calibration process
-    calibrateNextPoint();
+
+    runPoint();
   }
-  
-  function calibrateNextPoint() {
-    if (currentPointIndex >= points.length) {
-      complete();
+
+  async function runPoint() {
+    if (!isActive) return;
+
+    if (pointIndex >= GRID.length) {
+      await finalize();
       return;
     }
-    
-    const point = points[currentPointIndex];
-    if (statusSpan) statusSpan.textContent = `${currentPointIndex + 1} / ${points.length} نقاط`;
-    if (progressFill) progressFill.style.width = `${(currentPointIndex / points.length) * 100}%`;
-    
-    // Highlight current point
-    const allPoints = overlay.querySelectorAll('.cal-point');
-    allPoints.forEach((el, i) => {
-      if (i === currentPointIndex) {
-        el.style.transform = 'scale(1.5)';
-        el.style.background = 'rgba(139,92,246,0.8)';
-        el.style.boxShadow = '0 0 20px #8b5cf6';
+
+    const pt  = GRID[pointIndex];
+    const sx  = pt.x * window.innerWidth;
+    const sy  = pt.y * window.innerHeight;
+
+    /* Move animated dot */
+    dotEl.style.left = sx + 'px';
+    dotEl.style.top  = sy + 'px';
+
+    /* Highlight grid indicator */
+    overlay.querySelectorAll('.cal-pt').forEach((el, i) => {
+      if (i < pointIndex) {
+        el.style.background   = 'rgba(16,185,129,.5)';
+        el.style.borderColor  = '#10b981';
+        el.style.transform    = 'scale(1)';
+      } else if (i === pointIndex) {
+        el.style.background   = 'rgba(0,240,255,.35)';
+        el.style.borderColor  = '#00f0ff';
+        el.style.transform    = 'scale(1.4)';
+        el.style.boxShadow    = '0 0 12px rgba(0,240,255,.5)';
       } else {
-        el.style.transform = 'scale(1)';
-        el.style.background = 'rgba(0,240,255,0.3)';
-        el.style.boxShadow = 'none';
+        el.style.background   = 'rgba(0,240,255,.08)';
+        el.style.borderColor  = 'rgba(0,240,255,.35)';
+        el.style.transform    = 'scale(1)';
+        el.style.boxShadow    = 'none';
       }
     });
-    
-    // Create temporary visual point for user to look at
-    const tempPoint = document.createElement('div');
-    tempPoint.style.cssText = `
-      position:fixed;
-      left:${point.x - 25}px;
-      top:${point.y - 25}px;
-      width:50px;
-      height:50px;
-      border-radius:50%;
-      background:radial-gradient(circle, #00f0ff, #6d28d9);
-      box-shadow:0 0 30px #00f0ff;
-      z-index:10001;
-      pointer-events:none;
-      animation: pulse 0.5s ease-in-out infinite;
-    `;
-    document.body.appendChild(tempPoint);
-    
-    // Show countdown
-    let countdown = 2;
-    const countdownText = document.createElement('div');
-    countdownText.style.cssText = `
-      position:fixed;
-      left:${point.x - 15}px;
-      top:${point.y - 40}px;
-      font-size:24px;
-      font-weight:bold;
-      color:#00f0ff;
-      z-index:10002;
-      pointer-events:none;
-    `;
-    countdownText.textContent = countdown;
-    document.body.appendChild(countdownText);
-    
-    // Countdown and calibrate
-    if (calibrationInterval) clearInterval(calibrationInterval);
-    calibrationInterval = setInterval(() => {
-      countdown--;
-      countdownText.textContent = countdown;
-      if (countdown <= 0) {
-        clearInterval(calibrationInterval);
-        tempPoint.remove();
-        countdownText.remove();
-        
-        // Record calibration point with WebGazer
-        if (typeof webgazer !== 'undefined' && webgazer) {
-          webgazer.recordScreenPosition(point.x, point.y, 'click');
-        }
-        
-        currentPointIndex++;
-        calibrateNextPoint();
-      }
-    }, 1000);
-  }
-  
-  function complete() {
-    if (calibrationInterval) clearInterval(calibrationInterval);
-    isActive = false;
-    if (overlay) overlay.classList.remove('on');
-    
-    const cursor = document.getElementById('cursor');
-    if (cursor) cursor.classList.remove('calibrating');
-    
-    if (onCompleteCallback) {
-      onCompleteCallback(true);
+
+    statusEl.textContent       = `${pointIndex + 1} / ${GRID.length} نقاط`;
+    progressFillEl.style.width = `${(pointIndex / GRID.length) * 100}%`;
+
+    /* Wait for fixation hold, then record */
+    await pause(HOLD_MS);
+    if (!isActive) return;
+
+    // Animate dot: shrink to signal capture
+    dotEl.style.transform = 'translate(-50%,-50%) scale(0.55)';
+    dotEl.style.boxShadow = '0 0 32px 12px rgba(139,92,246,.8)';
+
+    if (typeof EyeTracker !== 'undefined') {
+      await EyeTracker.recordCalibrationPoint(sx, sy, FRAMES_PER_POINT);
     }
+
+    dotEl.style.transform = 'translate(-50%,-50%) scale(1)';
+    dotEl.style.boxShadow = '0 0 24px 6px rgba(0,240,255,.6)';
+
+    pointIndex++;
+    runPoint();
   }
-  
+
+  async function finalize() {
+    let success = false;
+    if (typeof EyeTracker !== 'undefined') {
+      success = EyeTracker.finalizeCalibration();
+    }
+    const quality = typeof EyeTracker !== 'undefined'
+      ? EyeTracker.getCalibrationQuality()
+      : 0;
+
+    hide();
+    if (onCompleteCb) onCompleteCb(success, quality);
+  }
+
   function cancel() {
-    if (calibrationInterval) clearInterval(calibrationInterval);
     isActive = false;
-    if (overlay) overlay.classList.remove('on');
-    
-    const cursor = document.getElementById('cursor');
-    if (cursor) cursor.classList.remove('calibrating');
-    
-    if (onCancelCallback) {
-      onCancelCallback();
-    }
+    hide();
+    if (onCancelCb) onCancelCb();
   }
-  
-  function isRunning() {
-    return isActive;
+
+  function hide() {
+    isActive          = false;
+    overlay.style.display = 'none';
+    dotEl.style.display   = 'none';
+    progressFillEl.style.width = '0%';
   }
-  
+
+  function isRunning() { return isActive; }
+
+  function pause(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   return { init, start, cancel, isRunning };
 })();

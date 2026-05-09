@@ -1,188 +1,103 @@
-/* Calibration Overlay */
-#calibration-overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(3,5,13,.98);
-  z-index:5000;
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:20px;
+/* ─── Camera feed ───────────────────────────────────────────────────────── */
+#vcam {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 200px;
+  height: 150px;
+  border-radius: 20px;
+  border: 1.5px solid var(--cy2);
+  object-fit: cover;
+  transform: scaleX(-1);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s;
 }
-#calibration-overlay.on {
-  display:flex;
-}
-.cal-points {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:60px;
-  width:80%;
-  max-width:600px;
-  aspect-ratio:1;
-  margin:20px auto;
-}
-.cal-point {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:var(--cy);
-  box-shadow:0 0 20px var(--cy);
-  cursor:pointer;
-  transition:all .3s;
-  margin:auto;
-}
-.cal-point:hover {
-  transform:scale(1.3);
-  background:var(--vi2);
-}
-.cal-status {
-  font-size:14px;
-  color:var(--t2);
-  text-align:center;
-}
-.cal-progress {
-  width:200px;
-  height:4px;
-  background:var(--c2);
-  border-radius:2px;
-  overflow:hidden;
-}
-.cal-progress-fill {
-  height:100%;
-  background:linear-gradient(90deg,var(--vi),var(--cy));
-  width:0%;
-  transition:width .3s;
-}
+#vcam.show { opacity: 0.7; }
 
-/* WebGazer Video Container Override */
-#webgazerVideoContainer {
-  position:fixed !important;
-  bottom:14px !important;
-  left:14px !important;
-  width:200px !important;
-  height:150px !important;
-  border-radius:20px !important;
-  border:1.5px solid var(--vi2) !important;
-  z-index:801 !important;
-  opacity:0.7 !important;
-  overflow:hidden !important;
-}
-#webgazerVideoContainer video {
-  transform:scaleX(-1) !important;
-}
-#webgazerFaceFeedbackBox {
-  display:none !important;
-}
-
-#cursor.calibrating {
-  width:40px;
-  height:40px;
-  background:radial-gradient(circle,rgba(139,92,246,.9) 0%,rgba(139,92,246,.15) 65%,transparent 100%);
-  border-color:var(--vi2);
-  animation:pulse 1s ease infinite;
-}
-@keyframes pulse {
-  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
-  50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7;}
-}
-
-#calib-btn {
-  padding:4px 12px;
-  border-radius:6px;
-  border:1px solid var(--vi2);
-  background:var(--vi3);
-  color:var(--vi2);
-  font-size:11px;
-  cursor:pointer;
-  transition:all .2s;
-}
-#calib-btn:hover {
-  background:var(--vi2);
-  color:#fff;
-}
-/* Calibration overlay styles */
+/* ─── Calibration overlay ───────────────────────────────────────────────── */
 #calibration-overlay {
   position: fixed;
   inset: 0;
   background: rgba(3, 5, 13, 0.98);
+  backdrop-filter: blur(8px);
   z-index: 5000;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
+  gap: 20px;
 }
+#calibration-overlay.on { display: flex; }
 
-#calibration-overlay.on {
-  display: flex;
+/* 3×3 dot grid inside the overlay panel */
+#cal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 56px;
+  width: min(70vw, 420px);
+  margin-bottom: 8px;
 }
-
-.cal-point {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-#calibration-overlay .cal-point {
-  width: 40px;
-  height: 40px;
+.cal-pt {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(0, 240, 255, 0.3);
-  border: 2px solid #00f0ff;
   margin: auto;
+  border: 2px solid rgba(0, 240, 255, 0.35);
+  background: rgba(0, 240, 255, 0.08);
   transition: all 0.3s ease;
 }
 
-#calibration-overlay .cal-point:hover {
-  transform: scale(1.2);
-  background: rgba(139, 92, 246, 0.8);
+/* Floating animated target dot (rendered outside the overlay) */
+#cal-dot {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff 10%, #00f0ff 45%, #6d28d9 100%);
+  box-shadow: 0 0 24px 6px rgba(0, 240, 255, 0.6);
+  transform: translate(-50%, -50%);
+  transition:
+    left 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    top  0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  display: none;
 }
 
+/* ─── Cursor during calibration ─────────────────────────────────────────── */
 #cursor.calibrating {
   width: 40px;
   height: 40px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.9) 0%, rgba(139, 92, 246, 0.15) 65%, transparent 100%);
-  border-color: #8b5cf6;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.9) 0%,
+    rgba(139, 92, 246, 0.15) 65%,
+    transparent 100%
+  );
+  border-color: var(--vi2, #8b5cf6);
   animation: pulse 1s ease infinite;
 }
-
-#webgazerVideoContainer {
-  position: fixed !important;
-  bottom: 14px !important;
-  left: 14px !important;
-  width: 200px !important;
-  height: 150px !important;
-  border-radius: 20px !important;
-  border: 1.5px solid rgba(139, 92, 246, 0.3) !important;
-  z-index: 801 !important;
-  opacity: 0.7 !important;
-  overflow: hidden !important;
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 1;   }
+  50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
 }
 
-#webgazerVideoContainer video {
-  transform: scaleX(-1) !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-#webgazerFaceFeedbackBox,
-#webgazerFaceOverlay {
-  display: none !important;
-}
-
-#calib-btn {
+/* ─── Recalibrate button (top bar) ──────────────────────────────────────── */
+#recal-btn {
   padding: 4px 12px;
   border-radius: 6px;
-  border: 1px solid #8b5cf6;
+  border: 1px solid var(--vi2, #8b5cf6);
   background: rgba(109, 40, 217, 0.18);
-  color: #8b5cf6;
+  color: var(--vi2, #8b5cf6);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
 }
-
-#calib-btn:hover {
-  background: #8b5cf6;
+#recal-btn:hover {
+  background: var(--vi2, #8b5cf6);
   color: #fff;
 }

@@ -39,7 +39,6 @@
 
 <!-- Video Elements -->
 <video id="vcam" autoplay playsinline muted></video>
-<canvas id="iris-canvas" width="200" height="150"></canvas>
 
 <!-- Cursor -->
 <div id="cursor"></div>
@@ -58,6 +57,7 @@
     <span id="dv">3.5s</span>
     <button id="dp">+</button>
   </div>
+  <button class="bhome" onclick="EyeTrackingApp.recalibrate()">🎯 إعادة المعايرة</button>
   <button class="bhome" onclick="EyeTrackingApp.goHome()">⌂ الرئيسية</button>
 </div>
 
@@ -148,6 +148,7 @@
 <script src="js/shared/database.js"></script>
 <script src="js/shared/dwell.js"></script>
 <script src="js/shared/voice.js"></script>
+<script src="js/eye-tracking/calibration.js"></script>
 <script src="js/eye-tracking/eye-tracker.js"></script>
 <script src="js/eye-tracking/main.js"></script>
 
