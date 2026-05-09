@@ -1,0 +1,29 @@
+{
+  "name": "ensaf-head-tracker",
+  "version": "3.0.0",
+  "description": "Accessible e-learning platform with head tracking for motor-impaired students",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "echo \"No tests configured\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/ensaf-head-tracker.git"
+  },
+  "keywords": [
+    "accessibility",
+    "head-tracking",
+    "e-learning",
+    "assistive-technology",
+    "mediapipe",
+    "arabic",
+    "motor-disabilities"
+  ],
+  "author": "ENSAF Contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/ensaf-head-tracker/issues"
+  },
+  "homepage": "https://github.com/your-username/ensaf-head-tracker#readme"
+}
