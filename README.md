@@ -23,7 +23,7 @@
 
 ## 🚀 Live Demo
 
-[Click here to try ENSAF live](https://your-username.github.io/ensaf-head-tracker/)
+[Click here to try ENSAF live](https://ama1Mh.github.io/ensaf-head-tracker/)
 
 ## 🖥️ Installation
 
@@ -31,7 +31,7 @@
 
 ````bash
 # Clone the repository
-git clone https://github.com/your-username/ensaf-head-tracker.git
+git clone https://github.com/ama1Mh/ensaf-head-tracker.git
 cd ensaf-head-tracker
 
 # Serve locally (any static server works)
@@ -50,7 +50,7 @@ Go to Settings → Pages
 
 Set source to main branch / (root)
 
-Your site will be live at https://your-username.github.io/ensaf-head-tracker
+Your site will be live at https://ama1Mh.github.io/ensaf-head-tracker
 
 📱 Browser Support
 Browser	Head Tracking	Voice	Minimum Version
@@ -215,7 +215,7 @@ IBM Plex Sans Arabic and Syne fonts
 The open-source accessibility community
 
 📧 Contact
-Project Link: https://github.com/your-username/ensaf-head-tracker
+Project Link: https://github.com/ama1Mh/ensaf-head-tracker
 
 Made with ❤️ for accessibility and inclusive education
 
