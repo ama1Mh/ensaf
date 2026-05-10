@@ -24,11 +24,6 @@ const EyeTracker = (() => {
   const L_BOT    = 145;  // left lower lid
   const R_TOP    = 386;  // right upper lid
   const R_BOT    = 374;  // right lower lid
-  // Nose tip & chin for head-pose compensation
-  const NOSE_TIP = 1;
-  const CHIN     = 199;
-  const L_CHEEK  = 234;
-  const R_CHEEK  = 454;
 
   /* ─── State ─────────────────────────────────────────────────────────── */
   let faceMesh   = null;
@@ -151,18 +146,75 @@ const EyeTracker = (() => {
     return w > 0 ? h / w : 0;
   }
 
-  /* ─── Head-pose yaw estimate (normalise iris by head width) ──────────── */
-  function headNormalize(lm, rawX, rawY) {
-    // Use inter-cheek distance as scale reference
-    const headW = Math.abs(lm[R_CHEEK].x - lm[L_CHEEK].x) || 0.3;
-    const noseTipX = lm[NOSE_TIP].x;
-    // Horizontal gaze relative to nose tip, scaled by head width
-    const relX = (rawX - noseTipX) / headW;
-    // Vertical: relative to nose-chin midpoint
-    const faceMidY = (lm[NOSE_TIP].y + lm[CHIN].y) / 2;
-    const faceH    = Math.abs(lm[CHIN].y - lm[NOSE_TIP].y) || 0.3;
-    const relY = (rawY - faceMidY) / faceH;
-    return { relX, relY };
+  /**
+   * ─── TRUE GAZE EXTRACTION ────────────────────────────────────────────────
+   *
+   * MediaPipe landmarks are in normalised image coords (0,0 = top-left of
+   * the RAW camera frame, BEFORE any CSS mirror flip).
+   *
+   * In the raw frame:
+   *   Left eye  (user's left):  outer corner = lm[33]  (smaller x, left side of image)
+   *                              inner corner = lm[133] (larger  x, nose side)
+   *   Right eye (user's right): inner corner = lm[362] (smaller x, nose side)
+   *                              outer corner = lm[263] (larger  x, right side of image)
+   *
+   * gazeX = (iris_x - eye_left_x) / eye_width   → 0 = iris at left edge, 1 = right edge
+   *
+   * When the user looks LEFT (in real world), their iris moves toward the
+   * outer corner of each eye.  In raw image coords that means SMALLER x
+   * for the left eye, LARGER x for the right eye.  We normalise so that
+   * "looking left" → gazeX < 0.5 for both eyes before averaging.
+   *
+   * Screen mapping (webcam is mirrored for display but coords are raw):
+   *   looking left  → we want cursor LEFT  → screenX small
+   *   gazeX small when looking left, so:  screenX = gazeX * W  (no invert needed)
+   */
+  function extractGaze(lm, li, ri) {
+    // ── Left eye ─────────────────────────────────────────────────────────
+    // lm[33]  = temporal (outer) corner — smaller x in raw frame
+    // lm[133] = nasal   (inner) corner — larger  x in raw frame
+    const lLeftX  = lm[L_OUTER].x;   // lm[33]  — left edge of eye in image
+    const lRightX = lm[L_INNER].x;   // lm[133] — right edge of eye in image
+    const lEyeW   = Math.abs(lRightX - lLeftX);
+
+    // iris x position within the eye, 0 = looking toward outer (temporal) side
+    const lGazeX  = lEyeW > 0.005
+      ? (li.x - lLeftX) / lEyeW
+      : 0.5;
+
+    // Vertical: lm[159] upper lid, lm[145] lower lid
+    const lTopY  = Math.min(lm[159].y, lm[145].y);
+    const lBotY  = Math.max(lm[159].y, lm[145].y);
+    const lEyeH  = lBotY - lTopY;
+    const lGazeY = lEyeH > 0.003
+      ? (li.y - lTopY) / lEyeH
+      : 0.5;
+
+    // ── Right eye ────────────────────────────────────────────────────────
+    // lm[362] = nasal   (inner) corner — smaller x in raw frame
+    // lm[263] = temporal(outer) corner — larger  x in raw frame
+    const rLeftX  = lm[R_INNER].x;   // lm[362] — left edge of eye in image
+    const rRightX = lm[R_OUTER].x;   // lm[263] — right edge of eye in image
+    const rEyeW   = Math.abs(rRightX - rLeftX);
+
+    const rGazeX  = rEyeW > 0.005
+      ? (ri.x - rLeftX) / rEyeW
+      : 0.5;
+
+    const rTopY  = Math.min(lm[386].y, lm[374].y);
+    const rBotY  = Math.max(lm[386].y, lm[374].y);
+    const rEyeH  = rBotY - rTopY;
+    const rGazeY = rEyeH > 0.003
+      ? (ri.y - rTopY) / rEyeH
+      : 0.5;
+
+    // ── Average & clamp ───────────────────────────────────────────────────
+    // Left eye:  lGazeX small = looking left  ✓
+    // Right eye: rGazeX large = looking left  ✗  →  invert it
+    const fx = Math.max(-0.1, Math.min(1.1, (lGazeX + (1 - rGazeX)) / 2));
+    const fy = Math.max(-0.1, Math.min(1.1, (lGazeY + rGazeY) / 2));
+
+    return { fx, fy };
   }
 
   /* ─── Main results callback ──────────────────────────────────────────── */
@@ -201,11 +253,8 @@ const EyeTracker = (() => {
     const ri = irisCenter(lm, R_IRIS);
     if (!li || !ri) { notify(); return; }
 
-    const rawX = (li.x + ri.x) / 2;
-    const rawY = (li.y + ri.y) / 2;
-
-    /* — Head-normalised gaze features — */
-    const { relX: fx, relY: fy } = headNormalize(lm, rawX, rawY);
+    /* — True eye-rotation gaze (head-pose independent) — */
+    const { fx, fy } = extractGaze(lm, li, ri);
 
     /* — Map to screen — */
     let sx, sy;
@@ -214,9 +263,12 @@ const EyeTracker = (() => {
       sx = p.sx;
       sy = p.sy;
     } else {
-      // Fallback before calibration: simple linear stretch
-      sx = (1 - rawX) * window.innerWidth  * 1.4 - window.innerWidth  * 0.2;
-      sy =      rawY  * window.innerHeight * 1.4 - window.innerHeight * 0.2;
+      // Fallback before calibration.
+      // fx=0 → looking left → cursor left, fx=1 → looking right → cursor right.
+      // Raw frame is NOT mirrored, so no X inversion here.
+      // We stretch slightly (× 1.6, offset −0.3) so edge gaze reaches screen edges.
+      sx = (fx * 1.6 - 0.3) * window.innerWidth;
+      sy = (fy * 1.8 - 0.4) * window.innerHeight;
     }
 
     // Clamp
@@ -337,18 +389,15 @@ const EyeTracker = (() => {
     });
   }
 
-  // Patched version that also stores _rawGaze
+  // Patched version that also stores _rawGaze for calibration capture
   function _patchedOnResults(results) {
-    // Extract raw features before the main handler
     if (results.multiFaceLandmarks?.length) {
       const lm = results.multiFaceLandmarks[0];
       const li = irisCenter(lm, L_IRIS);
       const ri = irisCenter(lm, R_IRIS);
       if (li && ri) {
-        const rawX = (li.x + ri.x) / 2;
-        const rawY = (li.y + ri.y) / 2;
-        const { relX: fx, relY: fy } = headNormalize(lm, rawX, rawY);
-        _rawGaze = { fx, fy };
+        // Use the same extractGaze that onResults uses — keeps calibration consistent
+        _rawGaze = extractGaze(lm, li, ri);
       }
     }
     onResults(results);
