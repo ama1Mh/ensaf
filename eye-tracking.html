@@ -5,16 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إنصاف — تتبع العين (Eye Tracking)</title>
 
-<!-- MediaPipe for eye tracking -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<!--
+  ══════════════════════════════════════════════════════════════════
+  DEPENDENCY CHANGE: MediaPipe raw WASM → TensorFlow.js (WebGL)
+  ══════════════════════════════════════════════════════════════════
+  OLD (v2/v3):
+    @mediapipe/face_mesh   (WASM, ~8 MB, cold-start slow)
+    @mediapipe/camera_utils
+
+  NEW (v4):
+    TensorFlow.js core     (WebGL backend, GPU-accelerated)
+    @tensorflow-models/face-landmarks-detection
+      runtime: 'tfjs'  →  uses the same MediaPipe FaceMesh model weights
+                           but runs through TF.js WebGL — no WASM needed,
+                           faster on most devices, and we can also call
+                           tf.model.fit() directly for on-device CNN training.
+
+  Load order matters: tf.js FIRST, then the face-landmarks model.
+  ══════════════════════════════════════════════════════════════════
+-->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.6/dist/face-landmarks-detection.js"></script>
 
 <!-- Styles -->
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/eye-tracking.css">
 
 <style>
-/* Additional styles */
 #iris-canvas {
   position: fixed;
   bottom: 14px;
@@ -27,9 +44,7 @@
   opacity: 0;
   transition: opacity 0.5s;
 }
-#iris-canvas.show {
-  opacity: 0.7;
-}
+#iris-canvas.show { opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -37,10 +52,10 @@
 <!-- Loading Screen -->
 <div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل نظام تتبع العين…</div></div>
 
-<!-- Video Elements -->
+<!-- Video (webcam feed preview) -->
 <video id="vcam" autoplay playsinline muted></video>
 
-<!-- Cursor -->
+<!-- Gaze cursor -->
 <div id="cursor"></div>
 
 <!-- Top Bar -->
@@ -61,10 +76,10 @@
   <button class="bhome" onclick="EyeTrackingApp.goHome()">⌂ الرئيسية</button>
 </div>
 
-<!-- Voice Indicator -->
+<!-- Voice indicator -->
 <div id="vi">🔊</div>
 
-<!-- Hint Container -->
+<!-- Hint -->
 <div id="hint"><div class="hh">✦ تلميح</div><div id="htxt"></div></div>
 
 <!-- Welcome Screen -->
@@ -74,14 +89,14 @@
     <div class="wsub">إنصاف · تتبع العين</div>
     <div class="wtag">منصة التعلم بتتبع حركة العين</div>
     <div class="wpills">
-      <div class="pill">👁️ تتبع العين</div>
-      <div class="pill">🎯 تتبع القزحية</div>
-      <div class="pill">🧠 تلميحات ذكية</div>
+      <div class="pill">👁️ تتبع العين بالذكاء الاصطناعي</div>
+      <div class="pill">🧠 نموذج مدرّب على عينيك</div>
+      <div class="pill">🎯 دقة عالية</div>
       <div class="pill">🔊 قراءة صوتية</div>
     </div>
     <button class="cta" onclick="EyeTrackingApp.start()">ابدأ التعلم ←</button>
     <div class="wnote" style="margin-top:20px;font-size:12px;color:var(--t3);">
-      يتطلب كاميرا ويب وإضاءة جيدة. حرّك عينيك للتحكم في المؤشر.
+      يتطلب كاميرا ويب وإضاءة جيدة. سيُدرَّب نموذج ذكاء اصطناعي صغير على عينيك أثناء المعايرة.
     </div>
   </div>
 </div>
@@ -94,9 +109,9 @@
     <div class="pdesc">يستخدم تتبع العين الكاميرا لتحريك المؤشر بنظرك.</div>
     <div class="psteps">
       <div class="pstep"><div class="psn">1</div>انقر "السماح" للوصول إلى الكاميرا</div>
-      <div class="pstep"><div class="psn">2</div>إضاءة جيدة - وجهك بحاجة لأن يكون مرئياً</div>
-      <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50-70 سم من الشاشة</div>
-      <div class="pstep"><div class="psn">4</div>حرّك عينيك لتحريك المؤشر</div>
+      <div class="pstep"><div class="psn">2</div>إضاءة جيدة — وجهك بحاجة لأن يكون مرئياً</div>
+      <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50–70 سم من الشاشة</div>
+      <div class="pstep"><div class="psn">4</div>ستُدرَّب شبكة عصبية صغيرة على نمط عينيك (1-3 ثواني)</div>
     </div>
     <button class="cta" onclick="EyeTrackingApp.requestCamera()">السماح بالكاميرا</button>
   </div>
@@ -143,13 +158,16 @@
   </div>
 </div>
 
-<!-- Scripts -->
+<!-- Scripts — shared utilities first, then eye-tracking modules -->
 <script src="js/shared/utils.js"></script>
 <script src="js/shared/database.js"></script>
 <script src="js/shared/dwell.js"></script>
 <script src="js/shared/voice.js"></script>
+<!-- v5 calibration (CNN training progress UI) -->
 <script src="js/eye-tracking/calibration.js"></script>
+<!-- v4 eye tracker (TF.js CNN, replaces MediaPipe WASM) -->
 <script src="js/eye-tracking/eye-tracker.js"></script>
+<!-- main.js unchanged -->
 <script src="js/eye-tracking/main.js"></script>
 
 </body>
