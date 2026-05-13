@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنصاف — تتبع الرأس (Head Tracking)</title>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+<!-- Styles -->
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/head-tracking.css">
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل نظام تتبع الرأس…</div></div>
+
+<!-- Particles Background -->
+<div id="pts"></div>
+
+<!-- Video Elements -->
+<video id="vcam" autoplay playsinline muted></video>
+<canvas id="ov" width="200" height="150"></canvas>
+
+<!-- Cursor -->
+<div id="cursor"></div>
+
+<!-- Top Bar -->
+<div id="bar">
+  <div class="dot" id="bdot"></div>
+  <span class="bst" id="bst">جاري التهيئة…</span>
+  <div class="bsep"></div>
+  <div class="cfw">
+    <span class="cfl">الدقة</span>
+    <div class="cfb"><div class="cff" id="cff"></div></div>
+  </div>
+  <div class="dctrl">
+    <button id="dm">−</button>
+    <span id="dv">3.5s</span>
+    <button id="dp">+</button>
+  </div>
+  <button class="bhome" onclick="HeadTrackingApp.goHome()">⌂ الرئيسية</button>
+</div>
+
+<!-- SOS Button -->
+<div id="sos"><span>⚠</span><span>طوارئ<br>ثبّت 3 ث</span></div>
+<svg id="sosa" viewBox="0 0 58 58">
+  <circle cx="29" cy="29" r="26" fill="none" stroke="rgba(244,63,94,.25)" stroke-width="2.5"/>
+  <circle id="sosc" cx="29" cy="29" r="26" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90 29 29)"/>
+</svg>
+
+<!-- SOS Modal -->
+<div id="sosm">
+  <div style="font-size:56px;">⚠️</div>
+  <div style="font-size:24px;font-weight:700;font-family:var(--fh);color:var(--re);">وضع الطوارئ</div>
+  <div style="font-size:14px;color:var(--t2);max-width:320px;line-height:1.8;">تم تفعيل الطوارئ. انقر على أحد الخيارات.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+    <button class="bpri" onclick="HeadTrackingApp.closeSOS()">رجوع</button>
+    <button class="bout" onclick="HeadTrackingApp.goHome()">الرئيسية</button>
+  </div>
+</div>
+
+<!-- Voice Indicator -->
+<div id="vi">🔊</div>
+
+<!-- Hint Container -->
+<div id="hint"><div class="hh">✦ تلميح</div><div id="htxt"></div></div>
+
+<!-- Fallback Mode Indicator -->
+<div id="fb">⚡ وضع الماوس — حرّك المؤشر للتفاعل</div>
+
+<!-- Welcome Screen -->
+<div class="scr on" id="sw">
+  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;">
+    <div class="wlogo">ENSAF</div>
+    <div class="wsub">إنصاف · تتبع الرأس</div>
+    <div class="wtag">منصة التعلم بتتبع حركة الرأس للطلاب ذوي الإعاقة الحركية</div>
+    <div class="wpills">
+      <div class="pill">🎯 تتبع حركة الرأس</div>
+      <div class="pill">🧠 تلميحات ذكية</div>
+      <div class="pill">🔊 قراءة صوتية</div>
+      <div class="pill">⚡ بدون معايرة</div>
+    </div>
+    <button class="cta" onclick="HeadTrackingApp.start()">ابدأ التعلم ←</button>
+    <div class="wnote" style="margin-top:20px;font-size:12px;color:var(--t3);">
+      يتطلب كاميرا ويب. حرّك رأسك للتحكم في المؤشر. جميع البيانات تُعالج محلياً.
+    </div>
+  </div>
+</div>
+
+<!-- Permission Screen -->
+<div class="scr" id="sp">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;">
+    <div class="pico">📷</div>
+    <div class="ptit">إذن الكاميرا مطلوب</div>
+    <div class="pdesc">يستخدم تتبع الرأس الكاميرا لرصد حركة رأسك. لا يتم تخزين أي مقاطع فيديو.</div>
+    <div class="psteps">
+      <div class="pstep"><div class="psn">1</div>انقر "السماح" في نافذة إذن المتصفح</div>
+      <div class="pstep"><div class="psn">2</div>إضاءة جيدة — يجب أن يكون وجهك مرئياً بوضوح</div>
+      <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50–70 سم من الشاشة، رأسك مستقيم</div>
+      <div class="pstep"><div class="psn">4</div>حرّك رأسك لتوجيه المؤشر نحو الهدف</div>
+    </div>
+    <button class="cta" onclick="HeadTrackingApp.requestCamera()">السماح بالكاميرا</button>
+  </div>
+</div>
+
+<!-- Subjects Screen -->
+<div class="scr" id="ss">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;">
+    <div class="stit">اختر مادة دراسية</div>
+    <div class="shint">وجّه رأسك نحو البطاقة وثبّت نظرتك للاختيار</div>
+    <div class="sgrid" id="sgrid"></div>
+  </div>
+</div>
+
+<!-- Question Screen -->
+<div class="scr" id="sq">
+  <div class="qwrap">
+    <div class="qmeta">
+      <span class="qctr" id="qc">السؤال 1 من 5</span>
+      <div class="qprog"><div class="qpf" id="qpf"></div></div>
+      <span class="qpts" id="qpts">⭐ 0</span>
+    </div>
+    <div class="qbox">
+      <div class="qtag" id="qtag">📚 المادة</div>
+      <div class="qtxt" id="qtxt">...</div>
+    </div>
+    <div class="agrid" id="agrid"></div>
+  </div>
+</div>
+
+<!-- Lesson Screen -->
+<div class="scr" id="sl">
+  <div class="lwrap">
+    <div class="qmeta">
+      <span class="qctr" id="lc">الدرس 1 من 2</span>
+      <div class="qprog"><div class="qpf" id="lpf"></div></div>
+    </div>
+    <div class="lbox" id="lbox"></div>
+    <div class="lnav" id="lnav"></div>
+  </div>
+</div>
+
+<!-- Result Screen -->
+<div class="scr" id="sr">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px;text-align:center;">
+    <div class="rbadge" id="rb">🏆</div>
+    <div class="rscore" id="rs">80%</div>
+    <div class="rlbl" id="rl">ممتاز!</div>
+    <div class="rsub" id="ru">أجبت على 4 من 5 بشكل صحيح</div>
+    <div class="rstats" id="rst"></div>
+    <div class="rrep" id="rrep"></div>
+    <div class="racts">
+      <button class="bpri" onclick="HeadTrackingApp.retry()">إعادة المحاولة 🔄</button>
+      <button class="bout" onclick="HeadTrackingApp.goHome()">الرئيسية 🏠</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/shared/utils.js"></script>
+<script src="js/shared/database.js"></script>
+<script src="js/shared/dwell.js"></script>
+<script src="js/shared/voice.js"></script>
+<script src="js/head-tracking/head-tracker.js"></script>
+<script src="js/head-tracking/main.js"></script>
+
+</body>
+</html>
