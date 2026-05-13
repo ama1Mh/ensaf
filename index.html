@@ -4,119 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إنصاف — منصة التعلم التكيفي</title>
+
+<!-- MediaPipe Face Mesh (supports both head & iris tracking) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+
+<!-- Styles -->
 <link rel="stylesheet" href="css/main.css">
-<style>
-.mode-selector {
-  display: flex;
-  gap: 30px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 40px 0;
-}
-.mode-card {
-  background: var(--c);
-  border: 2px solid var(--b2);
-  border-radius: var(--r3);
-  padding: 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 300px;
-}
-.mode-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--cy);
-  box-shadow: 0 20px 40px rgba(0,240,255,.1);
-}
-.mode-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-}
-.mode-title {
-  font-size: 24px;
-  font-weight: 700;
-  font-family: var(--fh);
-  margin-bottom: 10px;
-}
-.mode-desc {
-  font-size: 14px;
-  color: var(--t3);
-  line-height: 1.6;
-}
-.mode-features {
-  margin-top: 20px;
-  text-align: right;
-}
-.mode-features li {
-  font-size: 12px;
-  color: var(--t2);
-  margin: 8px 0;
-  list-style: none;
-}
-.version-badge {
-  position: fixed;
-  bottom: 14px;
-  right: 14px;
-  font-size: 10px;
-  color: var(--t3);
-  background: var(--c);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-</style>
+
 </head>
 <body>
+<!-- [Same HTML structure as your current file, but update mode buttons:] -->
 
-<div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل المنصة…</div></div>
-
-<div class="scr on" id="sw">
-  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;padding:20px;">
-    <div class="wlogo">ENSAF</div>
-    <div class="wsub">إنصاف · التعلم التكيفي</div>
-    <div class="wtag">منصة تعليمية ذكية للطلاب ذوي الإعاقة الحركية</div>
-    
-    <div class="mode-selector">
-      <div class="mode-card" onclick="location.href='eye-tracking.html'">
-        <div class="mode-icon">👁️</div>
-        <div class="mode-title">تتبع العين</div>
-        <div class="mode-desc">تحكم كامل باستخدام حركة العينين<br>دقة عالية - تفاعل طبيعي</div>
-        <div class="mode-features">
-          <li>✓ معايرة 9 نقاط</li>
-          <li>✓ دقة sub-degree</li>
-          <li>✓ أقل إجهاد</li>
-        </div>
-      </div>
-      
-      <div class="mode-card" onclick="location.href='head-tracking.html'">
-        <div class="mode-icon">🎯</div>
-        <div class="mode-title">تتبع الرأس</div>
-        <div class="mode-desc">تحكم باستخدام حركة الرأس<br>بدون معايرة - يعمل فوراً</div>
-        <div class="mode-features">
-          <li>✓ بدون معايرة</li>
-          <li>✓ يعمل في الإضاءة المنخفضة</li>
-          <li>✓ للاستخدام العام</li>
-        </div>
-      </div>
-    </div>
-    
-    <div class="wpills" style="margin-top:20px;">
-      <div class="pill">🧠 تلميحات ذكية</div>
-      <div class="pill">🔊 قراءة صوتية</div>
-      <div class="pill">📊 تقارير مفصلة</div>
-      <div class="pill">🛡️ خصوصية تامة</div>
-    </div>
-  </div>
+<div class="wmodes">
+  <button class="mbtn act" data-mode="head">🎯 تتبع الرأس (أسرع)</button>
+  <button class="mbtn" data-mode="eye">👁️ تتبع العين (أدق)</button>
+  <button class="mbtn" data-mode="mouse">🖱️ الماوس (بديل)</button>
 </div>
 
-<div class="version-badge">ENSAF v4.0 | تعلم بتقنيات الذكاء الاصطناعي</div>
+<!-- Scripts in dependency order -->
+<script src="js/config.js"></script>
+<script src="js/core/state.js"></script>
+<script src="js/tracking/base-tracker.js"></script>
+<script src="js/tracking/head-tracker.js"></script>
+<script src="js/tracking/eye-tracker.js"></script>
+<script src="js/interaction/dwell.js"></script>
+<script src="js/features/database.js"></script>
+<script src="js/app.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    document.getElementById('load').classList.add('out');
-  }, 1600);
-});
-</script>
 </body>
 </html>

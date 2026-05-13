@@ -1,15 +1,14 @@
-// Dwell selection system for hands-free interaction
-class Dwell {
-  constructor(onSelect, onProgress) {
-    this.onSelect = onSelect;
-    this.onProgress = onProgress;
+class DwellSystem {
+  constructor(options = {}) {
+    this.onSelect = options.onSelect || (() => {});
+    this.onProgress = options.onProgress || (() => {});
     this.items = new Map();
-    this.dwellTime = 3500; // milliseconds
+    this.dwellTime = CONFIG.DWELL.DEFAULT_MS;
   }
-  
-  setItems(items) {
+
+  setItems(itemList) {
     this.items.clear();
-    items.forEach((item) => {
+    itemList.forEach(item => {
       this.items.set(item.id, {
         element: item.element,
         startTime: null,
@@ -18,18 +17,20 @@ class Dwell {
       });
     });
   }
-  
+
   setDwellTime(ms) {
-    this.dwellTime = Math.max(1000, Math.min(8000, ms));
+    this.dwellTime = Math.max(
+      CONFIG.DWELL.MIN_MS,
+      Math.min(CONFIG.DWELL.MAX_MS, ms)
+    );
   }
-  
+
   update(x, y) {
     let hoveredId = null;
     
-    // Find which item is being hovered
+    // Find hovered item
     for (const [id, item] of this.items) {
       if (item.completed) continue;
-      
       const rect = item.element.getBoundingClientRect();
       const padding = 30;
       
@@ -42,10 +43,9 @@ class Dwell {
       }
     }
     
-    // Update all items
+    // Update states
     for (const [id, item] of this.items) {
       if (id !== hoveredId && item.active) {
-        // Lost focus
         item.active = false;
         item.startTime = null;
         this.onProgress(id, 0, false);
@@ -54,9 +54,7 @@ class Dwell {
     
     if (hoveredId) {
       const item = this.items.get(hoveredId);
-      
       if (!item.active) {
-        // Just started hovering
         item.active = true;
         item.startTime = performance.now();
       }
@@ -66,13 +64,12 @@ class Dwell {
       this.onProgress(hoveredId, progress, true);
       
       if (progress >= 1 && !item.completed) {
-        // Selection complete
         item.completed = true;
         this.onSelect(hoveredId);
       }
     }
   }
-  
+
   reset() {
     for (const [id, item] of this.items) {
       item.startTime = null;
@@ -81,7 +78,7 @@ class Dwell {
       this.onProgress(id, 0, false);
     }
   }
-  
+
   destroy() {
     this.items.clear();
   }
