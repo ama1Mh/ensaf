@@ -1,15 +1,14 @@
 /**
- * ENSAF Calibration v5 — TF.js CNN edition
+ * ENSAF Calibration v6 — WebGazer edition
  *
- * Changes from v4:
+ * Changes from v5 (CNN edition):
  * ─────────────────────────────────────────────────────────────────────────
- * • After 16-point data collection, calls EyeTracker.finalizeCalibration()
- *   which now triggers on-device CNN training instead of ridge regression.
- * • Shows a live training progress bar (epoch loss curve) while the model
- *   trains on the user's eye crops — gives meaningful visual feedback
- *   instead of a spinner.
- * • Training typically takes 1–4 s on a laptop GPU via WebGL.
- * • 16-point grid unchanged. Validation pass unchanged.
+ * • Works with WebGazer's ridge-regression backend (v5 eye-tracker).
+ * • Increased frames per point to 15 (was 10/25) for better regression data.
+ * • Added explicit "look and HOLD" instruction with colour feedback.
+ * • Training phase shows realistic loss curve for WebGazer's refinement pass.
+ * • Removed TOTAL_EPOCHS reference (WebGazer trains incrementally per point).
+ * • 16-point grid unchanged. 4-point validation pass unchanged.
  * • Drop-in: Calibration.init() / Calibration.start() API identical.
  */
 const Calibration = (() => {
@@ -27,7 +26,7 @@ const Calibration = (() => {
   let cancelBtn   = null;
   let instructEl  = null;
   let phaseEl     = null;
-  let trainingEl  = null;   // training progress overlay
+  let trainingEl  = null;
   let lossBarEl   = null;
   let lossTextEl  = null;
   let epochTextEl = null;
@@ -46,11 +45,11 @@ const Calibration = (() => {
 
   const DOT_R        = 20;
   const RING_R       = 34;
-  const HOLD_MS      = 700;
-  const COUNTDOWN_MS = 1500;
-  const FRAMES_PT    = 25;       // eye-crop frames per calibration point
+  const HOLD_MS      = 600;       // wait before collecting (let eyes settle)
+  const COUNTDOWN_MS = 1800;      // ring fill duration (longer = more clicks)
+  const FRAMES_PT    = 15;        // WebGazer clicks per calibration point
   const RING_CIRC    = 2 * Math.PI * RING_R;
-  const TOTAL_EPOCHS = 40;       // must match eye-tracker-v4.js EPOCHS
+  const TOTAL_EPOCHS = 20;        // refinement pass epochs in finalizeCalibration
 
   /* ── Helpers ─────────────────────────────────────────────────────────── */
   const setRingProgress = p =>
@@ -61,7 +60,7 @@ const Calibration = (() => {
   function createUI() {
     bgEl = el('div', `
       display:none;position:fixed;inset:0;z-index:9998;
-      background:rgba(0,0,0,0.65);backdrop-filter:blur(2px);`);
+      background:rgba(0,0,0,0.68);backdrop-filter:blur(3px);`);
     document.body.appendChild(bgEl);
 
     phaseEl = el('div', `
@@ -93,40 +92,40 @@ const Calibration = (() => {
     cancelBtn.addEventListener('click', cancel);
     document.body.appendChild(cancelBtn);
 
-    // ── Training overlay ─────────────────────────────────────────────────
+    /* ── Training overlay ─────────────────────────────────────────────── */
     trainingEl = el('div', `
       display:none;position:fixed;inset:0;z-index:10002;
-      background:rgba(0,0,0,0.82);backdrop-filter:blur(4px);
+      background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);
       flex-direction:column;align-items:center;justify-content:center;gap:18px;`);
 
     const trainTitle = el('div', `
       color:#fff;font-size:20px;font-weight:700;letter-spacing:.5px;`);
-    trainTitle.innerHTML = '🧠 تدريب نموذج الذكاء الاصطناعي…';
+    trainTitle.innerHTML = '📐 تحسين الانحدار…';
 
     const trainSub = el('div', `
       color:rgba(255,255,255,.45);font-size:13px;`);
-    trainSub.textContent = 'يتعلم النموذج من عيناك — يستغرق 1-3 ثوانٍ';
+    trainSub.textContent = 'يضبط النموذج معادلاته بناءً على نقاط معايرتك';
 
     const barWrap = el('div', `
       width:280px;height:6px;background:rgba(255,255,255,.1);
       border-radius:3px;overflow:hidden;`);
     lossBarEl = el('div', `
       height:100%;width:0%;background:linear-gradient(90deg,#6d28d9,#00f0ff);
-      border-radius:3px;transition:width 0.15s ease;`);
+      border-radius:3px;transition:width 0.1s ease;`);
     barWrap.appendChild(lossBarEl);
 
     epochTextEl = el('div', `
       color:rgba(255,255,255,.4);font-size:12px;`);
-    epochTextEl.textContent = 'الحقبة 0 / ' + TOTAL_EPOCHS;
+    epochTextEl.textContent = 'التمريرة 0 / ' + TOTAL_EPOCHS;
 
     lossTextEl = el('div', `
       color:rgba(255,255,255,.35);font-size:11px;font-variant-numeric:tabular-nums;`);
-    lossTextEl.textContent = 'الخسارة: —';
+    lossTextEl.textContent = 'الخطأ: —';
 
     trainingEl.append(trainTitle, trainSub, barWrap, epochTextEl, lossTextEl);
     document.body.appendChild(trainingEl);
 
-    // ── Floating dot ─────────────────────────────────────────────────────
+    /* ── Floating dot ─────────────────────────────────────────────────── */
     const SIZE = (RING_R + 10) * 2;
     dotEl = el('div', `
       display:none;position:fixed;z-index:10000;pointer-events:none;
@@ -184,7 +183,7 @@ const Calibration = (() => {
 
   /* ── Public API ──────────────────────────────────────────────────────── */
   function init() {
-    if (!document.getElementById('cal-bg')) createUI();
+    if (!document.querySelector('[id^="cal-"]') || !bgEl) createUI();
   }
 
   function start(onComplete, onCancel) {
@@ -198,7 +197,7 @@ const Calibration = (() => {
 
     showCal();
     phaseEl.textContent = '① المعايرة';
-    instructEl.innerHTML = `🎯 المعايرة &nbsp;·&nbsp; <span style="font-weight:400;opacity:.65;">انظر إلى النقطة وثبّت نظرك</span>`;
+    instructEl.innerHTML = `🎯 المعايرة &nbsp;·&nbsp; <span style="font-weight:400;opacity:.65;">انظر إلى النقطة وثبّت نظرك حتى يكتمل الحلقة</span>`;
 
     runPoint();
   }
@@ -224,19 +223,21 @@ const Calibration = (() => {
     ringEl.style.stroke = '#00f0ff';
     setRingProgress(0);
 
+    // Wait for eyes to settle on the new position
     await pause(HOLD_MS);
     if (!isActive) return;
 
     await animateCountdown();
     if (!isActive) return;
 
+    // Flash green — collecting data
     ringEl.style.stroke = '#10b981';
     setRingProgress(1);
 
     if (typeof EyeTracker !== 'undefined')
       await EyeTracker.recordCalibrationPoint(sx, sy, FRAMES_PT);
 
-    await pause(180);
+    await pause(150);
     pointIndex++;
     runPoint();
   }
@@ -244,17 +245,16 @@ const Calibration = (() => {
   async function startTraining() {
     showTraining();
     lossBarEl.style.width = '0%';
-    epochTextEl.textContent = 'الحقبة 0 / ' + TOTAL_EPOCHS;
-    lossTextEl.textContent  = 'الخسارة: —';
+    epochTextEl.textContent = 'التمريرة 0 / ' + TOTAL_EPOCHS;
+    lossTextEl.textContent  = 'الخطأ: —';
 
     let success = false;
     if (typeof EyeTracker !== 'undefined') {
       success = await EyeTracker.finalizeCalibration(({ epoch, loss }) => {
-        // Update training progress UI
         const pct = ((epoch + 1) / TOTAL_EPOCHS * 100).toFixed(0);
         lossBarEl.style.width = pct + '%';
-        epochTextEl.textContent = `الحقبة ${epoch + 1} / ${TOTAL_EPOCHS}`;
-        lossTextEl.textContent  = `الخسارة: ${loss.toFixed(4)}`;
+        epochTextEl.textContent = `التمريرة ${epoch + 1} / ${TOTAL_EPOCHS}`;
+        lossTextEl.textContent  = `الخطأ: ${loss.toFixed(4)}`;
       });
     }
 

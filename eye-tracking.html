@@ -7,31 +7,39 @@
 
 <!--
   ══════════════════════════════════════════════════════════════════
-  DEPENDENCY CHANGE: MediaPipe raw WASM → TensorFlow.js (WebGL)
+  DEPENDENCY: WebGazer.js  (Brown University, MIT licensed)
   ══════════════════════════════════════════════════════════════════
-  OLD (v2/v3):
-    @mediapipe/face_mesh   (WASM, ~8 MB, cold-start slow)
-    @mediapipe/camera_utils
+  Replaces the previous TF.js face-landmarks-detection approach.
 
-  NEW (v4):
-    TensorFlow.js core     (WebGL backend, GPU-accelerated)
-    @tensorflow-models/face-landmarks-detection
-      runtime: 'tfjs'  →  uses the same MediaPipe FaceMesh model weights
-                           but runs through TF.js WebGL — no WASM needed,
-                           faster on most devices, and we can also call
-                           tf.model.fit() directly for on-device CNN training.
+  WebGazer uses:
+    • TF.js FaceMesh tracker  (GPU-accelerated, no WASM)
+    • Ridge regression        (provably generalisable with small datasets)
+    • Built-in Kalman filter  (raw output smoothing)
 
-  Load order matters: tf.js FIRST, then the face-landmarks model.
+  Advantages over our previous DIY CNN:
+    • ~200 KB vs ~8 MB for face-landmarks-detection
+    • No WASM cold-start delay
+    • Ridge regression does not overfit with 16×10 training samples
+    • Actively maintained, tested on thousands of users
   ══════════════════════════════════════════════════════════════════
 -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.6/dist/face-landmarks-detection.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/webgazer@3.0.1/dist/webgazer.min.js"></script>
 
 <!-- Styles -->
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/eye-tracking.css">
 
 <style>
+/* Hide WebGazer's own UI elements — we use our own camera preview */
+#webgazerVideoContainer {
+  display: none !important;
+}
+#webgazerFaceOverlay,
+#webgazerFaceFeedbackBox {
+  display: none !important;
+}
+
+/* Our camera preview canvas (we clone the WG video feed here) */
 #iris-canvas {
   position: fixed;
   bottom: 14px;
@@ -43,6 +51,8 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.5s;
+  object-fit: cover;
+  transform: scaleX(-1);
 }
 #iris-canvas.show { opacity: 0.7; }
 </style>
@@ -52,7 +62,7 @@
 <!-- Loading Screen -->
 <div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل نظام تتبع العين…</div></div>
 
-<!-- Video (webcam feed preview) -->
+<!-- Video (webcam feed preview — populated by eye-tracker.js) -->
 <video id="vcam" autoplay playsinline muted></video>
 
 <!-- Gaze cursor -->
@@ -90,13 +100,13 @@
     <div class="wtag">منصة التعلم بتتبع حركة العين</div>
     <div class="wpills">
       <div class="pill">👁️ تتبع العين بالذكاء الاصطناعي</div>
-      <div class="pill">🧠 نموذج مدرّب على عينيك</div>
-      <div class="pill">🎯 دقة عالية</div>
+      <div class="pill">📐 انحدار ريدج — دقة أكاديمية</div>
+      <div class="pill">🎯 معايرة 16 نقطة</div>
       <div class="pill">🔊 قراءة صوتية</div>
     </div>
     <button class="cta" onclick="EyeTrackingApp.start()">ابدأ التعلم ←</button>
     <div class="wnote" style="margin-top:20px;font-size:12px;color:var(--t3);">
-      يتطلب كاميرا ويب وإضاءة جيدة. سيُدرَّب نموذج ذكاء اصطناعي صغير على عينيك أثناء المعايرة.
+      يتطلب كاميرا ويب وإضاءة جيدة. يعمل بأفضل شكل على Chrome/Edge.
     </div>
   </div>
 </div>
@@ -109,9 +119,9 @@
     <div class="pdesc">يستخدم تتبع العين الكاميرا لتحريك المؤشر بنظرك.</div>
     <div class="psteps">
       <div class="pstep"><div class="psn">1</div>انقر "السماح" للوصول إلى الكاميرا</div>
-      <div class="pstep"><div class="psn">2</div>إضاءة جيدة — وجهك بحاجة لأن يكون مرئياً</div>
+      <div class="pstep"><div class="psn">2</div>إضاءة جيدة من الأمام — تجنّب الإضاءة الخلفية</div>
       <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50–70 سم من الشاشة</div>
-      <div class="pstep"><div class="psn">4</div>ستُدرَّب شبكة عصبية صغيرة على نمط عينيك (1-3 ثواني)</div>
+      <div class="pstep"><div class="psn">4</div>ثبّت رأسك وانظر إلى كل نقطة معايرة بثبات</div>
     </div>
     <button class="cta" onclick="EyeTrackingApp.requestCamera()">السماح بالكاميرا</button>
   </div>
@@ -163,11 +173,11 @@
 <script src="js/shared/database.js"></script>
 <script src="js/shared/dwell.js"></script>
 <script src="js/shared/voice.js"></script>
-<!-- v5 calibration (CNN training progress UI) -->
+<!-- v5 calibration (training progress UI) -->
 <script src="js/eye-tracking/calibration.js"></script>
-<!-- v4 eye tracker (TF.js CNN, replaces MediaPipe WASM) -->
+<!-- v5 eye tracker (WebGazer backend — replaces TF.js CNN) -->
 <script src="js/eye-tracking/eye-tracker.js"></script>
-<!-- main.js unchanged -->
+<!-- main app logic (unchanged) -->
 <script src="js/eye-tracking/main.js"></script>
 
 </body>
