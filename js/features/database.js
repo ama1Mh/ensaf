@@ -5,12 +5,12 @@
 const DB = {
   // ── SUBJECTS ──────────────────────────────────────────────
   subjects: [
-    { id: 'math', name: 'الرياضيات',   emoji: '🔢', color: 'cy' },
-    { id: 'sci',  name: 'العلوم',      emoji: '🔬', color: 'gr' },
-    { id: 'hist', name: 'التاريخ',     emoji: '🏛️', color: 'vi' },
-    { id: 'geo',  name: 'الجغرافيا',   emoji: '🌍', color: 'bl' },
-    { id: 'lit',  name: 'الأدب',       emoji: '📖', color: 'go' },
-    { id: 'bio',  name: 'الأحياء',     emoji: '🧬', color: 're' },
+    { id: 'math', name: 'الرياضيات',   icon: 'calculate', color: 'cy' },
+    { id: 'sci',  name: 'العلوم',      icon: 'science', color: 'gr' },
+    { id: 'hist', name: 'التاريخ',     icon: 'history_edu', color: 'vi' },
+    { id: 'geo',  name: 'الجغرافيا',   icon: 'public', color: 'bl' },
+    { id: 'lit',  name: 'الأدب',       icon: 'menu_book', color: 'go' },
+    { id: 'bio',  name: 'الأحياء',     icon: 'biotech', color: 're' },
   ],
 
   // ── QUESTIONS ─────────────────────────────────────────────

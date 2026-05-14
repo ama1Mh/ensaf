@@ -16,6 +16,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
 
 <!-- Styles -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200">
 <link rel="stylesheet" href="css/main.css">
 
 <style>
@@ -61,12 +62,14 @@
 /* Face overlay canvas */
 #ov {
   position: fixed;
-  bottom: 14px;
-  left: 14px;
-  width: 200px;
-  height: 150px;
-  border-radius: var(--r2);
-  z-index: 801;
+  top: 70px;
+  right: 18px;
+  width: 170px;
+  height: 125px;
+  min-width: 150px;
+  min-height: 110px;
+  border-radius: 22px;
+  z-index: 9996;
   pointer-events: none;
   opacity: 0;
   transition: opacity .5s;
@@ -100,7 +103,7 @@
 <div id="bar">
   <div class="dot" id="bdot"></div>
   <span class="bst" id="bst">جاري التهيئة…</span>
-  <span class="mode-indicator mode-head" id="mode-indicator">🎯 تتبع الرأس</span>
+  <span class="mode-indicator mode-head" id="mode-indicator"><span class="material-symbols-outlined icon icon-sm">track_changes</span>تتبع الرأس</span>
   <div class="bsep"></div>
   <div class="cfw">
     <span class="cfl">الدقة</span>
@@ -111,21 +114,20 @@
     <span id="dv">3.5s</span>
     <button id="dp">+</button>
   </div>
-  <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()">🎯 إعادة المعايرة</button>
-  <button class="bhome" id="home-btn" onclick="App.home()">⌂ الرئيسية</button>
+  <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()"><span class="material-symbols-outlined icon icon-sm">track_changes</span>إعادة المعايرة</button>
+  <button class="bhome" id="home-btn" onclick="App.home()"><span class="material-symbols-outlined icon icon-sm">home</span>الرئيسية</button>
+  <button class="bhome" id="theme-btn" title="تبديل الثيم"><span class="material-symbols-outlined icon icon-sm">light_mode</span></button>
+  <div id="vi"><span class="material-symbols-outlined icon icon-sm">volume_up</span></div>
 </div>
-
-<!-- Voice Indicator -->
-<div id="vi">🔊</div>
 
 <!-- Hint Popup -->
 <div id="hint">
-  <div class="hh">✦ تلميح</div>
+  <div class="hh"><span class="material-symbols-outlined icon icon-sm">lightbulb</span>تلميح</div>
   <div id="htxt"></div>
 </div>
 
 <!-- Fallback Mode Indicator -->
-<div id="fb">⚡ وضع الماوس — حرّك المؤشر للتفاعل</div>
+<div id="fb"><span class="material-symbols-outlined icon icon-sm">bolt</span>وضع الماوس — حرّك المؤشر للتفاعل</div>
 
 <!-- Screen Fragments -->
 <div id="screens-root"></div>

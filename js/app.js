@@ -10,6 +10,14 @@ class EnsafApp {
     this.hesitationTimeout = null;
   }
 
+  getIcon(name, size = 'sm') {
+    return `<span class="material-symbols-outlined icon icon-${size}">${name}</span>`;
+  }
+
+  iconLabel(name, label) {
+    return `${this.getIcon(name)}${label}`;
+  }
+
   init() {
     // Hide loader after animation
     setTimeout(() => {
@@ -20,17 +28,18 @@ class EnsafApp {
     // Setup event listeners - with null checks
     const dmBtn = document.getElementById('dm');
     const dpBtn = document.getElementById('dp');
-    const sosBtn = document.getElementById('sos');
+    const themeBtn = document.getElementById('theme-btn');
     
     if (dmBtn) dmBtn.onclick = () => this.adjustDwell(-500);
     if (dpBtn) dpBtn.onclick = () => this.adjustDwell(+500);
-    if (sosBtn) sosBtn.onclick = () => this.triggerSOS();
+    if (themeBtn) themeBtn.onclick = () => this.toggleTheme();
     
     // Mode buttons
     document.querySelectorAll('.mbtn').forEach(btn => {
       btn.onclick = () => this.setMode(btn.dataset.mode, btn);
     });
-    
+
+    this.initTheme();
     console.log('[ENSAF] App initialized - Mode:', this.state.get('mode'));
   }
 
@@ -48,15 +57,15 @@ class EnsafApp {
       switch(mode) {
         case 'head':
           indicator.classList.add('mode-head');
-          indicator.textContent = '🎯 تتبع الرأس';
+          indicator.innerHTML = this.iconLabel('track_changes', 'تتبع الرأس');
           break;
         case 'eye':
           indicator.classList.add('mode-eye');
-          indicator.textContent = '👁️ تتبع العين';
+          indicator.innerHTML = this.iconLabel('visibility', 'تتبع العين');
           break;
         case 'mouse':
           indicator.classList.add('mode-mouse');
-          indicator.textContent = '🖱️ الماوس';
+          indicator.innerHTML = this.iconLabel('mouse', 'الماوس');
           break;
       }
     }
@@ -68,6 +77,26 @@ class EnsafApp {
     }
     
     console.log('[ENSAF] Mode changed to:', mode);
+  }
+
+  initTheme() {
+    const savedTheme = localStorage.getItem('ensaf-theme') || 'default';
+    this.applyTheme(savedTheme);
+  }
+
+  toggleTheme() {
+    const nextTheme = document.body.classList.contains('theme-warm') ? 'default' : 'warm';
+    this.applyTheme(nextTheme);
+  }
+
+  applyTheme(theme) {
+    document.body.classList.toggle('theme-warm', theme === 'warm');
+    localStorage.setItem('ensaf-theme', theme);
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) {
+      themeBtn.innerHTML = this.getIcon(theme === 'warm' ? 'dark_mode' : 'light_mode');
+      themeBtn.title = theme === 'warm' ? 'الوضع الليلي' : 'الوضع الافتراضي';
+    }
   }
 
   start() {
@@ -245,10 +274,8 @@ class EnsafApp {
     
     grid.innerHTML = DB.subjects.map(s => `
       <div class="scard" data-c="${s.color}" data-id="${s.id}">
-        <svg class="dsvg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <rect class="drect" x="1.5" y="1.5" width="97" height="97" rx="19"/>
-        </svg>
-        <div class="sem">${s.emoji}</div>
+        
+        <div class="sem">${this.getIcon(s.icon, 'lg')}</div>
         <div class="snm">${s.name}</div>
         <div class="sct">${DB.getQuestionCount(s.id)} أسئلة</div>
       </div>
@@ -264,9 +291,7 @@ class EnsafApp {
         const el = grid.querySelector(`[data-id="${id}"]`);
         if (!el) return;
         el.classList.toggle('gz', active);
-        const rect = el.querySelector('.drect');
-        if (rect) rect.style.strokeDashoffset = active ? 1000 * (1 - progress) : 1000;
-      }
+         }
     });
     
     this.dwell.setDwellTime(this.state.get('dwell.ms'));
@@ -322,8 +347,8 @@ class EnsafApp {
     
     if (qc) qc.textContent = `السؤال ${index + 1} من ${total}`;
     if (qpf) qpf.style.width = `${(index / total) * 100}%`;
-    if (qpts) qpts.textContent = `⭐ ${this.state.get('quiz.score')}`;
-    if (qtag) qtag.textContent = `${subject ? subject.emoji : '📚'} ${subject ? subject.name : 'المادة'}`;
+    if (qpts) qpts.innerHTML = `${this.getIcon('star')} ${this.state.get('quiz.score')}`;
+    if (qtag) qtag.innerHTML = `${this.getIcon(subject ? subject.icon : 'menu_book')} ${subject ? subject.name : 'المادة'}`;
     if (qtxt) qtxt.textContent = q.q;
     
     const answersGrid = document.getElementById('agrid');
@@ -427,15 +452,15 @@ class EnsafApp {
     const hesitations = this.state.get('quiz.hesitations');
     
     // Determine grade
-    let emoji, label, message;
+    let icon, label, message;
     if (percent >= 90) {
-      emoji = '🏆'; label = 'أداء استثنائي!'; message = 'عمل مثالي!';
+      icon = 'emoji_events'; label = 'أداء استثنائي!'; message = 'عمل مثالي!';
     } else if (percent >= 70) {
-      emoji = '⭐'; label = 'ممتاز!'; message = 'عمل رائع!';
+      icon = 'star'; label = 'ممتاز!'; message = 'عمل رائع!';
     } else if (percent >= 50) {
-      emoji = '👍'; label = 'جيد!'; message = 'استمر في التدريب.';
+      icon = 'thumb_up'; label = 'جيد!'; message = 'استمر في التدريب.';
     } else {
-      emoji = '💪'; label = 'استمر في المحاولة!'; message = 'راجع المادة وحاول مجدداً.';
+      icon = 'fitness_center'; label = 'استمر في المحاولة!'; message = 'راجع المادة وحاول مجدداً.';
     }
     
     const rb = document.getElementById('rb');
@@ -445,7 +470,7 @@ class EnsafApp {
     const rst = document.getElementById('rst');
     const rrep = document.getElementById('rrep');
     
-    if (rb) rb.textContent = emoji;
+    if (rb) rb.innerHTML = `${this.getIcon(icon, 'lg')}`;
     if (rs) rs.textContent = percent + '%';
     if (rl) rl.textContent = label;
     if (ru) ru.textContent = `أجبت على ${score} من ${total} بشكل صحيح`;
@@ -461,7 +486,7 @@ class EnsafApp {
     if (rrep) {
       const modeLabel = this._getModeLabel();
       rrep.innerHTML = `
-        <div class="rrow"><span class="rlb">المادة</span><span class="rvl">${subject ? subject.emoji : '📚'} ${subject ? subject.name : 'المادة'}</span></div>
+        <div class="rrow"><span class="rlb">المادة</span><span class="rvl">${this.getIcon(subject ? subject.icon : 'menu_book')} ${subject ? subject.name : 'المادة'}</span></div>
         <div class="rrow"><span class="rlb">النتيجة</span><span class="rvl ${percent >= 70 ? 'g' : 'w'}">${percent}%</span></div>
         <div class="rrow"><span class="rlb">متوسط وقت السؤال</span><span class="rvl">${Math.round(duration / total)}ث</span></div>
         <div class="rrow"><span class="rlb">طريقة التفاعل</span><span class="rvl">${modeLabel}</span></div>
@@ -510,9 +535,9 @@ class EnsafApp {
   _getModeLabel() {
     const mode = this.state.get('mode');
     switch(mode) {
-      case 'head': return '🎯 تتبع الرأس';
-      case 'eye': return '👁️ تتبع العين';
-      case 'mouse': return '🖱️ الماوس';
+      case 'head': return 'تتبع الرأس';
+      case 'eye': return 'تتبع العين';
+      case 'mouse': return 'الماوس';
       default: return mode || 'غير محدد';
     }
   }
@@ -547,7 +572,7 @@ class EnsafApp {
           <div class="lsep"></div>
           ${idx < lessons.length - 1 ? 
             `<button class="lbtn pri" data-a="next">التالي →</button>` : 
-            `<button class="lbtn pri" data-a="quiz">اختبار ✏️</button>`}
+            `<button class="lbtn pri" data-a="quiz">اختبار <span class="material-symbols-outlined icon icon-sm">edit</span></button>`}
         `;
       }
       

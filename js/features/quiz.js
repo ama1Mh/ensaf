@@ -187,32 +187,32 @@ const QuizEngine = (() => {
 
   /**
    * Get performance grade
-   * @returns {Object} Grade with emoji, label, message
+   * @returns {Object} Grade with icon, label, message
    */
   function getGrade() {
     const results = getResults();
     const pct = results.percentage;
     
     if (pct >= 90) return {
-      emoji: '🏆',
+      icon: 'emoji_events',
       label: 'أداء استثنائي!',
       message: 'أداء مثالي! أنت متميز.',
       color: '#10b981'
     };
     if (pct >= 70) return {
-      emoji: '⭐',
+      icon: 'star',
       label: 'ممتاز!',
       message: 'عمل رائع! استمر بهذا المستوى.',
       color: '#8b5cf6'
     };
     if (pct >= 50) return {
-      emoji: '👍',
+      icon: 'thumb_up',
       label: 'جيد!',
       message: 'نتيجة جيدة. استمر في التدريب.',
       color: '#fbbf24'
     };
     return {
-      emoji: '💪',
+      icon: 'fitness_center',
       label: 'استمر في المحاولة!',
       message: 'راجع المادة وحاول مرة أخرى.',
       color: '#f43f5e'
