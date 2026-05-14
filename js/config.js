@@ -22,22 +22,27 @@ const CONFIG = {
   },
   
   // Eye Tracking (Iris-based)
-  EYE_TRACKING: {
-    USE_IRIS: true,
-    SMOOTHING: {
-      SLOW_EMA: 0.06,
-      FAST_EMA: 0.18
-    },
-    CONFIDENCE_THRESHOLD: 0.55,
-    KEY_LANDMARKS: {
-      LEFT_IRIS: 468,
-      RIGHT_IRIS: 473,
-      LEFT_EYE_OUTER: 33,
-      LEFT_EYE_INNER: 133,
-      RIGHT_EYE_OUTER: 362,
-      RIGHT_EYE_INNER: 263
-    }
+EYE_TRACKING: {
+  USE_IRIS: true,
+  SMOOTHING: {
+    SLOW_EMA: 0.08,   // Slightly faster for eye tracking
+    FAST_EMA: 0.22
   },
+  CONFIDENCE_THRESHOLD: 0.55,
+  SENSITIVITY: {
+    X: 3.5,  // Horizontal sensitivity
+    Y: 3.0   // Vertical sensitivity (less because eyes move less vertically)
+  },
+  KEY_LANDMARKS: {
+    LEFT_IRIS: 468,
+    RIGHT_IRIS: 473,
+    LEFT_EYE_OUTER: 33,
+    LEFT_EYE_INNER: 133,
+    RIGHT_EYE_OUTER: 362,
+    RIGHT_EYE_INNER: 263
+  }
+},
+
   
   // Dwell
   DWELL: {

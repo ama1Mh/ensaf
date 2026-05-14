@@ -115,18 +115,6 @@
   <button class="bhome" id="home-btn" onclick="App.home()">⌂ الرئيسية</button>
 </div>
 
-<!-- SOS Emergency Button -->
-<div id="sos">
-  <span>⚠</span>
-  <span>طوارئ<br>ثبّت 3 ث</span>
-</div>
-
-<!-- SOS Circle Timer -->
-<svg id="sosa" viewBox="0 0 58 58">
-  <circle cx="29" cy="29" r="26" fill="none" stroke="rgba(244,63,94,.25)" stroke-width="2.5"/>
-  <circle id="sosc" cx="29" cy="29" r="26" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round" transform="rotate(-90 29 29)"/>
-</svg>
-
 <!-- Voice Indicator -->
 <div id="vi">🔊</div>
 
@@ -139,123 +127,8 @@
 <!-- Fallback Mode Indicator -->
 <div id="fb">⚡ وضع الماوس — حرّك المؤشر للتفاعل</div>
 
-<!-- SOS Modal -->
-<div id="sosm" style="display:none;">
-  <div style="font-size:56px;">⚠️</div>
-  <div style="font-size:24px;font-weight:700;font-family:var(--fh);color:var(--re);">وضع الطوارئ</div>
-  <div style="font-size:14px;color:var(--t2);max-width:320px;line-height:1.8;">تم تفعيل الطوارئ. انقر على أحد الخيارات.</div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-    <button class="bpri" onclick="App.closeSOS()">العودة للتطبيق</button>
-    <button class="bout" onclick="App.home()">الرئيسية</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SCREENS                                                   -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-
-<!-- Welcome Screen -->
-<div class="scr on" id="sw">
-  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;">
-    <div class="wlogo">ENSAF</div>
-    <div class="wsub">إنصاف · التعلم التكيفي</div>
-    <div class="wtag">منصة التعلم بتتبع حركة الرأس والعين</div>
-    
-    <div class="wpills">
-      <div class="pill">🎯 تتبع الرأس</div>
-      <div class="pill">👁️ تتبع العين</div>
-      <div class="pill">🧠 تلميحات ذكية</div>
-      <div class="pill">📊 تقارير الجلسة</div>
-      <div class="pill">🔊 قراءة صوتية</div>
-      <div class="pill">⚡ بدون معايرة</div>
-    </div>
-    
-    <div class="wmodes">
-      <button class="mbtn act" data-mode="head">🎯 تتبع الرأس (أسرع)</button>
-      <button class="mbtn" data-mode="eye">👁️ تتبع العين (أدق)</button>
-      <button class="mbtn" data-mode="mouse">🖱️ الماوس (بديل)</button>
-    </div>
-    
-    <button class="cta" onclick="App.start()">ابدأ التعلم ←</button>
-    
-    <div class="wnote">
-      يتطلب كاميرا ويب وإضاءة جيدة. جميع البيانات تُعالج محلياً على جهازك.
-    </div>
-  </div>
-</div>
-
-<!-- Permission Screen -->
-<div class="scr" id="sp">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;z-index:2;">
-    <div class="pico">📷</div>
-    <div class="ptit">إذن الكاميرا مطلوب</div>
-    <div class="pdesc">
-      يستخدم التتبع الكاميرا لرصد حركة رأسك أو عينيك. لا يتم تخزين أي مقاطع فيديو.
-    </div>
-    <div class="psteps">
-      <div class="pstep"><div class="psn">1</div>انقر "السماح" في نافذة إذن المتصفح</div>
-      <div class="pstep"><div class="psn">2</div>إضاءة جيدة — يجب أن يكون وجهك مرئياً بوضوح</div>
-      <div class="pstep"><div class="psn">3</div>اجلس على بُعد 50–70 سم من الشاشة</div>
-      <div class="pstep"><div class="psn">4</div>حرّك رأسك أو عينيك لتوجيه المؤشر</div>
-    </div>
-    <button class="cta" onclick="App.requestCamera()">السماح بالكاميرا</button>
-    <button class="bout" onclick="App.useMouse()">استخدام الماوس بدلاً من ذلك</button>
-  </div>
-</div>
-
-<!-- Subjects Screen -->
-<div class="scr" id="ss" style="padding-top:58px;">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2;padding:20px;">
-    <div class="stit">اختر مادة دراسية</div>
-    <div class="shint">وجّه المؤشر نحو البطاقة وثبّته للاختيار</div>
-    <div class="sgrid" id="sgrid"></div>
-  </div>
-</div>
-
-<!-- Question Screen -->
-<div class="scr" id="sq">
-  <div class="qwrap">
-    <div class="qmeta">
-      <span class="qctr" id="qc">السؤال 1 من 5</span>
-      <div class="qprog"><div class="qpf" id="qpf"></div></div>
-      <span class="qpts" id="qpts">⭐ 0</span>
-    </div>
-    <div class="qbox">
-      <div class="qtag" id="qtag">📚 المادة</div>
-      <div class="qtxt" id="qtxt">…</div>
-    </div>
-    <div class="agrid" id="agrid"></div>
-  </div>
-</div>
-
-<!-- Lesson Screen -->
-<div class="scr" id="sl">
-  <div class="lwrap">
-    <div class="qmeta">
-      <span class="qctr" id="lc">الدرس 1 من 2</span>
-      <div class="qprog"><div class="qpf" id="lpf"></div></div>
-    </div>
-    <div class="lbox" id="lbox"></div>
-    <div class="lnav" id="lnav"></div>
-  </div>
-</div>
-
-<!-- Result Screen -->
-<div class="scr" id="sr">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2;padding:20px;text-align:center;">
-    <div class="rbadge" id="rb">🏆</div>
-    <div class="rscore" id="rs">80%</div>
-    <div class="rlbl" id="rl">ممتاز!</div>
-    <div class="rsub" id="ru">أجبت على 4 من 5 بشكل صحيح</div>
-    <div class="rstats" id="rst"></div>
-    <div class="rrep" id="rrep"></div>
-    <div class="racts">
-      <button class="bpri" onclick="App.retry()">إعادة المحاولة 🔄</button>
-      <button class="bout" onclick="App.home()">الرئيسية 🏠</button>
-      <button class="bout" onclick="App.showLesson()">محتوى تعليمي 📖</button>
-    </div>
-  </div>
-</div>
+<!-- Screen Fragments -->
+<div id="screens-root"></div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SCRIPTS (in dependency order)                              -->
@@ -291,7 +164,9 @@
 <!-- Interaction -->
 <script src="js/interaction/cursor.js"></script>
 <script src="js/interaction/dwell.js"></script>
-<script src="js/interaction/sos.js"></script>
+
+<!-- Screen Loader -->
+<script src="js/screen-loader.js"></script>
 
 <!-- Features -->
 <script src="js/features/quiz.js"></script>

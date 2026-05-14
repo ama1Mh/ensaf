@@ -208,13 +208,9 @@ class EnsafApp {
 
   _showUI() {
     const bar = document.getElementById('bar');
-    const sos = document.getElementById('sos');
-    const sosa = document.getElementById('sosa');
     const vi = document.getElementById('vi');
     
     if (bar) bar.classList.add('show');
-    if (sos) sos.classList.add('show');
-    if (sosa) sosa.classList.add('show');
     if (vi) vi.style.display = 'flex';
   }
 
@@ -691,8 +687,15 @@ class EnsafApp {
 // Initialize app when DOM is ready
 const App = new EnsafApp();
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => App.init());
-} else {
+async function initializeApp() {
+  if (window.SCREENS_READY) {
+    await window.SCREENS_READY;
+  }
   App.init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
 }
