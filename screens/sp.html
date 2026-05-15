@@ -1,0 +1,17 @@
+<div class="scr" id="sp">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;z-index:2;">
+    <div class="pico">📷</div>
+    <div class="ptit" data-i18n="permissionTitle">إذن الكاميرا مطلوب</div>
+    <div class="pdesc" data-i18n="permissionDesc">
+      يستخدم التتبع الكاميرا لرصد حركة رأسك أو عينيك. لا يتم تخزين أي مقاطع فيديو.
+    </div>
+    <div class="psteps">
+      <div class="pstep"><div class="psn">1</div><span data-i18n="permissionStep1">انقر "السماح" في نافذة إذن المتصفح</span></div>
+      <div class="pstep"><div class="psn">2</div><span data-i18n="permissionStep2">إضاءة جيدة — يجب أن يكون وجهك مرئياً بوضوح</span></div>
+      <div class="pstep"><div class="psn">3</div><span data-i18n="permissionStep3">اجلس على بُعد 50–70 سم من الشاشة</span></div>
+      <div class="pstep"><div class="psn">4</div><span data-i18n="permissionStep4">حرّك رأسك أو عينيك لتوجيه المؤشر</span></div>
+    </div>
+    <button class="cta" onclick="App.requestCamera()" data-i18n="permissionAllow">السماح بالكاميرا</button>
+    <button class="bout" onclick="App.useMouse()" data-i18n="permissionUseMouse">استخدام الماوس بدلاً من ذلك</button>
+  </div>
+</div>

@@ -4,119 +4,213 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إنصاف — منصة التعلم التكيفي</title>
+
+<!-- MediaPipe Face Mesh (supports both head & iris tracking) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+
+<!-- Styles -->
+
+<!-- MediaPipe Face Mesh (supports both head & iris tracking) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+
+<!-- Styles -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200">
 <link rel="stylesheet" href="css/main.css">
+
 <style>
-.mode-selector {
-  display: flex;
-  gap: 30px;
-  justify-content: center;
+/* Additional styles for mode indicators */
+.mode-indicator {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  margin: 40px 0;
-}
-.mode-card {
-  background: var(--c);
-  border: 2px solid var(--b2);
-  border-radius: var(--r3);
-  padding: 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 300px;
-}
-.mode-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--cy);
-  box-shadow: 0 20px 40px rgba(0,240,255,.1);
-}
-.mode-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-}
-.mode-title {
-  font-size: 24px;
-  font-weight: 700;
-  font-family: var(--fh);
-  margin-bottom: 10px;
-}
-.mode-desc {
-  font-size: 14px;
-  color: var(--t3);
-  line-height: 1.6;
-}
-.mode-features {
-  margin-top: 20px;
-  text-align: right;
-}
-.mode-features li {
-  font-size: 12px;
-  color: var(--t2);
-  margin: 8px 0;
-  list-style: none;
-}
-.version-badge {
-  position: fixed;
-  bottom: 14px;
-  right: 14px;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 100px;
   font-size: 10px;
-  color: var(--t3);
-  background: var(--c);
-  padding: 4px 8px;
-  border-radius: 4px;
+  font-family: var(--fh);
+  margin-left: 4px;
+}
+
+.mode-head { background: rgba(0,240,255,.12); color: var(--cy); border: 1px solid rgba(0,240,255,.3); }
+.mode-eye  { background: rgba(139,92,246,.12); color: var(--vi2); border: 1px solid rgba(139,92,246,.3); }
+.mode-mouse { background: rgba(16,185,129,.12); color: var(--gr); border: 1px solid rgba(16,185,129,.3); }
+
+/* Particles */
+#pts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.pt {
+  position: absolute;
+  border-radius: 50%;
+  animation: ptf linear infinite;
+  opacity: 0;
+}
+
+@keyframes ptf {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: .45; }
+  90% { opacity: .1; }
+  100% { transform: translateY(-5vh); opacity: 0; }
+}
+
+/* Face overlay canvas */
+#ov {
+  position: fixed;
+  top: 70px;
+  right: 18px;
+  width: 170px;
+  height: 125px;
+  min-width: 150px;
+  min-height: 110px;
+  border-radius: 22px;
+  z-index: 9996;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .5s;
+}
+
+#ov.show {
+  opacity: .7;
 }
 </style>
+
 </head>
 <body>
 
-<div id="load"><div class="spin"></div><div class="ltxt">جاري تحميل المنصة…</div></div>
-
-<div class="scr on" id="sw">
-  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;padding:20px;">
-    <div class="wlogo">ENSAF</div>
-    <div class="wsub">إنصاف · التعلم التكيفي</div>
-    <div class="wtag">منصة تعليمية ذكية للطلاب ذوي الإعاقة الحركية</div>
-    
-    <div class="mode-selector">
-      <div class="mode-card" onclick="location.href='eye-tracking.html'">
-        <div class="mode-icon">👁️</div>
-        <div class="mode-title">تتبع العين</div>
-        <div class="mode-desc">تحكم كامل باستخدام حركة العينين<br>دقة عالية - تفاعل طبيعي</div>
-        <div class="mode-features">
-          <li>✓ معايرة 9 نقاط</li>
-          <li>✓ دقة sub-degree</li>
-          <li>✓ أقل إجهاد</li>
-        </div>
-      </div>
-      
-      <div class="mode-card" onclick="location.href='head-tracking.html'">
-        <div class="mode-icon">🎯</div>
-        <div class="mode-title">تتبع الرأس</div>
-        <div class="mode-desc">تحكم باستخدام حركة الرأس<br>بدون معايرة - يعمل فوراً</div>
-        <div class="mode-features">
-          <li>✓ بدون معايرة</li>
-          <li>✓ يعمل في الإضاءة المنخفضة</li>
-          <li>✓ للاستخدام العام</li>
-        </div>
-      </div>
-    </div>
-    
-    <div class="wpills" style="margin-top:20px;">
-      <div class="pill">🧠 تلميحات ذكية</div>
-      <div class="pill">🔊 قراءة صوتية</div>
-      <div class="pill">📊 تقارير مفصلة</div>
-      <div class="pill">🛡️ خصوصية تامة</div>
-    </div>
-  </div>
+<!-- Loading Screen -->
+<div id="load">
+  <div class="spin"></div>
+  <div class="ltxt">جاري تحميل نظام التتبع…</div>
 </div>
 
-<div class="version-badge">ENSAF v4.0 | تعلم بتقنيات الذكاء الاصطناعي</div>
+<!-- Particles Background -->
+<div id="pts"></div>
 
+<!-- Webcam Preview -->
+<video id="vcam" autoplay playsinline muted></video>
+<canvas id="ov" width="200" height="150"></canvas>
+
+<!-- Gaze Cursor -->
+<div id="cursor"></div>
+
+<!-- Top Bar -->
+<div id="bar">
+  <div class="dot" id="bdot"></div>
+  <span class="bst" id="bst" data-i18n="statusLoading">جاري التهيئة…</span>
+  <span class="mode-indicator mode-head" id="mode-indicator"><span class="material-symbols-outlined icon icon-sm">track_changes</span>تتبع الرأس</span>
+  <div class="bsep"></div>
+  <div class="cfw">
+    <span class="cfl" data-i18n="accuracyLabel">الدقة</span>
+    <div class="cfb"><div class="cff" id="cff"></div></div>
+  </div>
+  <div class="dctrl">
+    <button id="dm">−</button>
+    <span id="dv">3.5s</span>
+    <button id="dp">+</button>
+  </div>
+  <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()"><span class="material-symbols-outlined icon icon-sm">track_changes</span>إعادة المعايرة</button>
+  <button class="bhome" id="home-btn" onclick="App.home()"><span class="material-symbols-outlined icon icon-sm">home</span>الرئيسية</button>
+  <button class="bhome" id="theme-btn" title="تبديل الثيم"><span class="material-symbols-outlined icon icon-sm">light_mode</span></button>
+  <select id="lang-switch" class="blang" aria-label="Language">
+    <option value="ar">العربية</option>
+    <option value="en">English</option>
+    <option value="zh">中文</option>
+  </select>
+  <div id="vi"><span class="material-symbols-outlined icon icon-sm">volume_up</span></div>
+</div>
+
+<!-- Hint Popup -->
+<div id="hint">
+  <div class="hh"><span class="material-symbols-outlined icon icon-sm">lightbulb</span><span data-i18n="hintTitle">تلميح</span></div>
+  <div id="htxt"></div>
+</div>
+
+<!-- Fallback Mode Indicator -->
+<div id="fb"><span class="material-symbols-outlined icon icon-sm">bolt</span><span data-i18n="fallbackMessage">وضع الماوس — حرّك المؤشر للتفاعل</span></div>
+
+<!-- Screen Fragments -->
+<div id="screens-root"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCRIPTS (in dependency order)                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<!-- Configuration -->
+<script src="js/config.js"></script>
+
+<!-- Core -->
+<script src="js/core/state.js"></script>
+<script src="js/core/events.js"></script>
+<script src="js/core/router.js"></script>
+
+<!-- Shared Utilities -->
+<script src="js/shared/utils.js"></script>
+<script src="js/shared/dom.js"></script>
+
+<!-- Database -->
+<script src="js/features/database.js"></script>
+
+<!-- Voice (depends on config) -->
+<script src="js/features/voice.js"></script>
+
+<!-- Tracking Base -->
+<script src="js/tracking/base-tracker.js"></script>
+
+<!-- Head Tracker -->
+<script src="js/tracking/head-tracker.js"></script>
+
+<!-- Eye Tracker -->
+<script src="js/tracking/eye-tracker.js"></script>
+
+<!-- Interaction -->
+<script src="js/interaction/cursor.js"></script>
+<script src="js/interaction/dwell.js"></script>
+
+<!-- Screen Loader -->
+<script src="js/screen-loader.js"></script>
+
+<!-- Features -->
+<script src="js/features/quiz.js"></script>
+<script src="js/features/lessons.js"></script>
+
+<!-- Main Application -->
+<script src="js/app.js"></script>
+
+<!-- Initialize Particles -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    document.getElementById('load').classList.add('out');
-  }, 1600);
-});
+(function() {
+  const container = document.getElementById('pts');
+  if (!container) return;
+  
+  const colors = [
+    'rgba(0,240,255,.3)',
+    'rgba(109,40,217,.3)',
+    'rgba(251,191,36,.2)',
+    'rgba(16,185,129,.2)'
+  ];
+  
+  for (let i = 0; i < 22; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'pt';
+    const size = Math.random() * 3 + 1;
+    particle.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}%;
+      background: ${colors[i % 4]};
+      animation-duration: ${Math.random() * 18 + 8}s;
+      animation-delay: ${Math.random() * 18}s;
+    `;
+    container.appendChild(particle);
+  }
+})();
 </script>
+
 </body>
 </html>
