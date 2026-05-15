@@ -2,34 +2,34 @@
 
 **ENSAF** (إنصاف meaning "fairness/equity" in Arabic) is an accessible e-learning platform designed for students with motor disabilities. Using only a standard webcam, it tracks head/eye movements to control the cursor, enabling hands-free interaction with educational content.
 
-## ✨ Features
+## Features
 
-- **🎯 Head Tracking Control** — Move your head to point the cursor, dwell to select
-- **🧠 Smart Hint System** — Automatic hints when you hesitate too long
-- **📊 Session Reports** — Detailed performance analytics after each quiz
-- **🔊 Voice Feedback** — Arabic text-to-speech for all questions and results
-- **⚡ No Calibration** — Works immediately after granting camera permission
-- **🖱️ Mouse Fallback** — Traditional mouse control for compatibility
-- **🚨 Emergency SOS** — 3-second hold button returns to home screen
-- **📚 6 Subjects** — Math, Science, History, Geography, Literature, Biology
-- **📖 Lesson Content** — Educational material before each quiz
+- **Head Tracking Control** — Move your head to point the cursor, dwell to select
+- **Smart Hint System** — Automatic hints when you hesitate too long
+- **Session Reports** — Detailed performance analytics after each quiz
+- **Voice Feedback** — Arabic text-to-speech for all questions and results
+- **No Calibration** — Works immediately after granting camera permission
+- **Mouse Fallback** — Traditional mouse control for compatibility
+- **Emergency SOS** — 3-second hold button returns to home screen
+- **6 Subjects** — Math, Science, History, Geography, Literature, Biology
+- **Lesson Content** — Educational material before each quiz
 
-## 🎮 How It Works
+## How It Works
 
 1. **Head Tracking**: Your nose tip relative to face center determines cursor position
 2. **Dwell Selection**: Hold cursor over an element for 3.5 seconds (adjustable)
 3. **Adaptive Difficulty**: Questions shuffle randomly each session
 4. **Learning Flow**: Choose subject → Read lesson → Take quiz → View results
 
-## 🚀 Live Demo
+## Live Demo
 
 [Click here to try ENSAF live](https://ama1Mh.github.io/ensaf-head-tracker/)
 
-## 🖥️ Installation
+## Installation
 
 ### Local Development
 
-````bash
+```bash
 # Clone the repository
 git clone https://github.com/ama1Mh/ensaf-head-tracker.git
 cd ensaf-head-tracker
@@ -52,15 +52,15 @@ Set source to main branch / (root)
 
 Your site will be live at https://ama1Mh.github.io/ensaf-head-tracker
 
-📱 Browser Support
+Browser Support
 Browser	Head Tracking	Voice	Minimum Version
-Chrome	✅ Full	✅	90+
-Edge	✅ Full	✅	90+
-Firefox	⚠️ Partial	✅	100+
-Safari	⚠️ Requires	✅	14.1+ (needs HTTPS)
+Chrome	Full	Yes	90+
+Edge	Full	Yes	90+
+Firefox	Partial	Yes	100+
+Safari	Requires	Yes	14.1+ (needs HTTPS)
 Note: Head tracking requires HTTPS (or localhost) and camera permissions.
 
-🎯 Usage Guide
+Usage Guide
 Setup
 Click "السماح بالكاميرا" (Allow Camera)
 
@@ -75,17 +75,17 @@ Adjust dwell time: Use + and - buttons in top bar
 
 Emergency: Click and hold red SOS button for 3 seconds
 
-Voice: Toggle with 🔊 button (automatic during quizzes)
+Voice: Toggle audio button (automatic during quizzes)
 
 Subjects Available
 Subject	Questions	Lesson Content
-🔢 Mathematics	5	Multiplication tables, prime numbers
-🔬 Science	5	Solar system, chemistry, human body
-🏛️ History	5	World history, key events
-🌍 Geography	5	Rivers, capitals, mountains
-📖 Literature	5	Arabic literature classics
-🧬 Biology	5	Cell theory, genetics, human anatomy
-🏗️ Technical Architecture
+Mathematics	5	Multiplication tables, prime numbers
+Science	5	Solar system, chemistry, human body
+History	5	World history, key events
+Geography	5	Rivers, capitals, mountains
+Literature	5	Arabic literature classics
+Biology	5	Cell theory, genetics, human anatomy
+Technical Architecture
 text
 ┌─────────────────────────────────────────────────────┐
 │                    ENSAF Platform                    │
@@ -135,7 +135,7 @@ Progress shown via stroke-dashoffset or width animation
 
 Configurable threshold (default: 3500ms)
 
-🔧 Configuration
+Configuration
 Edit window.ST (State) in the script:
 
 javascript
@@ -149,7 +149,7 @@ ST.dwellMs = 3500
 // Smoothing alpha (0-1, lower = smoother but laggier)
 // In HeadTracker.setAlpha(a)
 // Default: 0.10
-📊 Performance Metrics
+Performance Metrics
 The platform tracks:
 
 Accuracy: Correct answers / total questions
@@ -160,16 +160,13 @@ Hesitations: Number of hints triggered
 
 Interaction method: Head tracking vs mouse
 
-🛡️ Privacy & Security
-✅ 100% local processing — No video frames leave your device
+Privacy & Security
+- 100% local processing — No video frames leave your device
+- No data storage — Everything destroyed on page close
+- No tracking — No analytics, cookies, or external requests (except CDNs)
+- HTTPS required — Browser security standard for camera access
 
-✅ No data storage — Everything destroyed on page close
-
-✅ No tracking — No analytics, cookies, or external requests (except CDNs)
-
-✅ HTTPS required — Browser security standard for camera access
-
-🤝 Contributing
+Contributing
 We welcome contributions! Areas for improvement:
 
 Add more subjects and questions
@@ -215,3 +212,4 @@ The open-source accessibility community
 Project Link: https://github.com/ama1Mh/ensaf-head-tracker
 
 Made with ❤️ for accessibility and inclusive education
+```

@@ -1,31 +1,42 @@
-// Utility functions for ENSAF platform
-
+/**
+ * Shared Utilities
+ * Common helper functions used across the application
+ */
 const Utils = {
-  // Screen dimensions
-  getViewportSize() {
-    return {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-  },
-  
-  // Clamp a value between min and max
+  /**
+   * Clamp a value between min and max
+   */
   clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   },
-  
-  // Linear interpolation
+
+  /**
+   * Linear interpolation
+   */
   lerp(start, end, amount) {
-    return start + (end - start) * amount;
+    return start + (end - start) * this.clamp(amount, 0, 1);
   },
-  
-  // Map a value from one range to another
+
+  /**
+   * Map value from one range to another
+   */
   mapRange(value, fromMin, fromMax, toMin, toMax) {
-    return toMin + (value - fromMin) * (toMax - toMin) / (fromMax - fromMin);
+    const clamped = this.clamp(value, fromMin, fromMax);
+    return toMin + (clamped - fromMin) * (toMax - toMin) / (fromMax - fromMin);
   },
-  
-  // Shuffle array (Fisher-Yates)
-  shuffleArray(array) {
+
+  /**
+   * Exponential Moving Average
+   */
+  ema(previous, current, alpha) {
+    if (previous === null) return current;
+    return previous * (1 - alpha) + current * alpha;
+  },
+
+  /**
+   * Fisher-Yates shuffle
+   */
+  shuffle(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -33,15 +44,19 @@ const Utils = {
     }
     return arr;
   },
-  
-  // Format time (seconds to mm:ss)
+
+  /**
+   * Format seconds to mm:ss
+   */
   formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   },
-  
-  // Debounce function
+
+  /**
+   * Debounce function calls
+   */
   debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -53,8 +68,10 @@ const Utils = {
       timeout = setTimeout(later, wait);
     };
   },
-  
-  // Throttle function
+
+  /**
+   * Throttle function calls
+   */
   throttle(func, limit) {
     let inThrottle;
     return function(...args) {
@@ -65,156 +82,139 @@ const Utils = {
       }
     };
   },
-  
-  // Generate random ID
+
+  /**
+   * Generate unique ID
+   */
   generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
   },
-  
-  // Save to localStorage
-  saveToLocalStorage(key, data) {
+
+  /**
+   * Check if point is inside rectangle
+   */
+  isPointInRect(px, py, rect, padding = 0) {
+    return px >= rect.left - padding &&
+           px <= rect.right + padding &&
+           py >= rect.top - padding &&
+           py <= rect.bottom + padding;
+  },
+
+  /**
+   * Calculate distance between two points
+   */
+  distance(x1, y1, x2, y2) {
+    return Math.hypot(x2 - x1, y2 - y1);
+  },
+
+  /**
+   * Convert degrees to radians
+   */
+  toRadians(degrees) {
+    return degrees * Math.PI / 180;
+  },
+
+  /**
+   * Convert radians to degrees
+   */
+  toDegrees(radians) {
+    return radians * 180 / Math.PI;
+  },
+
+  /**
+   * Calculate running mean and variance
+   */
+  runningStats(values) {
+    if (!values.length) return { mean: 0, variance: 0 };
+    
+    const n = values.length;
+    const mean = values.reduce((sum, v) => sum + v, 0) / n;
+    const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / n;
+    
+    return { mean, variance, stdDev: Math.sqrt(variance) };
+  },
+
+  /**
+   * Detect outlier using z-score
+   */
+  isOutlier(value, values, threshold = 2) {
+    if (values.length < 3) return false;
+    const { mean, stdDev } = this.runningStats(values);
+    if (stdDev === 0) return false;
+    return Math.abs(value - mean) / stdDev > threshold;
+  },
+
+  /**
+   * Save to localStorage
+   */
+  saveToStorage(key, data) {
     try {
       localStorage.setItem(`ensaf_${key}`, JSON.stringify(data));
       return true;
     } catch (e) {
-      console.error('Failed to save to localStorage:', e);
+      console.error('[Storage] Save failed:', e);
       return false;
     }
   },
-  
-  // Load from localStorage
-  loadFromLocalStorage(key, defaultValue = null) {
+
+  /**
+   * Load from localStorage
+   */
+  loadFromStorage(key, defaultValue = null) {
     try {
       const data = localStorage.getItem(`ensaf_${key}`);
       return data ? JSON.parse(data) : defaultValue;
     } catch (e) {
-      console.error('Failed to load from localStorage:', e);
+      console.error('[Storage] Load failed:', e);
       return defaultValue;
     }
   },
-  
-  // Get performance metrics
-  getPerformanceMetrics(startTime, totalQuestions, score, hesitations) {
-    const duration = (Date.now() - startTime) / 1000;
-    const avgTimePerQuestion = duration / totalQuestions;
-    const accuracy = (score / totalQuestions) * 100;
-    
+
+  /**
+   * Get device info
+   */
+  getDeviceInfo() {
+    const ua = navigator.userAgent;
     return {
-      duration,
-      avgTimePerQuestion,
-      accuracy,
-      score,
-      totalQuestions,
-      hesitations
+      isMobile: /Mobile|Android|iPhone|iPad|iPod/i.test(ua),
+      isTablet: /iPad|Android(?!.*Mobile)/i.test(ua),
+      isDesktop: !/Mobile|Android|iPhone|iPad|iPod/i.test(ua),
+      browser: ua.includes('Chrome') ? 'Chrome' :
+               ua.includes('Firefox') ? 'Firefox' :
+               ua.includes('Safari') ? 'Safari' :
+               ua.includes('Edge') ? 'Edge' : 'Unknown',
+      screenSize: `${window.screen.width}x${window.screen.height}`,
+      language: navigator.language
     };
   },
-  
-  // Create particles effect
-  createParticles(containerId, count = 30) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    const colors = [
-      'rgba(0,240,255,0.3)',
-      'rgba(109,40,217,0.3)',
-      'rgba(251,191,36,0.2)',
-      'rgba(16,185,129,0.2)'
-    ];
-    
-    for (let i = 0; i < count; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'pt';
-      const size = Math.random() * 3 + 1;
-      particle.style.cssText = `
-        position: absolute;
-        width: ${size}px;
-        height: ${size}px;
-        left: ${Math.random() * 100}%;
-        background: ${colors[i % colors.length]};
-        border-radius: 50%;
-        animation: ptf ${Math.random() * 18 + 8}s linear infinite;
-        animation-delay: ${Math.random() * 18}s;
-        opacity: 0;
-      `;
-      container.appendChild(particle);
-    }
-  },
-  
-  // Check if element is in viewport
-  isElementInViewport(el) {
-    const rect = el.getBoundingClientRect();
-    return (
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    );
-  },
-  
-  // Smooth scroll to element
-  scrollToElement(el, offset = 0) {
-    if (!el) return;
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-    
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    });
-  },
-  
-  // Download data as JSON
-  downloadJSON(data, filename = 'ensaf_data.json') {
-    const jsonStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
-  
-  // Copy text to clipboard
+
+  /**
+   * Copy text to clipboard
+   */
   async copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (e) {
-      console.error('Failed to copy:', e);
-      return false;
+    } catch {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return true;
     }
   },
-  
-  // Get device info
-  getDeviceInfo() {
-    const ua = navigator.userAgent;
-    const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
-    const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
-    const browser = (() => {
-      if (ua.includes('Chrome')) return 'Chrome';
-      if (ua.includes('Firefox')) return 'Firefox';
-      if (ua.includes('Safari')) return 'Safari';
-      if (ua.includes('Edge')) return 'Edge';
-      return 'Unknown';
-    })();
-    
-    return {
-      isMobile,
-      isTablet,
-      isDesktop: !isMobile && !isTablet,
-      browser,
-      screenSize: `${window.screen.width}x${window.screen.height}`
-    };
-  },
-  
-  // Show toast notification
+
+  /**
+   * Show toast notification
+   */
   showToast(message, type = 'info', duration = 3000) {
-    // Remove existing toast if any
-    const existingToast = document.querySelector('.ensaf-toast');
-    if (existingToast) existingToast.remove();
+    const existing = document.querySelector('.ensaf-toast');
+    if (existing) existing.remove();
     
     const toast = document.createElement('div');
     toast.className = `ensaf-toast ensaf-toast-${type}`;
@@ -240,57 +240,5 @@ const Utils = {
       toast.style.animation = 'slideOut 0.3s ease';
       setTimeout(() => toast.remove(), 300);
     }, duration);
-  },
-  
-  // Add animation keyframes if not present
-  addAnimationStyles() {
-    if (document.getElementById('ensaf-animations')) return;
-    
-    const style = document.createElement('style');
-    style.id = 'ensaf-animations';
-    style.textContent = `
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      @keyframes slideOut {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-      @keyframes ptf {
-        0% {
-          transform: translateY(100vh) scale(0);
-          opacity: 0;
-        }
-        10% {
-          opacity: 0.45;
-        }
-        90% {
-          opacity: 0.1;
-        }
-        100% {
-          transform: translateY(-5vh);
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
   }
 };
-
-// Initialize animations on load
-document.addEventListener('DOMContentLoaded', () => {
-  Utils.addAnimationStyles();
-});
