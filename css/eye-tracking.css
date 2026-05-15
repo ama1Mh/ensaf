@@ -1,0 +1,73 @@
+/* ─── Camera feed ───────────────────────────────────────────────────────── */
+#vcam {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 200px;
+  height: 150px;
+  border-radius: 20px;
+  border: 1.5px solid var(--cy2);
+  object-fit: cover;
+  transform: scaleX(-1);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+#vcam.show { opacity: 0.7; }
+
+/* ─── Calibration backdrop ──────────────────────────────────────────────── */
+/* No panel, no flex centering — just a dim overlay so the dot pops */
+#cal-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+}
+
+/* ─── Calibration floating dot ──────────────────────────────────────────── */
+#cal-dot {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition:
+    left 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    top  0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none;
+}
+
+/* ─── Cursor during calibration ─────────────────────────────────────────── */
+#cursor.calibrating {
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.9) 0%,
+    rgba(139, 92, 246, 0.15) 65%,
+    transparent 100%
+  );
+  border-color: var(--vi2, #8b5cf6);
+  animation: pulse 1s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 1;   }
+  50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
+}
+
+/* ─── Recalibrate button (top bar) ──────────────────────────────────────── */
+#recal-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--vi2, #8b5cf6);
+  background: rgba(109, 40, 217, 0.18);
+  color: var(--vi2, #8b5cf6);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#recal-btn:hover {
+  background: var(--vi2, #8b5cf6);
+  color: #fff;
+}
