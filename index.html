@@ -102,11 +102,11 @@
 <!-- Top Bar -->
 <div id="bar">
   <div class="dot" id="bdot"></div>
-  <span class="bst" id="bst">جاري التهيئة…</span>
+  <span class="bst" id="bst" data-i18n="statusLoading">جاري التهيئة…</span>
   <span class="mode-indicator mode-head" id="mode-indicator"><span class="material-symbols-outlined icon icon-sm">track_changes</span>تتبع الرأس</span>
   <div class="bsep"></div>
   <div class="cfw">
-    <span class="cfl">الدقة</span>
+    <span class="cfl" data-i18n="accuracyLabel">الدقة</span>
     <div class="cfb"><div class="cff" id="cff"></div></div>
   </div>
   <div class="dctrl">
@@ -117,17 +117,22 @@
   <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()"><span class="material-symbols-outlined icon icon-sm">track_changes</span>إعادة المعايرة</button>
   <button class="bhome" id="home-btn" onclick="App.home()"><span class="material-symbols-outlined icon icon-sm">home</span>الرئيسية</button>
   <button class="bhome" id="theme-btn" title="تبديل الثيم"><span class="material-symbols-outlined icon icon-sm">light_mode</span></button>
+  <select id="lang-switch" class="blang" aria-label="Language">
+    <option value="ar">العربية</option>
+    <option value="en">English</option>
+    <option value="zh">中文</option>
+  </select>
   <div id="vi"><span class="material-symbols-outlined icon icon-sm">volume_up</span></div>
 </div>
 
 <!-- Hint Popup -->
 <div id="hint">
-  <div class="hh"><span class="material-symbols-outlined icon icon-sm">lightbulb</span>تلميح</div>
+  <div class="hh"><span class="material-symbols-outlined icon icon-sm">lightbulb</span><span data-i18n="hintTitle">تلميح</span></div>
   <div id="htxt"></div>
 </div>
 
 <!-- Fallback Mode Indicator -->
-<div id="fb"><span class="material-symbols-outlined icon icon-sm">bolt</span>وضع الماوس — حرّك المؤشر للتفاعل</div>
+<div id="fb"><span class="material-symbols-outlined icon icon-sm">bolt</span><span data-i18n="fallbackMessage">وضع الماوس — حرّك المؤشر للتفاعل</span></div>
 
 <!-- Screen Fragments -->
 <div id="screens-root"></div>
