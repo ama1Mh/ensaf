@@ -56,6 +56,8 @@ class EnsafApp {
         lessonNext: 'التالي →',
         lessonQuiz: 'اختبار',
         voiceReady: 'نظام التتبع جاهز. اختر مادة دراسية.',
+        voiceRecalibrating: 'جاري إعادة ضبط التتبع. انظر مباشرة إلى الشاشة.',
+        voiceSOSActive: 'تم تفعيل وضع الطوارئ.',
         cameraFailed: 'تعذر تشغيل الكاميرا. جاري التبديل إلى وضع الماوس.',
         hintVoice: 'تلميح: {hint}',
         gradeExcellent: 'ممتاز!',
@@ -122,6 +124,8 @@ class EnsafApp {
         lessonNext: 'Next →',
         lessonQuiz: 'Quiz',
         voiceReady: 'Tracker ready. Choose a subject.',
+        voiceRecalibrating: 'Recalibrating the tracker. Look at the screen.',
+        voiceSOSActive: 'Emergency mode activated.',
         cameraFailed: 'Camera failed. Switching to mouse mode.',
         hintVoice: 'Hint: {hint}',
         gradeExcellent: 'Excellent!',
@@ -188,6 +192,8 @@ class EnsafApp {
         lessonNext: '下一页 →',
         lessonQuiz: '测验',
         voiceReady: '跟踪系统已就绪。请选择一个科目。',
+        voiceRecalibrating: '正在重新校准跟踪系统。请直视屏幕。',
+        voiceSOSActive: '已激活紧急模式。',
         cameraFailed: '摄像头无法启动。正在切换到鼠标模式。',
         hintVoice: '提示：{hint}',
         gradeExcellent: '优秀！',
@@ -239,6 +245,10 @@ class EnsafApp {
     }
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    if (typeof VoiceManager !== 'undefined' && typeof VoiceManager.setLang === 'function') {
+      const voiceLangs = { ar: 'ar-SA', en: 'en-US', zh: 'zh-CN' };
+      VoiceManager.setLang(voiceLangs[lang] || 'ar-SA');
+    }
     this.translateUI();
   }
 
@@ -434,7 +444,7 @@ class EnsafApp {
         
         // Use VoiceManager from voice.js
         if (typeof VoiceManager !== 'undefined') {
-          VoiceManager.speak('نظام التتبع جاهز. اختر مادة دراسية.');
+          VoiceManager.speak(this.t('voiceReady'));
         }
       }
     } catch (error) {
@@ -557,20 +567,27 @@ class EnsafApp {
     if (this.dwell && this.dwell.destroy) this.dwell.destroy();
     
     const cards = Array.from(grid.querySelectorAll('.scard'));
-    this.dwell = new DwellSystem({
-      onSelect: (id) => this.selectSubject(id),
-      onProgress: (id, progress, active) => {
-        const el = grid.querySelector(`[data-id="${id}"]`);
-        if (!el) return;
-        el.classList.toggle('gz', active);
-         }
+    cards.forEach(card => {
+      card.onclick = () => this.selectSubject(card.dataset.id);
     });
-    
-    this.dwell.setDwellTime(this.state.get('dwell.ms'));
-    this.dwell.setItems(cards.map(card => ({
-      id: card.dataset.id,
-      element: card
-    })));
+    const isMouseMode = this.state.get('mode') === 'mouse';
+    if (!isMouseMode) {
+      this.dwell = new DwellSystem({
+        onSelect: (id) => this.selectSubject(id),
+        onProgress: (id, progress, active) => {
+          const el = grid.querySelector(`[data-id="${id}"]`);
+          if (!el) return;
+          el.classList.toggle('gz', active);
+        }
+      });
+      this.dwell.setDwellTime(this.state.get('dwell.ms'));
+      this.dwell.setItems(cards.map(card => ({
+        id: card.dataset.id,
+        element: card
+      })));
+    } else {
+      this.dwell = null;
+    }
   }
 
   selectSubject(subjectId) {
@@ -593,7 +610,8 @@ class EnsafApp {
       VoiceManager.speak(this.t('voiceChooseSubject', { subject: selectedSubjectLabel }));
     }
     
-    setTimeout(() => this.showQuestion(), 500);
+    const hasLessons = DB.getLessons(subjectId, this.language).length > 0;
+    setTimeout(() => hasLessons ? this.showLesson() : this.showQuestion(), 500);
   }
 
   showQuestion() {
@@ -649,22 +667,29 @@ class EnsafApp {
     if (this.dwell && this.dwell.destroy) this.dwell.destroy();
     
     const buttons = Array.from(answersGrid.querySelectorAll('.abtn'));
-    this.dwell = new DwellSystem({
-      onSelect: (id) => this.selectAnswer(parseInt(id)),
-      onProgress: (id, progress, active) => {
-        const btn = answersGrid.querySelector(`[data-i="${id}"]`);
-        if (!btn) return;
-        btn.classList.toggle('gz', active && progress < 1);
-        const fill = document.getElementById(`df${id}`);
-        if (fill) fill.style.width = active ? (progress * 100) + '%' : '0%';
-      }
+    buttons.forEach(btn => {
+      btn.onclick = () => this.selectAnswer(parseInt(btn.dataset.i));
     });
-    
-    this.dwell.setDwellTime(this.state.get('dwell.ms'));
-    this.dwell.setItems(buttons.map(btn => ({
-      id: btn.dataset.i,
-      element: btn
-    })));
+    const isMouseMode = this.state.get('mode') === 'mouse';
+    if (!isMouseMode) {
+      this.dwell = new DwellSystem({
+        onSelect: (id) => this.selectAnswer(parseInt(id)),
+        onProgress: (id, progress, active) => {
+          const btn = answersGrid.querySelector(`[data-i="${id}"]`);
+          if (!btn) return;
+          btn.classList.toggle('gz', active && progress < 1);
+          const fill = document.getElementById(`df${id}`);
+          if (fill) fill.style.width = active ? (progress * 100) + '%' : '0%';
+        }
+      });
+      this.dwell.setDwellTime(this.state.get('dwell.ms'));
+      this.dwell.setItems(buttons.map(btn => ({
+        id: btn.dataset.i,
+        element: btn
+      })));
+    } else {
+      this.dwell = null;
+    }
     
     // Hesitation timeout
     clearTimeout(this.hesitationTimeout);
@@ -792,24 +817,33 @@ class EnsafApp {
       });
       
       const targets = btns.filter(b => b.dataset.ra);
-      
-      this.dwell = new DwellSystem({
-        onSelect: (id) => {
-          this.dwell = null;
-          if (id === 'retry') this.retry();
-          else if (id === 'home') this.home();
-          else if (id === 'study') this.showLesson();
-        },
-        onProgress: (id, progress, active) => {
-          const btn = actions.querySelector(`[data-ra="${id}"]`);
-          if (!btn) return;
-          btn.style.outline = active ? `2px solid rgba(0,240,255,${progress})` : '';
-          btn.style.transform = active ? `scale(${1 + progress * 0.04})` : '';
-        }
+      const isMouseMode = this.state.get('mode') === 'mouse';
+      const handleResultAction = (id) => {
+        this.dwell = null;
+        if (id === 'retry') this.retry();
+        else if (id === 'home') this.home();
+        else if (id === 'study') this.showLesson();
+      };
+      targets.forEach(btn => {
+        btn.onclick = () => handleResultAction(btn.dataset.ra);
       });
       
-      this.dwell.setDwellTime(this.state.get('dwell.ms'));
-      this.dwell.setItems(targets.map(b => ({ id: b.dataset.ra, element: b })));
+      if (!isMouseMode) {
+        this.dwell = new DwellSystem({
+          onSelect: handleResultAction,
+          onProgress: (id, progress, active) => {
+            const btn = actions.querySelector(`[data-ra="${id}"]`);
+            if (!btn) return;
+            btn.style.outline = active ? `2px solid rgba(0,240,255,${progress})` : '';
+            btn.style.transform = active ? `scale(${1 + progress * 0.04})` : '';
+          }
+        });
+        
+        this.dwell.setDwellTime(this.state.get('dwell.ms'));
+        this.dwell.setItems(targets.map(b => ({ id: b.dataset.ra, element: b })));
+      } else {
+        this.dwell = null;
+      }
     }, 150);
   }
 
@@ -858,18 +892,22 @@ class EnsafApp {
       }
       
       if (typeof VoiceManager !== 'undefined') {
-        VoiceManager.speak(lesson.title + '. ' + lesson.body.replace(/<[^>]+>/g, ''));
+        const lessonTitle = typeof lesson.title === 'object' ? (lesson.title[this.language] || lesson.title.ar || '') : lesson.title;
+        const lessonBody = typeof lesson.body === 'object' ? (lesson.body[this.language] || lesson.body.ar || '') : lesson.body;
+        VoiceManager.speak(`${lessonTitle}. ${lessonBody.replace(/<[^>]+>/g, '')}`);
       }
       
       if (this.dwell && this.dwell.destroy) this.dwell.destroy();
       
       const navBtns = lnav ? Array.from(lnav.querySelectorAll('.lbtn')) : [];
-      this.dwell = new DwellSystem({
-        onSelect: (action) => {
+      const isMouseMode = this.state.get('mode') === 'mouse';
+      navBtns.forEach(btn => {
+        btn.onclick = () => {
+          const action = btn.dataset.a;
           if (action === 'next') showLessonPage(idx + 1);
           else if (action === 'prev') showLessonPage(idx - 1);
           else {
-            const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND);
+            const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
             this.state.set('quiz.questions', questions);
             this.state.set('quiz.index', 0);
             this.state.set('quiz.score', 0);
@@ -877,15 +915,33 @@ class EnsafApp {
             this.state.set('quiz.startTime', Date.now());
             this.showQuestion();
           }
-        },
-        onProgress: (action, progress, active) => {
-          const btn = lnav ? lnav.querySelector(`[data-a="${action}"]`) : null;
-          if (btn) btn.classList.toggle('gz', active);
-        }
+        };
       });
-      
-      this.dwell.setDwellTime(this.state.get('dwell.ms'));
-      this.dwell.setItems(navBtns.map(btn => ({ id: btn.dataset.a, element: btn })));
+      if (!isMouseMode) {
+        this.dwell = new DwellSystem({
+          onSelect: (action) => {
+            if (action === 'next') showLessonPage(idx + 1);
+            else if (action === 'prev') showLessonPage(idx - 1);
+            else {
+              const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
+              this.state.set('quiz.questions', questions);
+              this.state.set('quiz.index', 0);
+              this.state.set('quiz.score', 0);
+              this.state.set('quiz.hesitations', 0);
+              this.state.set('quiz.startTime', Date.now());
+              this.showQuestion();
+            }
+          },
+          onProgress: (action, progress, active) => {
+            const btn = lnav ? lnav.querySelector(`[data-a="${action}"]`) : null;
+            if (btn) btn.classList.toggle('gz', active);
+          }
+        });
+        this.dwell.setDwellTime(this.state.get('dwell.ms'));
+        this.dwell.setItems(navBtns.map(btn => ({ id: btn.dataset.a, element: btn })));
+      } else {
+        this.dwell = null;
+      }
     };
     
     showLessonPage(0);
@@ -897,7 +953,7 @@ class EnsafApp {
       this.tracker.reset();
     }
     if (typeof VoiceManager !== 'undefined') {
-      VoiceManager.speak('جاري إعادة ضبط التتبع. انظر مباشرة إلى الشاشة.');
+      VoiceManager.speak(this.t('voiceRecalibrating'));
     }
   }
 
@@ -938,7 +994,7 @@ class EnsafApp {
       sosm.style.display = 'flex';
       sosm.classList.add('on');
     }
-    if (typeof VoiceManager !== 'undefined') VoiceManager.speak('تم تفعيل وضع الطوارئ.');
+    if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('voiceSOSActive'));
     this.dwell = null;
     this.state.set('sos.active', true);
   }
@@ -965,7 +1021,7 @@ class EnsafApp {
     if (!this.state.get('quiz.subject')) return;
     if (typeof DB === 'undefined') return;
     
-    const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND);
+    const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
     
     this.state.set('quiz.questions', questions);
     this.state.set('quiz.index', 0);
