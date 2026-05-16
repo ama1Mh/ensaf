@@ -70,7 +70,7 @@ EYE_TRACKING: {
   // Voice
   VOICE: {
     LANG: 'ar-SA',
-    RATE: 0.92,
-    PITCH: 1.04
+    RATE: 1.0,
+    PITCH: 1.0
   }
 };
