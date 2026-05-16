@@ -9,6 +9,7 @@ class EnsafApp {
     this.dwell = null;
     this.hesitationTimeout = null;
     this.language = localStorage.getItem('ensaf-lang') || 'ar';
+    this.auth = null;
     this.translations = {
       ar: {
         statusLoading: 'جاري التهيئة…',
@@ -29,7 +30,40 @@ class EnsafApp {
         welcomeFeatureReports: 'تقارير الجلسة',
         welcomeFeatureVoice: 'قراءة صوتية',
         welcomeFeatureNoCalib: 'بدون معايرة',
-        modeHeadOption: 'تتبع الرأس (أسرع)',
+        landingHowItWorks: 'إنصاف يستخدم الكاميرا فقط لتوجيه المؤشر من خلال حركة الرأس أو العين مع دعم الماوس كبديل. يساعدك هذا النظام على التعلم بتركيز أكبر، وحفظ التقدم الشخصي، واختيار تجربة تعليمية تتناسب مع مهاراتك.',
+        landingBenefitsAdaptive: 'تعلم شخصي مبني على السلوك',
+        landingBenefitsEngaging: 'تجربة تفاعلية مع تتبع العين والرأس',
+        landingBenefitsSecure: 'خصوصية كاملة وعرض محلي للبيانات',
+        landingBenefitsPreferences: 'ملف شخصي وتفضيلات مخصصة',
+        landingWelcomeGuest: 'سجل الدخول لتحفظ بياناتك، أو استمر كزائر لتجربة التطبيق.',
+        authTabLogin: 'تسجيل الدخول',
+        authTabRegister: 'إنشاء حساب',
+        authEmail: 'البريد الإلكتروني',
+        authPassword: 'كلمة المرور',
+        authName: 'الاسم',
+        authConfirmPassword: 'تأكيد كلمة المرور',
+        authSubmitLogin: 'دخول',
+        authSubmitRegister: 'إنشاء حساب',
+        authForgotPassword: 'نسيت كلمة المرور؟',
+        authGuestContinue: 'المتابعة كزائر',
+        authProfileButton: 'الملف',
+        authProfileTitle: 'الملف الشخصي',
+        authProfileWelcome: 'مرحباً، {name}',
+        authProfileEmail: 'البريد الإلكتروني',
+        authProfileModeLabel: 'طريقة التفاعل',
+        authProfileThemeLabel: 'الثيم',
+        authProfileLangLabel: 'اللغة',
+        authLoginDescription: 'يسجل الدخول للحفاظ على تقدمك وخياراتك الشخصية.',
+        authProfileSave: 'حفظ التفضيلات',
+        authProfileSignOut: 'تسجيل الخروج',
+        authSignedIn: 'تم تسجيل الدخول بنجاح.',
+        authCreatedAccount: 'تم إنشاء الحساب بنجاح.',
+        authPasswordMismatch: 'كلمة المرور والتأكيد غير متطابقتين.',
+        authResetSentMessage: 'تم إرسال تعليمات إعادة التعيين إلى بريدك الإلكتروني.',
+        authPreferencesSaved: 'تم حفظ إعداداتك.',
+        authGuestEmail: 'زائر',
+        landingLoginCTA: 'تسجيل الدخول / إنشاء حساب',
+        welcomeLoginCTA: 'تسجيل الدخول / إنشاء حساب',
         modeEyeOption: 'تتبع العين (أدق)',
         modeMouseOption: 'الماوس (بديل)',
         startLearning: 'ابدأ التعلم ←',
@@ -97,7 +131,40 @@ class EnsafApp {
         welcomeFeatureReports: 'Session reports',
         welcomeFeatureVoice: 'Voice feedback',
         welcomeFeatureNoCalib: 'No calibration',
-        modeHeadOption: 'Head tracking (faster)',
+        landingHowItWorks: 'Ensaf uses your webcam only to guide the cursor with head or eye movement, while mouse input remains available. It helps you focus better, save progress, and choose the learning style that fits you.',
+        landingBenefitsAdaptive: 'Adaptive learning based on behavior',
+        landingBenefitsEngaging: 'Interactive experience with head and eye tracking',
+        landingBenefitsSecure: 'Full privacy and local data handling',
+        landingBenefitsPreferences: 'Personal profile and preferences',
+        landingWelcomeGuest: 'Log in to save your progress, or continue as a guest to try the app.',
+        authTabLogin: 'Login',
+        authTabRegister: 'Sign Up',
+        authEmail: 'Email',
+        authPassword: 'Password',
+        authName: 'Name',
+        authConfirmPassword: 'Confirm Password',
+        authSubmitLogin: 'Sign In',
+        authSubmitRegister: 'Create Account',
+        authForgotPassword: 'Forgot password?',
+        authGuestContinue: 'Continue as guest',
+        authProfileButton: 'Profile',
+        authProfileTitle: 'Profile',
+        authProfileWelcome: 'Welcome, {name}',
+        authProfileEmail: 'Email',
+        authProfileModeLabel: 'Interaction mode',
+        authProfileThemeLabel: 'Theme',
+        authProfileLangLabel: 'Language',
+        authLoginDescription: 'Sign in to preserve your progress and personalized settings.',
+        authProfileSave: 'Save preferences',
+        authProfileSignOut: 'Sign out',
+        authSignedIn: 'Signed in successfully.',
+        authCreatedAccount: 'Account created successfully.',
+        authPasswordMismatch: 'Password and confirmation do not match.',
+        authResetSentMessage: 'Reset instructions have been sent to your email.',
+        authPreferencesSaved: 'Your settings were saved.',
+        authGuestEmail: 'Guest',
+        landingLoginCTA: 'Login / Sign Up',
+        welcomeLoginCTA: 'Login / Sign Up',
         modeEyeOption: 'Eye tracking (more accurate)',
         modeMouseOption: 'Mouse (fallback)',
         startLearning: 'Start learning ←',
@@ -165,7 +232,40 @@ class EnsafApp {
         welcomeFeatureReports: '会话报告',
         welcomeFeatureVoice: '语音反馈',
         welcomeFeatureNoCalib: '无需校准',
-        modeHeadOption: '头部追踪（更快）',
+        landingHowItWorks: 'Ensaf 仅使用摄像头通过头部或眼睛运动引导光标，并同时保留鼠标输入。它帮助您更专注地学习，保存进度，并选择适合自己的学习方式。',
+        landingBenefitsAdaptive: '基于行为的自适应学习',
+        landingBenefitsEngaging: '头部与眼动追踪的互动体验',
+        landingBenefitsSecure: '完全隐私，本地数据处理',
+        landingBenefitsPreferences: '个人档案与偏好设置',
+        landingWelcomeGuest: '登录以保存进度，或作为访客继续体验应用。',
+        authTabLogin: '登录',
+        authTabRegister: '创建账号',
+        authEmail: '邮箱',
+        authPassword: '密码',
+        authName: '姓名',
+        authConfirmPassword: '确认密码',
+        authSubmitLogin: '登录',
+        authSubmitRegister: '创建账号',
+        authForgotPassword: '忘记密码？',
+        authGuestContinue: '以访客身份继续',
+        authProfileButton: '个人资料',
+        authProfileTitle: '个人资料',
+        authProfileWelcome: '欢迎，{name}',
+        authProfileEmail: '邮箱',
+        authProfileModeLabel: '交互模式',
+        authProfileThemeLabel: '主题',
+        authProfileLangLabel: '语言',
+        authLoginDescription: '登录以保存您的进度和个性化设置。',
+        authProfileSave: '保存偏好',
+        authProfileSignOut: '注销',
+        authSignedIn: '登录成功。',
+        authCreatedAccount: '账号创建成功。',
+        authPasswordMismatch: '密码与确认密码不一致。',
+        authResetSentMessage: '重置说明已发送到您的邮箱。',
+        authPreferencesSaved: '已保存您的设置。',
+        authGuestEmail: '访客',
+        landingLoginCTA: '登录 / 创建账号',
+        welcomeLoginCTA: '登录 / 创建账号',
         modeEyeOption: '眼动追踪（更准确）',
         modeMouseOption: '鼠标（备用）',
         startLearning: '开始学习 ←',
@@ -322,6 +422,18 @@ class EnsafApp {
     this.initTheme();
     this.setLanguage(this.language);
     this.translateUI();
+    this.auth = new AuthManager();
+    this.auth.init();
+    if (this.auth.isSignedIn()) {
+      const prefs = this.auth.getUser()?.preferences || {};
+      if (prefs.language) this.language = prefs.language;
+      if (prefs.theme) this.applyTheme(prefs.theme);
+      if (prefs.mode) this.setMode(prefs.mode, document.querySelector(`[data-mode="${prefs.mode}"]`));
+      this.setLanguage(this.language);
+      this.translateUI();
+    }
+    this.renderUserState();
+    this.setupAuthForms();
     console.log('[ENSAF] App initialized - Mode:', this.state.get('mode'));
   }
 
@@ -382,14 +494,232 @@ class EnsafApp {
   }
 
   start() {
+    if (!this.auth || !this.auth.isSignedIn()) {
+      this.showScreen('login');
+      return;
+    }
+    this.startFromUser();
+  }
+
+  startFromUser() {
     const mode = this.state.get('mode');
     if (mode === 'mouse') {
       this._setupMouseMode();
       this.showScreen('s');
       this.buildSubjectsGrid();
     } else {
-      this.showScreen('p'); // Permission screen
+      this.showScreen('p');
     }
+  }
+
+  showLogin() {
+    this.showScreen('login');
+    this.renderUserState();
+    this._clearAuthStatus();
+  }
+
+  showProfile() {
+    if (!this.auth || !this.auth.isSignedIn()) {
+      this.showLogin();
+      return;
+    }
+    this.showScreen('profile');
+    this._populateProfileFields();
+  }
+
+  renderUserState() {
+    const profileBtn = document.getElementById('profile-btn');
+    const welcomeUser = document.getElementById('welcome-user');
+    const authStatus = document.getElementById('auth-status');
+    const user = this.auth ? this.auth.getUser() : null;
+
+    if (profileBtn) {
+      profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+
+    if (welcomeUser) {
+      welcomeUser.textContent = user ? this.t('authProfileWelcome', { name: user.name || user.email || 'User' }) : this.t('landingWelcomeGuest');
+    }
+
+    if (authStatus) {
+      authStatus.textContent = '';
+      authStatus.className = 'auth-status';
+    }
+  }
+
+  setupAuthForms() {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+    const forgotBtn = document.getElementById('auth-forgot-btn');
+    const guestBtn = document.getElementById('auth-guest-btn');
+    const profileSaveBtn = document.getElementById('profile-save-btn');
+    const signOutBtn = document.getElementById('profile-signout-btn');
+
+    if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
+    if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
+    if (loginForm) loginForm.onsubmit = async (event) => { event.preventDefault(); await this.handleLogin(); };
+    if (registerForm) registerForm.onsubmit = async (event) => { event.preventDefault(); await this.handleRegister(); };
+    if (forgotBtn) forgotBtn.onclick = () => this.handlePasswordReset();
+    if (guestBtn) {
+      if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
+        guestBtn.style.display = 'none';
+      } else {
+        guestBtn.onclick = () => {
+          if (!this.auth) this.auth = new AuthManager();
+          this.auth.continueAsGuest();
+          this.renderUserState();
+          this.startFromUser();
+        };
+      }
+    }
+    if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
+    if (signOutBtn) signOutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+  }
+
+  _switchAuthTab(tab) {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+
+    if (tab === 'login') {
+      loginTab?.classList.add('act');
+      registerTab?.classList.remove('act');
+      loginForm?.classList.remove('hidden');
+      registerForm?.classList.add('hidden');
+    } else {
+      loginTab?.classList.remove('act');
+      registerTab?.classList.add('act');
+      loginForm?.classList.add('hidden');
+      registerForm?.classList.remove('hidden');
+    }
+    this._clearAuthStatus();
+  }
+
+  _setAuthStatus(message, type = 'info') {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = message;
+    authStatus.className = `auth-status ${type}`;
+  }
+
+  _clearAuthStatus() {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = '';
+    authStatus.className = 'auth-status';
+  }
+
+  async handleLogin() {
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    const password = document.getElementById('login-password')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signIn(email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign in failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authSignedIn'), 'success');
+      this.renderUserState();
+      // auto-redirect after successful sign-in
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handleRegister() {
+    if (!this.auth) this.auth = new AuthManager();
+    const name = document.getElementById('register-name')?.value || '';
+    const email = document.getElementById('register-email')?.value || '';
+    const password = document.getElementById('register-password')?.value || '';
+    const confirm = document.getElementById('register-confirm')?.value || '';
+    if (password !== confirm) {
+      this._setAuthStatus(this.t('authPasswordMismatch'), 'error');
+      return;
+    }
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signUp(name, email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign up failed', 'error');
+        return;
+      }
+      // show sync status if available
+      if (result.synced === false) {
+        this._setAuthStatus('Account created but profile sync failed.', 'warning');
+      } else {
+        this._setAuthStatus(this.t('authCreatedAccount'), 'success');
+      }
+      this.renderUserState();
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handlePasswordReset() {
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.sendPasswordReset(email);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Reset failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authResetSentMessage'), 'success');
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  _populateProfileFields() {
+    const user = this.auth ? this.auth.getUser() : null;
+    if (!user) return;
+    const name = user.name || '';
+    const email = user.email || '';
+    const preferences = user.preferences || {};
+    const welcome = document.getElementById('profile-welcome');
+    const emailEl = document.getElementById('profile-email');
+    const modeSelect = document.getElementById('profile-mode');
+    const themeSelect = document.getElementById('profile-theme');
+    const languageSelect = document.getElementById('profile-language');
+
+    if (welcome) welcome.textContent = this.t('authProfileWelcome', { name });
+    if (emailEl) emailEl.textContent = email || this.t('authGuestEmail');
+    if (modeSelect) modeSelect.value = preferences.mode || this.state.get('mode');
+    if (themeSelect) themeSelect.value = preferences.theme || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    if (languageSelect) languageSelect.value = preferences.language || this.language;
+  }
+
+  async _saveProfilePreferences() {
+    const mode = document.getElementById('profile-mode')?.value || this.state.get('mode');
+    const theme = document.getElementById('profile-theme')?.value || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    const language = document.getElementById('profile-language')?.value || this.language;
+
+    if (this.auth) {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const res = await this.auth.savePreferences({ mode, theme, language });
+      if (res && res.success === false) {
+        this._setAuthStatus(res.message || 'Failed to save preferences', 'error');
+      } else {
+        this._setAuthStatus(this.t('authPreferencesSaved'), 'success');
+      }
+    }
+
+    this.setMode(mode, document.querySelector(`.mbtn[data-mode="${mode}"]`));
+    this.applyTheme(theme);
+    this.setLanguage(language);
+    this.renderUserState();
   }
 
   useMouse() {

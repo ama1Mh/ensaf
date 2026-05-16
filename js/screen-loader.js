@@ -4,7 +4,9 @@ const SCREEN_PARTS = [
   { id: 'ss', src: 'screens/ss.html' },
   { id: 'sq', src: 'screens/sq.html' },
   { id: 'sl', src: 'screens/sl.html' },
-  { id: 'sr', src: 'screens/sr.html' }
+  { id: 'sr', src: 'screens/sr.html' },
+  { id: 'login', src: 'screens/login.html' },
+  { id: 'profile', src: 'screens/profile.html' }
 ];
 
 async function loadScreens() {

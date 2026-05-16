@@ -72,5 +72,21 @@ EYE_TRACKING: {
     LANG: 'ar-SA',
     RATE: 0.92,
     PITCH: 1.04
+  },
+
+  // Firebase optional settings — fill this with your Firebase config if you want real auth
+  FIREBASE: {
+    enabled: true,
+    // If true, local fallback auth is disabled and Firebase is required
+    requireAuth: true,
+    config: {
+      apiKey: "AIzaSyBD_Mby6Jv6t7Z--vZEeQPkEXA9ULyX638",
+      authDomain: "ensaf-134dc.firebaseapp.com",
+      projectId: "ensaf-134dc",
+      storageBucket: "ensaf-134dc.firebasestorage.app",
+      messagingSenderId: "310365784197",
+      appId: "1:310365784197:web:9fa3d6b201a76b9b8901ec",
+      measurementId: "G-M5YLCNPLM9"
+    }
   }
 };

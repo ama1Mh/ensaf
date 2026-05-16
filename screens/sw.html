@@ -1,28 +1,30 @@
 <div class="scr on" id="sw">
-  <div style="display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2;">
-    <div class="wlogo">ENSAF</div>
-    <div class="wsub">إنصاف · التعلم التكيفي</div>
-    <div class="wtag" data-i18n="welcomeTag">منصة التعلم بتتبع حركة الرأس والعين</div>
-
-    <div class="wpills">
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">track_changes</span><span data-i18n="welcomeFeatureHead">تتبع الرأس</span></div>
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">visibility</span><span data-i18n="welcomeFeatureEye">تتبع العين</span></div>
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">smart_toy</span><span data-i18n="welcomeFeatureSmart">تلميحات ذكية</span></div>
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">bar_chart</span><span data-i18n="welcomeFeatureReports">تقارير الجلسة</span></div>
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">volume_up</span><span data-i18n="welcomeFeatureVoice">قراءة صوتية</span></div>
-      <div class="pill"><span class="material-symbols-outlined icon icon-sm">bolt</span><span data-i18n="welcomeFeatureNoCalib">بدون معايرة</span></div>
+  <div class="welcome-panel">
+    <div class="welcome-summary">
+      <div class="wlogo">ENSAF</div>
+      <div class="wsub">إنصاف · التعلم التكيفي</div>
+      <div class="wtag" data-i18n="welcomeTag">منصة التعلم بتتبع حركة الرأس والعين</div>
+      <div id="welcome-user" class="welcome-user"></div>
+      <p class="welcome-copy" data-i18n="landingHowItWorks">إنصاف يستخدم الكاميرا فقط لتوجيه المؤشر من خلال حركة الرأس أو العين مع دعم الماوس كبديل. يساعدك هذا النظام على التعلم بتركيز أكبر، وحفظ التقدم الشخصي، واختيار تجربة تعليمية تتناسب مع مهاراتك.</p>
+      <div class="welcome-actions">
+        <button class="cta" onclick="App.start()" data-i18n="startLearning">ابدأ التعلم ←</button>
+        <button class="bhome" onclick="App.showLogin()" data-i18n="welcomeLoginCTA">تسجيل الدخول / إنشاء حساب</button>
+      </div>
     </div>
 
-    <div class="wmodes">
-      <button class="mbtn act" data-mode="head"><span class="material-symbols-outlined icon icon-sm">track_changes</span><span data-i18n="modeHeadOption">تتبع الرأس (أسرع)</span></button>
-      <button class="mbtn" data-mode="eye"><span class="material-symbols-outlined icon icon-sm">visibility</span><span data-i18n="modeEyeOption">تتبع العين (أدق)</span></button>
-      <button class="mbtn" data-mode="mouse"><span class="material-symbols-outlined icon icon-sm">mouse</span><span data-i18n="modeMouseOption">الماوس (بديل)</span></button>
-    </div>
-
-    <button class="cta" onclick="App.start()" data-i18n="startLearning">ابدأ التعلم ←</button>
-
-    <div class="wnote" data-i18n="welcomeNote">
-      يتطلب كاميرا ويب وإضاءة جيدة. جميع البيانات تُعالج محلياً على جهازك.
+    <div class="welcome-details">
+      <div class="feature-card">
+        <div class="pill"><span class="material-symbols-outlined icon icon-sm">insights</span><span data-i18n="landingBenefitsAdaptive">تعلم شخصي مبني على السلوك</span></div>
+      </div>
+      <div class="feature-card">
+        <div class="pill"><span class="material-symbols-outlined icon icon-sm">extension</span><span data-i18n="landingBenefitsEngaging">تجربة تفاعلية مع تتبع العين والرأس</span></div>
+      </div>
+      <div class="feature-card">
+        <div class="pill"><span class="material-symbols-outlined icon icon-sm">shield</span><span data-i18n="landingBenefitsSecure">خصوصية كاملة وعرض محلي للبيانات</span></div>
+      </div>
+      <div class="feature-card">
+        <div class="pill"><span class="material-symbols-outlined icon icon-sm">settings</span><span data-i18n="landingBenefitsPreferences">ملف شخصي وتفضيلات مخصصة</span></div>
+      </div>
     </div>
   </div>
 </div>
