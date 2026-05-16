@@ -529,12 +529,16 @@ class EnsafApp {
 
   renderUserState() {
     const profileBtn = document.getElementById('profile-btn');
+    const logoutBtn = document.getElementById('logout-btn');
     const welcomeUser = document.getElementById('welcome-user');
     const authStatus = document.getElementById('auth-status');
     const user = this.auth ? this.auth.getUser() : null;
 
     if (profileBtn) {
       profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+    if (logoutBtn) {
+      logoutBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
     }
 
     if (welcomeUser) {
@@ -554,6 +558,7 @@ class EnsafApp {
     const registerForm = document.getElementById('auth-register-form');
     const forgotBtn = document.getElementById('auth-forgot-btn');
     const guestBtn = document.getElementById('auth-guest-btn');
+    const topLogoutBtn = document.getElementById('logout-btn');
     const profileSaveBtn = document.getElementById('profile-save-btn');
     const signOutBtn = document.getElementById('profile-signout-btn');
 
@@ -576,6 +581,11 @@ class EnsafApp {
     }
     if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
     if (signOutBtn) signOutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+    if (topLogoutBtn) topLogoutBtn.onclick = () => {
       if (this.auth) this.auth.signOut();
       this.renderUserState();
       this.showLogin();

@@ -565,3 +565,29 @@ body.theme-light .material-symbols-outlined{color:var(--vi2)}
 
 /* Ensure body vertical overflow is visible */
 html,body{overflow-y:auto}
+
+/* Light theme component overrides for app UI */
+body.theme-light .auth-card,
+body.theme-light .profile-card,
+body.theme-light .lbox,
+body.theme-light .qbox,
+body.theme-light .abtn {
+  background: var(--surface);
+  border: 1px solid rgba(16,24,32,.06);
+  color: var(--c);
+  box-shadow: 0 8px 30px rgba(16,24,32,.06);
+}
+
+body.theme-light .auth-tab{background:transparent;border:1px solid rgba(16,24,32,.06);color:var(--c2)}
+body.theme-light .auth-tab.act{background:rgba(14,165,171,.08);color:var(--cy)}
+body.theme-light .auth-input{background:var(--surface-soft);border:1px solid rgba(16,24,32,.06);color:var(--c)}
+body.theme-light .auth-label{color:var(--c2)}
+body.theme-light .pill{border:1px solid rgba(16,24,32,.04);color:var(--c)}
+body.theme-light .mbtn{border:1px solid rgba(16,24,32,.06);background:var(--surface-soft);color:var(--c)}
+body.theme-light .feature-card, body.theme-light .fcard, body.theme-light .about-section{background:var(--surface-soft);border:1px solid rgba(16,24,32,.04);color:var(--c2)}
+body.theme-light .step, body.theme-light .acc, body.theme-light blockquote{background:var(--surface-soft);border:1px solid rgba(16,24,32,.04);color:var(--c2)}
+body.theme-light .contact-form input, body.theme-light .contact-form textarea{background:var(--surface);border:1px solid rgba(16,24,32,.06);color:var(--c)}
+
+/* Buttons contrast in light theme */
+body.theme-light .cta{box-shadow:none}
+body.theme-light .lbtn, body.theme-light .lbox .lbtn, body.theme-light .bout{border:1px solid rgba(16,24,32,.06);background:transparent;color:var(--c)}
