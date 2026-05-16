@@ -866,20 +866,27 @@ class EnsafApp {
   }
 
   showScreen(screenId) {
-    const screens = {
-      'w': 'sw',
-      'p': 'sp', 
-      's': 'ss',
-      'q': 'sq',
-      'l': 'sl',
-      'r': 'sr'
+    // Map every legacy 1-letter code AND old DOM ids to canonical router names
+    const legacyMap = {
+      // 1-letter codes used throughout app.js
+      'w':  'welcome',
+      'p':  'permission',
+      's':  'subjects',
+      'q':  'question',
+      'l':  'lesson',
+      'r':  'result',
+      // short DOM ids (in case called directly)
+      'sw': 'welcome',
+      'sp': 'permission',
+      'ss': 'subjects',
+      'sq': 'question',
+      'sl': 'lesson',
+      'sr': 'result',
     };
-    
-    document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
-    const targetId = screens[screenId] || screenId;
-    const target = document.getElementById(targetId);
-    if (target) target.classList.add('on');
-    this.state.set('screen', screenId);
+
+    const canonical = legacyMap[screenId] || screenId;  // 'login', 'profile' pass through unchanged
+    this.state.set('screen', canonical);
+    ROUTER.navigate(canonical);
   }
 
   buildSubjectsGrid() {
@@ -1354,7 +1361,7 @@ class EnsafApp {
     if (typeof VoiceManager !== 'undefined') VoiceManager.stop();
     clearTimeout(this.hesitationTimeout);
     this._hideHint();
-    this.showScreen('w');
+    this.showScreen('welcome');
   }
 
   retry() {
