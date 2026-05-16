@@ -30,8 +30,8 @@ EYE_TRACKING: {
   },
   CONFIDENCE_THRESHOLD: 0.55,
   SENSITIVITY: {
-    X: 3.5,  // Horizontal sensitivity
-    Y: 3.0   // Vertical sensitivity (less because eyes move less vertically)
+    X: 5.0,  // Tuned from real data: iris offset ≈ ±0.10, need ×5 to span full screen
+    Y: 4.5   // Slightly less vertical (eyes move less up/down)
   },
   KEY_LANDMARKS: {
     LEFT_IRIS: 468,
@@ -70,7 +70,7 @@ EYE_TRACKING: {
   // Voice
   VOICE: {
     LANG: 'ar-SA',
-    RATE: 1.0,
-    PITCH: 1.0
+    RATE: 0.92,
+    PITCH: 1.04
   }
 };
