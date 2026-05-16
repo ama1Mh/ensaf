@@ -25,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/ama1Mh/ensaf-head-tracker/issues"
   },
-  "homepage": "https://github.com/ama1Mh/ensaf-head-tracker#readme"
+  "homepage": "https://github.com/ama1Mh/ensaf-head-tracker#readme",
+  "dependencies": {
+    "firebase": "^12.13.0"
+  }
 }

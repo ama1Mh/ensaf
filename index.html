@@ -81,7 +81,7 @@
 </style>
 
 </head>
-<body>
+<body class="theme-light">
 
 <!-- Loading Screen -->
 <div id="load">
@@ -116,7 +116,9 @@
   </div>
   <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()"><span class="material-symbols-outlined icon icon-sm">track_changes</span>إعادة المعايرة</button>
   <button class="bhome" id="home-btn" onclick="App.home()"><span class="material-symbols-outlined icon icon-sm">home</span>الرئيسية</button>
+  <button class="bhome" id="profile-btn" onclick="App.showProfile()" style="display:none"><span class="material-symbols-outlined icon icon-sm">person</span><span data-i18n="authProfileButton">الملف</span></button>
   <button class="bhome" id="theme-btn" title="تبديل الثيم"><span class="material-symbols-outlined icon icon-sm">light_mode</span></button>
+  <button class="bhome" id="logout-btn" style="display:none"><span class="material-symbols-outlined icon icon-sm">logout</span>تسجيل الخروج</button>
   <select id="lang-switch" class="blang" aria-label="Language">
     <option value="ar">العربية</option>
     <option value="en">English</option>
@@ -152,6 +154,7 @@
 <!-- Shared Utilities -->
 <script src="js/shared/utils.js"></script>
 <script src="js/shared/dom.js"></script>
+<script src="js/shared/auth.js"></script>
 
 <!-- Database -->
 <script src="js/features/database.js"></script>
@@ -180,6 +183,7 @@
 <script src="js/features/lessons.js"></script>
 
 <!-- Main Application -->
+<script type="module" src="js/shared/firebase-init.js"></script>
 <script src="js/app.js"></script>
 
 <!-- Initialize Particles -->
