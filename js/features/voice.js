@@ -57,5 +57,9 @@ const VoiceManager = (() => {
     return synth && synth.speaking;
   }
   
-  return { speak, stop, toggle, isSpeaking };
+  function setLang(lang) {
+    CONFIG.VOICE.LANG = lang;
+  }
+  
+  return { speak, stop, toggle, isSpeaking, setLang };
 })();
