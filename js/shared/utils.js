@@ -242,3 +242,9 @@ const Utils = {
     }, duration);
   }
 };
+
+// Expose legacy globals for older modules expecting `utils` or `Utils`
+if (typeof window !== 'undefined') {
+  if (!window.Utils) window.Utils = Utils;
+  if (!window.utils) window.utils = Utils;
+}
