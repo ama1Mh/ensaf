@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
 
 #sw {
-  font-family: 'IBM Plex Sans Arabic', 'DM Sans', sans-serif;
+  font-family: 'DM Sans', 'IBM Plex Sans Arabic', sans-serif;
   overflow-y: auto;
   overflow-x: hidden;
   flex-direction: column;
@@ -14,6 +14,11 @@
   min-height: 100vh;
   background: var(--bg);
   padding-top: 52px; /* account for topbar */
+}
+
+/* RTL support for Arabic */
+html[dir="rtl"] #sw {
+  font-family: 'IBM Plex Sans Arabic', 'DM Sans', sans-serif;
 }
 
 /* ── SHARED ── */
@@ -103,8 +108,6 @@
 }
 
 /* ── Copy ── */
-.lnd-hero-copy {}
-
 .lnd-logo-word {
   font-family: 'Playfair Display', serif;
   font-size: 108px;
@@ -313,6 +316,16 @@ body.theme-light .lnd-pill {
   left: -40px;
   animation: lnd-float2 7s ease-in-out infinite;
   color: #fff;
+}
+
+html[dir="rtl"] .lnd-stat-float-1 {
+  left: auto;
+  right: -32px;
+}
+
+html[dir="rtl"] .lnd-stat-float-2 {
+  left: auto;
+  right: -40px;
 }
 
 @keyframes lnd-float1 {
@@ -577,6 +590,11 @@ body.theme-light .lnd-mockup-bar { border-color: rgba(11,33,48,.06); }
   margin-right: auto;
 }
 
+html[dir="rtl"] .lnd-mockup-label {
+  margin-right: 0;
+  margin-left: auto;
+}
+
 .lnd-mock-progress-section {
   display: flex;
   flex-direction: column;
@@ -615,6 +633,10 @@ body.theme-light .lnd-mock-bar-wrap { background: rgba(11,33,48,.08); }
   color: var(--t3);
   min-width: 32px;
   text-align: left;
+}
+
+html[dir="rtl"] .lnd-mock-pct {
+  text-align: right;
 }
 
 .lnd-mock-stat-row {
@@ -743,6 +765,11 @@ body.theme-light .lnd-quote {
   pointer-events: none;
 }
 
+html[dir="rtl"] .lnd-quote::before {
+  right: auto;
+  left: 20px;
+}
+
 .lnd-quote-text {
   font-size: 16px;
   line-height: 1.8;
@@ -803,7 +830,7 @@ body.theme-light .lnd-faq-item { border-color: rgba(11,33,48,.07); }
 
 .lnd-faq-q {
   width: 100%;
-  text-align: right;
+  text-align: left;
   padding: 18px 20px;
   background: rgba(255,255,255,.02);
   border: none;
@@ -817,6 +844,10 @@ body.theme-light .lnd-faq-item { border-color: rgba(11,33,48,.07); }
   gap: 12px;
   transition: background .2s;
   font-family: inherit;
+}
+
+html[dir="rtl"] .lnd-faq-q {
+  text-align: right;
 }
 
 body.theme-light .lnd-faq-q { background: rgba(11,33,48,.02); }
@@ -907,6 +938,10 @@ body.theme-light .lnd-cinput {
   align-self: flex-end;
 }
 
+html[dir="rtl"] .lnd-cform button {
+  align-self: flex-start;
+}
+
 /* ═══════════════════════════════════════════
    FOOTER
 ══════════════════════════════════════════ */
@@ -992,34 +1027,34 @@ body.theme-light .lnd-footer {
       <!-- Copy -->
       <div class="lnd-hero-copy">
         <span class="lnd-logo-word">ENSAF</span>
-        <span class="lnd-logo-sub">إنصاف · منصة التعلم التكيّفي</span>
+        <span class="lnd-logo-sub" data-i18n="landingLogoSub">منصة التعلم التكيّفي</span>
 
-        <h1 class="lnd-hero-h1">واجهة تعليمية ذكية<br>تتكيّف مع كل متعلّم</h1>
-        <p class="lnd-hero-lead">تحكّم في بيئة التعلم بالكامل عبر تتبّع الرأس والعين — تجربة مخصصة، خصوصية محكمة، ووصول شامل لجميع المستخدمين.</p>
+        <h1 class="lnd-hero-h1" data-i18n="landingHeroTitle">واجهة تعليمية ذكية  تتكيّف مع كل متعلّم</h1>
+        <p class="lnd-hero-lead" data-i18n="landingHeroLead">تحكّم في بيئة التعلم بالكامل عبر تتبّع الرأس والعين — تجربة مخصصة، خصوصية محكمة، ووصول شامل لجميع المستخدمين.</p>
 
         <div class="lnd-hero-ctas">
-          <button class="lnd-btn-primary" onclick="App.start()">ابدأ التعلم الآن</button>
-          <button class="lnd-btn-ghost" onclick="App.showLogin()">تسجيل الدخول</button>
+          <button class="lnd-btn-primary" onclick="App.start()" data-i18n="landingStartBtn">ابدأ التعلم الآن</button>
+          <button class="lnd-btn-ghost" onclick="App.showLogin()" data-i18n="landingLoginBtn">تسجيل الدخول</button>
         </div>
 
         <div class="lnd-pills">
-          <span class="lnd-pill"><span class="material-symbols-outlined">bolt</span>تفاعل بدون لمس</span>
-          <span class="lnd-pill"><span class="material-symbols-outlined">insights</span>مسار مخصص</span>
-          <span class="lnd-pill"><span class="material-symbols-outlined">security</span>بيانات آمنة</span>
+          <span class="lnd-pill" data-i18n="landingPill1"><span class="material-symbols-outlined">bolt</span>تفاعل بدون لمس</span>
+          <span class="lnd-pill" data-i18n="landingPill2"><span class="material-symbols-outlined">insights</span>مسار مخصص</span>
+          <span class="lnd-pill" data-i18n="landingPill3"><span class="material-symbols-outlined">security</span>بيانات آمنة</span>
         </div>
       </div>
 
       <!-- Visual -->
       <div class="lnd-hero-visual">
         <div class="lnd-stat-float lnd-stat-float-1">
-          <div class="lnd-stat-label">المتعلمون النشطون</div>
-          <div class="lnd-stat-value">٢٤٠٠+</div>
-          <div class="lnd-stat-sub">↑ ١٨٪ هذا الشهر</div>
+          <div class="lnd-stat-label" data-i18n="landingStat1Label">المتعلمون النشطون</div>
+          <div class="lnd-stat-value">٢٬٤٠٠+</div>
+          <div class="lnd-stat-sub" data-i18n="landingStat1Sub">↑ ١٨٪ هذا الشهر</div>
         </div>
         <div class="lnd-stat-float lnd-stat-float-2">
-          <div class="lnd-stat-label">دقة التتبع</div>
+          <div class="lnd-stat-label" data-i18n="landingStat2Label">دقة التتبع</div>
           <div class="lnd-stat-value">٩٧٪</div>
-          <div class="lnd-stat-sub">متوسط الجلسة</div>
+          <div class="lnd-stat-sub" data-i18n="landingStat2Sub">متوسط الجلسة</div>
         </div>
 
         <div class="lnd-hero-card">
@@ -1027,8 +1062,8 @@ body.theme-light .lnd-footer {
           <div class="lnd-hero-badge">
             <div class="lnd-badge-dot"></div>
             <div>
-              <div style="font-size:12px;font-weight:600;">التتبع نشط</div>
-              <div style="font-size:11px;opacity:.6;">تتبع الرأس · دقة ٩٤٪</div>
+              <div style="font-size:12px;font-weight:600;" data-i18n="landingBadgeTitle">التتبع نشط</div>
+              <div style="font-size:11px;opacity:.6;" data-i18n="landingBadgeSub">تتبع الرأس · دقة ٩٤٪</div>
             </div>
           </div>
         </div>
@@ -1041,23 +1076,23 @@ body.theme-light .lnd-footer {
 <!-- ═══ SCROLLING BAND ═════════════════════════════════════════ -->
 <div class="lnd-band">
   <div class="lnd-band-track">
-    <span class="lnd-band-item"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
+    <span class="lnd-band-item" data-i18n="band1"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
+    <span class="lnd-band-item" data-i18n="band2"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
+    <span class="lnd-band-item" data-i18n="band3"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
+    <span class="lnd-band-item" data-i18n="band4"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
+    <span class="lnd-band-item" data-i18n="band5"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
+    <span class="lnd-band-item" data-i18n="band6"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
+    <span class="lnd-band-item" data-i18n="band7"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
+    <span class="lnd-band-item" data-i18n="band8"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
     <!-- Repeat for seamless loop -->
-    <span class="lnd-band-item"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
-    <span class="lnd-band-item"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
+    <span class="lnd-band-item" data-i18n="band1"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
+    <span class="lnd-band-item" data-i18n="band2"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
+    <span class="lnd-band-item" data-i18n="band3"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
+    <span class="lnd-band-item" data-i18n="band4"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
+    <span class="lnd-band-item" data-i18n="band5"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
+    <span class="lnd-band-item" data-i18n="band6"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
+    <span class="lnd-band-item" data-i18n="band7"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
+    <span class="lnd-band-item" data-i18n="band8"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
   </div>
 </div>
 
@@ -1065,9 +1100,9 @@ body.theme-light .lnd-footer {
 <section class="lnd-section lnd-features" id="features">
   <div class="lnd-maxw">
     <div class="lnd-features-header">
-      <div class="lnd-eyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">star</span>مزايا المنصة</div>
-      <h2 class="lnd-section-title">مصمَّم لكل متعلّم</h2>
-      <p class="lnd-section-lead">من تتبع الحركة إلى التعلم المخصص — كل أداة مبنية على احتياجات حقيقية.</p>
+      <div class="lnd-eyebrow" data-i18n="featuresEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">star</span>مزايا المنصة</div>
+      <h2 class="lnd-section-title" data-i18n="featuresTitle">مصمَّم لكل متعلّم</h2>
+      <p class="lnd-section-lead" data-i18n="featuresLead">من تتبع الحركة إلى التعلم المخصص — كل أداة مبنية على احتياجات حقيقية.</p>
     </div>
 
     <div class="lnd-features-grid">
@@ -1075,29 +1110,29 @@ body.theme-light .lnd-footer {
         <div class="lnd-fcard-icon lnd-fcard-icon-1">
           <span class="material-symbols-outlined">visibility</span>
         </div>
-        <h4>تتبع العين والرأس</h4>
-        <p>تحكّم طبيعي ودقيق عبر الكاميرا دون أي أجهزة إضافية.</p>
+        <h4 data-i18n="feature1Title">تتبع العين والرأس</h4>
+        <p data-i18n="feature1Desc">تحكّم طبيعي ودقيق عبر الكاميرا دون أي أجهزة إضافية.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-2">
           <span class="material-symbols-outlined">auto_fix_high</span>
         </div>
-        <h4>تخصيص ذكي</h4>
-        <p>المحتوى يتكيّف لحظياً مع مستواك وسرعة تقدمك.</p>
+        <h4 data-i18n="feature2Title">تخصيص ذكي</h4>
+        <p data-i18n="feature2Desc">المحتوى يتكيّف لحظياً مع مستواك وسرعة تقدمك.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-3">
           <span class="material-symbols-outlined">people</span>
         </div>
-        <h4>وصول شامل</h4>
-        <p>أدوات موجهة لذوي الاحتياجات الخاصة بمعايير عالمية.</p>
+        <h4 data-i18n="feature3Title">وصول شامل</h4>
+        <p data-i18n="feature3Desc">أدوات موجهة لذوي الاحتياجات الخاصة بمعايير عالمية.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-4">
           <span class="material-symbols-outlined">cloud</span>
         </div>
-        <h4>حفظ آمن</h4>
-        <p>احفظ تقدمك وتفضيلاتك عبر حساب مشفّر في السحابة.</p>
+        <h4 data-i18n="feature4Title">حفظ آمن</h4>
+        <p data-i18n="feature4Desc">احفظ تقدمك وتفضيلاتك عبر حساب مشفّر في السحابة.</p>
       </div>
     </div>
   </div>
@@ -1110,69 +1145,69 @@ body.theme-light .lnd-footer {
 
       <!-- Steps -->
       <div>
-        <div class="lnd-eyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">route</span>كيف يعمل</div>
-        <h2 class="lnd-section-title">ثلاث خطوات<br>للبدء</h2>
-        <p class="lnd-section-lead" style="margin-bottom:40px">جاهز في دقيقة واحدة، بدون إعداد معقد.</p>
+        <div class="lnd-eyebrow" data-i18n="howEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">route</span>كيف يعمل</div>
+        <h2 class="lnd-section-title" data-i18n="howTitle">ثلاث خطوات  للبدء</h2>
+        <p class="lnd-section-lead" style="margin-bottom:40px" data-i18n="howLead">جاهز في دقيقة واحدة، بدون إعداد معقد.</p>
 
         <div class="lnd-how-steps">
           <div class="lnd-how-step">
-            <div class="lnd-step-num">١</div>
+            <div class="lnd-step-num" data-i18n="step1Num">١</div>
             <div class="lnd-step-body">
-              <h4>اختر واجهة التحكم</h4>
-              <p>تتبع الرأس، العين، أو الماوس — اختر ما يناسب راحتك وإمكانياتك.</p>
+              <h4 data-i18n="step1Title">اختر واجهة التحكم</h4>
+              <p data-i18n="step1Desc">تتبع الرأس، العين، أو الماوس — اختر ما يناسب راحتك وإمكانياتك.</p>
             </div>
           </div>
           <div class="lnd-how-step">
-            <div class="lnd-step-num">٢</div>
+            <div class="lnd-step-num" data-i18n="step2Num">٢</div>
             <div class="lnd-step-body">
-              <h4>التقييم التلقائي</h4>
-              <p>يرصد النظام أداءك ويقترح المحتوى والصعوبة المناسبة لك.</p>
+              <h4 data-i18n="step2Title">التقييم التلقائي</h4>
+              <p data-i18n="step2Desc">يرصد النظام أداءك ويقترح المحتوى والصعوبة المناسبة لك.</p>
             </div>
           </div>
           <div class="lnd-how-step">
-            <div class="lnd-step-num">٣</div>
+            <div class="lnd-step-num" data-i18n="step3Num">٣</div>
             <div class="lnd-step-body">
-              <h4>تابع تقدّمك</h4>
-              <p>لوحة تحكم واضحة تعرض إنجازاتك وتقترح الخطوة القادمة.</p>
+              <h4 data-i18n="step3Title">تابع تقدّمك</h4>
+              <p data-i18n="step3Desc">لوحة تحكم واضحة تعرض إنجازاتك وتقترح الخطوة القادمة.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Mock visual -->
+      <!-- Mock visual (numbers remain visual, not translated) -->
       <div class="lnd-how-visual">
         <div class="lnd-mockup-bar">
           <div class="lnd-mockup-dot"></div>
           <div class="lnd-mockup-dot"></div>
           <div class="lnd-mockup-dot"></div>
-          <span class="lnd-mockup-label">لوحة التقدم</span>
+          <span class="lnd-mockup-label" data-i18n="mockProgressLabel">لوحة التقدم</span>
         </div>
 
-        <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px;">المواد الدراسية</div>
+        <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px;" data-i18n="mockSubjectsLabel">المواد الدراسية</div>
         <div class="lnd-mock-progress-section">
           <div class="lnd-mock-subject">
-            <span class="lnd-mock-sub-name">الرياضيات</span>
+            <span class="lnd-mock-sub-name" data-i18n="subjectMath">الرياضيات</span>
             <div class="lnd-mock-bar-wrap">
               <div class="lnd-mock-bar-fill" style="width:82%;background:linear-gradient(90deg,#7c3aed,#38bdf8)"></div>
             </div>
             <span class="lnd-mock-pct">٨٢٪</span>
           </div>
           <div class="lnd-mock-subject">
-            <span class="lnd-mock-sub-name">العلوم</span>
+            <span class="lnd-mock-sub-name" data-i18n="subjectScience">العلوم</span>
             <div class="lnd-mock-bar-wrap">
               <div class="lnd-mock-bar-fill" style="width:65%;background:linear-gradient(90deg,#0ea5e9,#34d399)"></div>
             </div>
             <span class="lnd-mock-pct">٦٥٪</span>
           </div>
           <div class="lnd-mock-subject">
-            <span class="lnd-mock-sub-name">اللغة العربية</span>
+            <span class="lnd-mock-sub-name" data-i18n="subjectArabic">اللغة العربية</span>
             <div class="lnd-mock-bar-wrap">
               <div class="lnd-mock-bar-fill" style="width:90%;background:linear-gradient(90deg,#f59e0b,#ec4899)"></div>
             </div>
             <span class="lnd-mock-pct">٩٠٪</span>
           </div>
           <div class="lnd-mock-subject">
-            <span class="lnd-mock-sub-name">التاريخ</span>
+            <span class="lnd-mock-sub-name" data-i18n="subjectHistory">التاريخ</span>
             <div class="lnd-mock-bar-wrap">
               <div class="lnd-mock-bar-fill" style="width:48%;background:linear-gradient(90deg,#a855f7,#38bdf8)"></div>
             </div>
@@ -1183,15 +1218,15 @@ body.theme-light .lnd-footer {
         <div class="lnd-mock-stat-row">
           <div class="lnd-mock-stat">
             <div class="lnd-mock-stat-val" style="color:#a78bfa">٤٧</div>
-            <div class="lnd-mock-stat-lbl">درس مكتمل</div>
+            <div class="lnd-mock-stat-lbl" data-i18n="statLessons">درس مكتمل</div>
           </div>
           <div class="lnd-mock-stat">
             <div class="lnd-mock-stat-val" style="color:#38bdf8">١٢</div>
-            <div class="lnd-mock-stat-lbl">يوم متواصل</div>
+            <div class="lnd-mock-stat-lbl" data-i18n="statStreak">يوم متواصل</div>
           </div>
           <div class="lnd-mock-stat">
             <div class="lnd-mock-stat-val" style="color:#34d399">٩٤٪</div>
-            <div class="lnd-mock-stat-lbl">متوسط الدقة</div>
+            <div class="lnd-mock-stat-lbl" data-i18n="statAccuracy">متوسط الدقة</div>
           </div>
         </div>
       </div>
@@ -1206,31 +1241,31 @@ body.theme-light .lnd-footer {
     <div class="lnd-access-grid">
 
       <div>
-        <div class="lnd-eyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">accessible</span>إمكانية الوصول</div>
-        <h2 class="lnd-section-title">مصمَّم ليصل<br>للجميع</h2>
-        <p class="lnd-section-lead">نؤمن بأن التعلم حق للجميع — لذا بنينا كل ميزة مع مراعاة الاحتياجات المتنوعة.</p>
+        <div class="lnd-eyebrow" data-i18n="accessEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">accessible</span>إمكانية الوصول</div>
+        <h2 class="lnd-section-title" data-i18n="accessTitle">مصمَّم ليصل للجميع</h2>
+        <p class="lnd-section-lead" data-i18n="accessLead">نؤمن بأن التعلم حق للجميع — لذا بنينا كل ميزة مع مراعاة الاحتياجات المتنوعة.</p>
       </div>
 
       <div class="lnd-access-cards">
         <div class="lnd-acc-card">
           <div class="lnd-acc-icon"><span class="material-symbols-outlined">text_increase</span></div>
-          <h4>تكبير النص</h4>
-          <p>تحكم كامل في الحجم والتباين.</p>
+          <h4 data-i18n="access1Title">تكبير النص</h4>
+          <p data-i18n="access1Desc">تحكم كامل في الحجم والتباين.</p>
         </div>
         <div class="lnd-acc-card">
           <div class="lnd-acc-icon"><span class="material-symbols-outlined">volume_up</span></div>
-          <h4>دعم صوتي</h4>
-          <p>قراءة المحتوى وإرشادات مسموعة.</p>
+          <h4 data-i18n="access2Title">دعم صوتي</h4>
+          <p data-i18n="access2Desc">قراءة المحتوى وإرشادات مسموعة.</p>
         </div>
         <div class="lnd-acc-card">
           <div class="lnd-acc-icon"><span class="material-symbols-outlined">keyboard_voice</span></div>
-          <h4>تحكم بديل</h4>
-          <p>لوحات مفاتيح خاصة وإدخال صوتي.</p>
+          <h4 data-i18n="access3Title">تحكم بديل</h4>
+          <p data-i18n="access3Desc">لوحات مفاتيح خاصة وإدخال صوتي.</p>
         </div>
         <div class="lnd-acc-card">
           <div class="lnd-acc-icon"><span class="material-symbols-outlined">contrast</span></div>
-          <h4>ألوان التباين</h4>
-          <p>أوضاع متعددة للرؤية المريحة.</p>
+          <h4 data-i18n="access4Title">ألوان التباين</h4>
+          <p data-i18n="access4Desc">أوضاع متعددة للرؤية المريحة.</p>
         </div>
       </div>
 
@@ -1241,27 +1276,27 @@ body.theme-light .lnd-footer {
 <!-- ═══ TESTIMONIALS ══════════════════════════════════════════ -->
 <section class="lnd-section lnd-testi">
   <div class="lnd-maxw">
-    <div class="lnd-eyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">format_quote</span>آراء مستخدمين</div>
-    <h2 class="lnd-section-title">ماذا يقول المجتمع</h2>
+    <div class="lnd-eyebrow" data-i18n="testiEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">format_quote</span>آراء مستخدمين</div>
+    <h2 class="lnd-section-title" data-i18n="testiTitle">ماذا يقول المجتمع</h2>
 
     <div class="lnd-testi-grid">
       <div class="lnd-quote">
-        <p class="lnd-quote-text">أداة رائعة لطلابي الذين يحتاجون لواجهة بديلة — سهل الاستخدام بشكل لافت ومرن جداً في التخصيص.</p>
+        <p class="lnd-quote-text" data-i18n="testi1Text">أداة رائعة لطلابي الذين يحتاجون لواجهة بديلة — سهل الاستخدام بشكل لافت ومرن جداً في التخصيص.</p>
         <div class="lnd-quote-cite">
           <div class="lnd-quote-avatar">م</div>
           <div>
-            <div class="lnd-quote-name">مريم الشهري</div>
-            <div class="lnd-quote-role">معلمة تربية خاصة</div>
+            <div class="lnd-quote-name" data-i18n="testi1Name">مريم الشهري</div>
+            <div class="lnd-quote-role" data-i18n="testi1Role">معلمة تربية خاصة</div>
           </div>
         </div>
       </div>
       <div class="lnd-quote">
-        <p class="lnd-quote-text">حسّنت تجربة التعلم لابني بشكل ملحوظ. التتبع دقيق والواجهة واضحة حتى للأطفال.</p>
+        <p class="lnd-quote-text" data-i18n="testi2Text">حسّنت تجربة التعلم لابني بشكل ملحوظ. التتبع دقيق والواجهة واضحة حتى للأطفال.</p>
         <div class="lnd-quote-cite">
           <div class="lnd-quote-avatar" style="background:linear-gradient(135deg,#0ea5e9,#34d399)">أ</div>
           <div>
-            <div class="lnd-quote-name">أحمد الغامدي</div>
-            <div class="lnd-quote-role">ولي أمر</div>
+            <div class="lnd-quote-name" data-i18n="testi2Name">أحمد الغامدي</div>
+            <div class="lnd-quote-role" data-i18n="testi2Role">ولي أمر</div>
           </div>
         </div>
       </div>
@@ -1276,25 +1311,25 @@ body.theme-light .lnd-footer {
 
       <!-- FAQ -->
       <div>
-        <div class="lnd-eyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">help</span>أسئلة شائعة</div>
-        <h2 class="lnd-section-title" style="margin-bottom:32px">إجابات سريعة</h2>
+        <div class="lnd-eyebrow" data-i18n="faqEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">help</span>أسئلة شائعة</div>
+        <h2 class="lnd-section-title" style="margin-bottom:32px" data-i18n="faqTitle">إجابات سريعة</h2>
 
         <div class="lnd-faq-list">
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q">هل أحتاج جهازاً خاصاً؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
-            <div class="lnd-faq-a">لا، تعمل المنصة باستخدام كاميرا الويب العادية الموجودة في حاسوبك أو هاتفك.</div>
+            <button class="lnd-faq-q" data-i18n="faq1Q">هل أحتاج جهازاً خاصاً؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <div class="lnd-faq-a" data-i18n="faq1A">لا، تعمل المنصة باستخدام كاميرا الويب العادية الموجودة في حاسوبك أو هاتفك.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q">كيف تحمي بياناتي؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
-            <div class="lnd-faq-a">يمكنك الاختيار بين الحفظ المحلي الكامل أو السحابة المشفّرة عبر Firebase — أنت المتحكم.</div>
+            <button class="lnd-faq-q" data-i18n="faq2Q">كيف تحمي بياناتي؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <div class="lnd-faq-a" data-i18n="faq2A">يمكنك الاختيار بين الحفظ المحلي الكامل أو السحابة المشفّرة عبر Firebase — أنت المتحكم.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q">هل تعمل على الأجهزة اللوحية؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
-            <div class="lnd-faq-a">نعم، المنصة متجاوبة بالكامل وتدعم الشاشات اللوحية واللمس.</div>
+            <button class="lnd-faq-q" data-i18n="faq3Q">هل تعمل على الأجهزة اللوحية؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <div class="lnd-faq-a" data-i18n="faq3A">نعم، المنصة متجاوبة بالكامل وتدعم الشاشات اللوحية واللمس.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q">هل يمكن استخدامها بدون انترنت؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
-            <div class="lnd-faq-a">وضع الحفظ المحلي يعمل دون اتصال. بعض الميزات السحابية تحتاج اتصالاً.</div>
+            <button class="lnd-faq-q" data-i18n="faq4Q">هل يمكن استخدامها بدون انترنت؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <div class="lnd-faq-a" data-i18n="faq4A">وضع الحفظ المحلي يعمل دون اتصال. بعض الميزات السحابية تحتاج اتصالاً.</div>
           </div>
         </div>
       </div>
@@ -1302,15 +1337,15 @@ body.theme-light .lnd-footer {
       <!-- Contact -->
       <div class="lnd-contact-side">
         <div class="lnd-contact-card">
-          <h3>تواصل معنا</h3>
-          <p>للمؤسسات أو الدعم التقني، أرسل لنا رسالة وسنرد في أقرب وقت.</p>
-          <form class="lnd-cform" onsubmit="event.preventDefault(); alert('شكراً! سنرد قريباً.')">
-            <input class="lnd-cinput" type="text" placeholder="الاسم" aria-label="الاسم" required />
-            <input class="lnd-cinput" type="email" placeholder="البريد الإلكتروني" aria-label="البريد" required />
-            <textarea class="lnd-cinput" placeholder="رسالتك" aria-label="الرسالة" rows="4" required style="resize:vertical"></textarea>
+          <h3 data-i18n="contactTitle">تواصل معنا</h3>
+          <p data-i18n="contactDesc">للمؤسسات أو الدعم التقني، أرسل لنا رسالة وسنرد في أقرب وقت.</p>
+          <form class="lnd-cform" onsubmit="event.preventDefault(); alert(this.querySelector('[data-i18n]')?.getAttribute('data-i18n') === 'contactSubmitMsg' ? 'شكراً! سنرد قريباً.' : 'Thank you! We will respond shortly.')">
+            <input class="lnd-cinput" type="text" placeholder="" data-i18n-placeholder="contactNamePlaceholder" aria-label="Name" required />
+            <input class="lnd-cinput" type="email" placeholder="" data-i18n-placeholder="contactEmailPlaceholder" aria-label="Email" required />
+            <textarea class="lnd-cinput" placeholder="" data-i18n-placeholder="contactMsgPlaceholder" aria-label="Message" rows="4" required style="resize:vertical"></textarea>
             <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-              <button class="lnd-btn-ghost" type="button" onclick="App.showLogin()" style="font-size:14px;padding:12px 22px">تسجيل الدخول</button>
-              <button class="lnd-btn-primary" type="submit" style="font-size:14px;padding:12px 28px">إرسال</button>
+              <button class="lnd-btn-ghost" type="button" onclick="App.showLogin()" style="font-size:14px;padding:12px 22px" data-i18n="contactLoginBtn">تسجيل الدخول</button>
+              <button class="lnd-btn-primary" type="submit" style="font-size:14px;padding:12px 28px" data-i18n="contactSendBtn">إرسال</button>
             </div>
           </form>
         </div>
@@ -1326,15 +1361,15 @@ body.theme-light .lnd-footer {
     <div class="lnd-footer-inner">
       <div class="lnd-footer-brand">
         <span class="lnd-logo-word">ENSAF</span>
-        <span class="lnd-logo-sub">تعلم تفاعلي للجميع</span>
+        <span class="lnd-logo-sub" data-i18n="footerSub">تعلم تفاعلي للجميع</span>
       </div>
       <div class="lnd-footer-links">
-        <a href="#features">المزايا</a>
-        <a href="#how">كيف يعمل</a>
-        <a href="#faq">الأسئلة</a>
-        <a href="#accessibility">الوصول</a>
+        <a href="#features" data-i18n="footerFeatures">المزايا</a>
+        <a href="#how" data-i18n="footerHow">كيف يعمل</a>
+        <a href="#faq" data-i18n="footerFaq">الأسئلة</a>
+        <a href="#accessibility" data-i18n="footerAccess">الوصول</a>
       </div>
-      <div class="lnd-footer-legal">© 2026 إنصاف — جميع الحقوق محفوظة</div>
+      <div class="lnd-footer-legal" data-i18n="footerCopyright">© 2026 إنصاف — جميع الحقوق محفوظة</div>
     </div>
   </div>
 </footer>
@@ -1358,6 +1393,17 @@ body.theme-light .lnd-footer {
         a.style.maxHeight = a.scrollHeight + 'px';
       }
     });
+  });
+})();
+
+// Handle placeholder translations
+(function updatePlaceholders() {
+  const elements = document.querySelectorAll('[data-i18n-placeholder]');
+  elements.forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (App && App.t) {
+      el.placeholder = App.t(key);
+    }
   });
 })();
 </script>
