@@ -1,0 +1,39 @@
+<div class="scr" id="profile">
+  <div class="profile-card">
+    <div class="profile-head">
+      <div>
+        <div class="profile-title" data-i18n="authProfileTitle">Profile</div>
+        <div id="profile-welcome" class="profile-welcome"></div>
+      </div>
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-row"><span data-i18n="authProfileEmail">Email</span><span id="profile-email"></span></div>
+      <div class="profile-row"><span data-i18n="authProfileModeLabel">Interaction mode</span>
+        <select id="profile-mode" class="auth-input">
+          <option value="head" data-i18n="modeHeadOption">Head tracking (faster)</option>
+          <option value="eye" data-i18n="modeEyeOption">Eye tracking (more accurate)</option>
+          <option value="mouse" data-i18n="modeMouseOption">Mouse (fallback)</option>
+        </select>
+      </div>
+      <div class="profile-row"><span data-i18n="authProfileThemeLabel">Theme</span>
+        <select id="profile-theme" class="auth-input">
+          <option value="default" data-i18n="themeLight">Light mode</option>
+          <option value="warm" data-i18n="themeDark">Dark mode</option>
+        </select>
+      </div>
+      <div class="profile-row"><span data-i18n="authProfileLangLabel">Language</span>
+        <select id="profile-language" class="auth-input">
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <button id="profile-save-btn" class="cta" data-i18n="authProfileSave">Save preferences</button>
+      <button id="profile-signout-btn" class="bhome" data-i18n="authProfileSignOut">Sign out</button>
+    </div>
+  </div>
+</div>
