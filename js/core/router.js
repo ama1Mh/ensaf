@@ -227,6 +227,23 @@ class ScreenRouter {
 
     setTimeout(callback, 50);
   }
+
+  // ── Transition engine ──────────────────────────────────────────
+
+  _transition(from, to, callback) {
+    // Hide ALL — class AND inline style — so nothing stacks
+    document.querySelectorAll('.scr').forEach(el => {
+      el.classList.remove('on');
+      el.style.display = 'none';
+    });
+
+    if (to?.element) {
+      to.element.style.display = '';   // hand back to CSS for layout
+      to.element.classList.add('on');
+    }
+
+    setTimeout(callback, 50);
+  }
 }
 
 const ROUTER = new ScreenRouter();

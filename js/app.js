@@ -924,6 +924,213 @@ footerCopyright: '© 2026 ENSAF — 保留所有权利',
       authStatus.textContent = '';
       authStatus.className = 'auth-status';
     }
+    this.showScreen('profile');
+    this._populateProfileFields();
+  }
+
+  renderUserState() {
+    const profileBtn = document.getElementById('profile-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const welcomeUser = document.getElementById('welcome-user');
+    const authStatus = document.getElementById('auth-status');
+    const user = this.auth ? this.auth.getUser() : null;
+
+    if (profileBtn) {
+      profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+    if (logoutBtn) {
+      logoutBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+
+    if (welcomeUser) {
+      welcomeUser.textContent = user ? this.t('authProfileWelcome', { name: user.name || user.email || 'User' }) : this.t('landingWelcomeGuest');
+    }
+
+    if (authStatus) {
+      authStatus.textContent = '';
+      authStatus.className = 'auth-status';
+    }
+  }
+
+  setupAuthForms() {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+    const forgotBtn = document.getElementById('auth-forgot-btn');
+    const guestBtn = document.getElementById('auth-guest-btn');
+    const topLogoutBtn = document.getElementById('logout-btn');
+    const profileSaveBtn = document.getElementById('profile-save-btn');
+    const signOutBtn = document.getElementById('profile-signout-btn');
+
+    if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
+    if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
+    if (loginForm) loginForm.onsubmit = async (event) => { event.preventDefault(); await this.handleLogin(); };
+    if (registerForm) registerForm.onsubmit = async (event) => { event.preventDefault(); await this.handleRegister(); };
+    if (forgotBtn) forgotBtn.onclick = () => this.handlePasswordReset();
+    if (guestBtn) {
+      if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
+        guestBtn.style.display = 'none';
+      } else {
+        guestBtn.onclick = () => {
+          if (!this.auth) this.auth = new AuthManager();
+          this.auth.continueAsGuest();
+          this.renderUserState();
+          this.startFromUser();
+        };
+      }
+    }
+    if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
+    if (signOutBtn) signOutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+    if (topLogoutBtn) topLogoutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+  }
+
+  _switchAuthTab(tab) {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+
+    if (tab === 'login') {
+      loginTab?.classList.add('act');
+      registerTab?.classList.remove('act');
+      loginForm?.classList.remove('hidden');
+      registerForm?.classList.add('hidden');
+    } else {
+      loginTab?.classList.remove('act');
+      registerTab?.classList.add('act');
+      loginForm?.classList.add('hidden');
+      registerForm?.classList.remove('hidden');
+    }
+    this._clearAuthStatus();
+  }
+
+  _setAuthStatus(message, type = 'info') {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = message;
+    authStatus.className = `auth-status ${type}`;
+  }
+
+  _clearAuthStatus() {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = '';
+    authStatus.className = 'auth-status';
+  }
+
+  async handleLogin() {
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    const password = document.getElementById('login-password')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signIn(email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign in failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authSignedIn'), 'success');
+      this.renderUserState();
+      // auto-redirect after successful sign-in
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handleRegister() {
+    if (!this.auth) this.auth = new AuthManager();
+    const name = document.getElementById('register-name')?.value || '';
+    const email = document.getElementById('register-email')?.value || '';
+    const password = document.getElementById('register-password')?.value || '';
+    const confirm = document.getElementById('register-confirm')?.value || '';
+    if (password !== confirm) {
+      this._setAuthStatus(this.t('authPasswordMismatch'), 'error');
+      return;
+    }
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signUp(name, email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign up failed', 'error');
+        return;
+      }
+      // show sync status if available
+      if (result.synced === false) {
+        this._setAuthStatus('Account created but profile sync failed.', 'warning');
+      } else {
+        this._setAuthStatus(this.t('authCreatedAccount'), 'success');
+      }
+      this.renderUserState();
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handlePasswordReset() {
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.sendPasswordReset(email);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Reset failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authResetSentMessage'), 'success');
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  _populateProfileFields() {
+    const user = this.auth ? this.auth.getUser() : null;
+    if (!user) return;
+    const name = user.name || '';
+    const email = user.email || '';
+    const preferences = user.preferences || {};
+    const welcome = document.getElementById('profile-welcome');
+    const emailEl = document.getElementById('profile-email');
+    const modeSelect = document.getElementById('profile-mode');
+    const themeSelect = document.getElementById('profile-theme');
+    const languageSelect = document.getElementById('profile-language');
+
+    if (welcome) welcome.textContent = this.t('authProfileWelcome', { name });
+    if (emailEl) emailEl.textContent = email || this.t('authGuestEmail');
+    if (modeSelect) modeSelect.value = preferences.mode || this.state.get('mode');
+    if (themeSelect) themeSelect.value = preferences.theme || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    if (languageSelect) languageSelect.value = preferences.language || this.language;
+  }
+
+  async _saveProfilePreferences() {
+    const mode = document.getElementById('profile-mode')?.value || this.state.get('mode');
+    const theme = document.getElementById('profile-theme')?.value || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    const language = document.getElementById('profile-language')?.value || this.language;
+
+    if (this.auth) {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const res = await this.auth.savePreferences({ mode, theme, language });
+      if (res && res.success === false) {
+        this._setAuthStatus(res.message || 'Failed to save preferences', 'error');
+      } else {
+        this._setAuthStatus(this.t('authPreferencesSaved'), 'success');
+      }
+    }
+
+    this.setMode(mode, document.querySelector(`.mbtn[data-mode="${mode}"]`));
+    this.applyTheme(theme);
+    this.setLanguage(language);
+    this.renderUserState();
   }
 
   setupAuthForms() {
