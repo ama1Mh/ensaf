@@ -90,3 +90,5 @@ EYE_TRACKING: {
     }
   }
 };
+
+window.CONFIG = CONFIG;

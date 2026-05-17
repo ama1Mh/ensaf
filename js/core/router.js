@@ -82,8 +82,27 @@ class ScreenRouter {
     // Wait for screen-loader.js to finish fetching & injecting fragments
     if (window.SCREENS_READY) {
       await window.SCREENS_READY;
-    } else if (document.readyState === 'loading') {
-      await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+    } else {
+      await new Promise(resolve => {
+        const checkReady = () => {
+          if (window.SCREENS_READY) {
+            window.SCREENS_READY.then(resolve).catch(() => resolve());
+            clearInterval(poll);
+          }
+        };
+
+        const poll = setInterval(checkReady, 20);
+        if (document.readyState !== 'loading') checkReady();
+        document.addEventListener('DOMContentLoaded', checkReady, { once: true });
+
+        setTimeout(() => {
+          clearInterval(poll);
+          if (!window.SCREENS_READY) {
+            console.warn('[Router] waited for SCREENS_READY but it never appeared');
+          }
+          resolve();
+        }, 3000);
+      });
     }
 
     // Hide again now that fragments are in DOM
@@ -190,6 +209,23 @@ class ScreenRouter {
       const screen = this.screens.get(this.currentScreen);
       if (screen?.onEnter) screen.onEnter({});
     }
+  }
+
+  // ── Transition engine ──────────────────────────────────────────
+
+  _transition(from, to, callback) {
+    // Hide ALL — class AND inline style — so nothing stacks
+    document.querySelectorAll('.scr').forEach(el => {
+      el.classList.remove('on');
+      el.style.display = 'none';
+    });
+
+    if (to?.element) {
+      to.element.style.display = '';   // hand back to CSS for layout
+      to.element.classList.add('on');
+    }
+
+    setTimeout(callback, 50);
   }
 
   // ── Transition engine ──────────────────────────────────────────

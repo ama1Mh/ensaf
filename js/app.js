@@ -12,6 +12,123 @@ class EnsafApp {
     this.auth = null;
     this.translations = {
       ar: {
+
+        // Landing page translations - Add to existing ar object
+landingLogoSub: 'منصة التعلم التكيّفي',
+landingHeroTitle: 'واجهة تعليمية ذكية  تتكيّف مع كل متعلّم',
+landingHeroLead: 'تحكّم في بيئة التعلم بالكامل عبر تتبّع الرأس والعين — تجربة مخصصة، خصوصية محكمة، ووصول شامل لجميع المستخدمين.',
+landingStartBtn: 'ابدأ التعلم الآن',
+landingLoginBtn: 'تسجيل الدخول',
+landingPill1: 'تفاعل بدون لمس',
+landingPill2: 'مسار مخصص',
+landingPill3: 'بيانات آمنة',
+landingStat1Label: 'المتعلمون النشطون',
+landingStat1Sub: '↑ ١٨٪ هذا الشهر',
+landingStat2Label: 'دقة التتبع',
+landingStat2Sub: 'متوسط الجلسة',
+landingBadgeTitle: 'التتبع نشط',
+landingBadgeSub: 'تتبع الرأس · دقة ٩٤٪',
+
+// Scrolling band
+band1: 'تتبع العين',
+band2: 'تتبع الرأس',
+band3: 'تعلم تكيفي',
+band4: 'وصول شامل',
+band5: 'حفظ في السحابة',
+band6: 'دعم صوتي',
+band7: 'ذكاء اصطناعي',
+band8: 'خصوصية تامة',
+
+// Features section
+featuresEyebrow: 'مزايا المنصة',
+featuresTitle: 'مصمَّم لكل متعلّم',
+featuresLead: 'من تتبع الحركة إلى التعلم المخصص — كل أداة مبنية على احتياجات حقيقية.',
+feature1Title: 'تتبع العين والرأس',
+feature1Desc: 'تحكّم طبيعي ودقيق عبر الكاميرا دون أي أجهزة إضافية.',
+feature2Title: 'تخصيص ذكي',
+feature2Desc: 'المحتوى يتكيّف لحظياً مع مستواك وسرعة تقدمك.',
+feature3Title: 'وصول شامل',
+feature3Desc: 'أدوات موجهة لذوي الاحتياجات الخاصة بمعايير عالمية.',
+feature4Title: 'حفظ آمن',
+feature4Desc: 'احفظ تقدمك وتفضيلاتك عبر حساب مشفّر في السحابة.',
+
+// How it works
+howEyebrow: 'كيف يعمل',
+howTitle: 'ثلاث خطوات  للبدء',
+howLead: 'جاهز في دقيقة واحدة، بدون إعداد معقد.',
+step1Num: '١',
+step1Title: 'اختر واجهة التحكم',
+step1Desc: 'تتبع الرأس، العين، أو الماوس — اختر ما يناسب راحتك وإمكانياتك.',
+step2Num: '٢',
+step2Title: 'التقييم التلقائي',
+step2Desc: 'يرصد النظام أداءك ويقترح المحتوى والصعوبة المناسبة لك.',
+step3Num: '٣',
+step3Title: 'تابع تقدّمك',
+step3Desc: 'لوحة تحكم واضحة تعرض إنجازاتك وتقترح الخطوة القادمة.',
+
+// Mock panel
+mockProgressLabel: 'لوحة التقدم',
+mockSubjectsLabel: 'المواد الدراسية',
+subjectMath: 'الرياضيات',
+subjectScience: 'العلوم',
+subjectArabic: 'اللغة العربية',
+subjectHistory: 'التاريخ',
+statLessons: 'درس مكتمل',
+statStreak: 'يوم متواصل',
+statAccuracy: 'متوسط الدقة',
+
+// Accessibility
+accessEyebrow: 'إمكانية الوصول',
+accessTitle: 'مصمَّم ليصل  للجميع',
+accessLead: 'نؤمن بأن التعلم حق للجميع — لذا بنينا كل ميزة مع مراعاة الاحتياجات المتنوعة.',
+access1Title: 'تكبير النص',
+access1Desc: 'تحكم كامل في الحجم والتباين.',
+access2Title: 'دعم صوتي',
+access2Desc: 'قراءة المحتوى وإرشادات مسموعة.',
+access3Title: 'تحكم بديل',
+access3Desc: 'لوحات مفاتيح خاصة وإدخال صوتي.',
+access4Title: 'ألوان التباين',
+access4Desc: 'أوضاع متعددة للرؤية المريحة.',
+
+// Testimonials
+testiEyebrow: 'آراء مستخدمين',
+testiTitle: 'ماذا يقول المجتمع',
+testi1Text: 'أداة رائعة لطلابي الذين يحتاجون لواجهة بديلة — سهل الاستخدام بشكل لافت ومرن جداً في التخصيص.',
+testi1Name: 'مريم الشهري',
+testi1Role: 'معلمة تربية خاصة',
+testi2Text: 'حسّنت تجربة التعلم لابني بشكل ملحوظ. التتبع دقيق والواجهة واضحة حتى للأطفال.',
+testi2Name: 'أحمد الغامدي',
+testi2Role: 'ولي أمر',
+
+// FAQ
+faqEyebrow: 'أسئلة شائعة',
+faqTitle: 'إجابات سريعة',
+faq1Q: 'هل أحتاج جهازاً خاصاً؟',
+faq1A: 'لا، تعمل المنصة باستخدام كاميرا الويب العادية الموجودة في حاسوبك أو هاتفك.',
+faq2Q: 'كيف تحمي بياناتي؟',
+faq2A: 'يمكنك الاختيار بين الحفظ المحلي الكامل أو السحابة المشفّرة عبر Firebase — أنت المتحكم.',
+faq3Q: 'هل تعمل على الأجهزة اللوحية؟',
+faq3A: 'نعم، المنصة متجاوبة بالكامل وتدعم الشاشات اللوحية واللمس.',
+faq4Q: 'هل يمكن استخدامها بدون انترنت؟',
+faq4A: 'وضع الحفظ المحلي يعمل دون اتصال. بعض الميزات السحابية تحتاج اتصالاً.',
+
+// Contact
+contactTitle: 'تواصل معنا',
+contactDesc: 'للمؤسسات أو الدعم التقني، أرسل لنا رسالة وسنرد في أقرب وقت.',
+contactNamePlaceholder: 'الاسم',
+contactEmailPlaceholder: 'البريد الإلكتروني',
+contactMsgPlaceholder: 'رسالتك',
+contactLoginBtn: 'تسجيل الدخول',
+contactSendBtn: 'إرسال',
+contactSubmitMsg: 'شكراً! سنرد قريباً.',
+
+// Footer
+footerSub: 'تعلم تفاعلي للجميع',
+footerFeatures: 'المزايا',
+footerHow: 'كيف يعمل',
+footerFaq: 'الأسئلة',
+footerAccess: 'الوصول',
+footerCopyright: '© 2026 إنصاف — جميع الحقوق محفوظة',
         statusLoading: 'جاري التهيئة…',
         statusActive: 'التتبع نشط',
         statusWeak: 'إشارة ضعيفة',
@@ -112,108 +229,360 @@ class EnsafApp {
         lessonQuizButton: 'اختبار',
         voiceTestComplete: 'انتهى الاختبار. حصلت على {percent} بالمئة. {message}'
       },
-      en: {
-        statusLoading: 'Loading…',
-        statusActive: 'Tracking active',
-        statusWeak: 'Weak signal',
-        statusNoFace: 'No face detected',
-        accuracyLabel: 'Accuracy',
-        recalibrate: 'Recalibrate',
-        home: 'Home',
-        themeLight: 'Light mode',
-        themeDark: 'Dark mode',
-        hintTitle: 'Hint',
-        fallbackMessage: 'Mouse mode — move the cursor to interact',
-        welcomeTag: 'Adaptive learning with head and eye tracking',
-        welcomeFeatureHead: 'Head tracking',
-        welcomeFeatureEye: 'Eye tracking',
-        welcomeFeatureSmart: 'Smart hints',
-        welcomeFeatureReports: 'Session reports',
-        welcomeFeatureVoice: 'Voice feedback',
-        welcomeFeatureNoCalib: 'No calibration',
-        landingHowItWorks: 'Ensaf uses your webcam only to guide the cursor with head or eye movement, while mouse input remains available. It helps you focus better, save progress, and choose the learning style that fits you.',
-        landingBenefitsAdaptive: 'Adaptive learning based on behavior',
-        landingBenefitsEngaging: 'Interactive experience with head and eye tracking',
-        landingBenefitsSecure: 'Full privacy and local data handling',
-        landingBenefitsPreferences: 'Personal profile and preferences',
-        landingWelcomeGuest: 'Log in to save your progress, or continue as a guest to try the app.',
-        authTabLogin: 'Login',
-        authTabRegister: 'Sign Up',
-        authEmail: 'Email',
-        authPassword: 'Password',
-        authName: 'Name',
-        authConfirmPassword: 'Confirm Password',
-        authSubmitLogin: 'Sign In',
-        authSubmitRegister: 'Create Account',
-        authForgotPassword: 'Forgot password?',
-        authGuestContinue: 'Continue as guest',
-        authProfileButton: 'Profile',
-        authProfileTitle: 'Profile',
-        authProfileWelcome: 'Welcome, {name}',
-        authProfileEmail: 'Email',
-        authProfileModeLabel: 'Interaction mode',
-        authProfileThemeLabel: 'Theme',
-        authProfileLangLabel: 'Language',
-        authLoginDescription: 'Sign in to preserve your progress and personalized settings.',
-        authProfileSave: 'Save preferences',
-        authProfileSignOut: 'Sign out',
-        authSignedIn: 'Signed in successfully.',
-        authCreatedAccount: 'Account created successfully.',
-        authPasswordMismatch: 'Password and confirmation do not match.',
-        authResetSentMessage: 'Reset instructions have been sent to your email.',
-        authPreferencesSaved: 'Your settings were saved.',
-        authGuestEmail: 'Guest',
-        landingLoginCTA: 'Login / Sign Up',
-        welcomeLoginCTA: 'Login / Sign Up',
-        modeEyeOption: 'Eye tracking (more accurate)',
-        modeMouseOption: 'Mouse (fallback)',
-        startLearning: 'Start learning ←',
-        welcomeNote: 'Requires a webcam and good lighting. All data is processed locally on your device.',
-            permissionTitle: 'Camera permission required',
-        permissionDesc: 'Tracking uses the camera to follow your head or eye movement. No video is stored.',
-        permissionStep1: 'Click "Allow" in the browser permission window',
-        permissionStep2: 'Good lighting — your face should be clearly visible',
-        permissionStep3: 'Sit 50–70 cm from the screen',
-        permissionStep4: 'Move your head or eyes to steer the cursor',
-        permissionAllow: 'Allow camera',
-        permissionUseMouse: 'Use mouse instead',
-        subjectSelect: 'Choose a subject',
-        subjectHint: 'Point at a card and hold to select',
-        questionCounter: 'Question {current} of {total}',
-        resultCorrect: 'You answered {score} of {total} correctly',
-        resultTime: 'Average time per question',
-        resultHints: 'Hints',
-        resultSubject: 'Subject',
-        resultInteraction: 'Interaction method',
-        resultRetry: 'Retry',
-        resultStudy: 'Study content',
-        lessonPrev: '← Previous',
-        lessonNext: 'Next →',
-        lessonQuiz: 'Quiz',
-        voiceReady: 'Tracker ready. Choose a subject.',
-        voiceRecalibrating: 'Recalibrating the tracker. Look at the screen.',
-        voiceSOSActive: 'Emergency mode activated.',
-        cameraFailed: 'Camera failed. Switching to mouse mode.',
-        hintVoice: 'Hint: {hint}',
-        gradeExcellent: 'Excellent!',
-        gradeGood: 'Good!',
-        gradeTryAgain: 'Keep trying!',
-        gradeMessageExcellent: 'Great work! Keep it up.',
-        gradeMessageGood: 'Good result. Keep practicing.',
-        gradeMessageRetry: 'Review the material and try again.',
-        voiceChooseSubject: 'You chose {subject}. The quiz will start now.',
-        voiceCorrectAnswer: 'Correct answer!',
-        voiceWrongAnswerPrefix: 'The correct answer is: {answer}',
-        resultStatsCorrect: 'Correct',
-        resultStatsDuration: 'Duration',
-        resultStatsHints: 'Hints',
-        timeSeconds: 's',
-        resultScoreLabel: 'Score',
-        lessonPage: 'Lesson {current} of {total}',
-        lessonQuizButton: 'Quiz',
-        voiceTestComplete: 'The quiz is over. You scored {percent} percent. {message}'
-      },
+       en: {
+        // Add these to your existing en object - Landing page translations
+landingLogoSub: 'Adaptive Learning Platform',
+landingHeroTitle: 'An intelligent learning interface  that adapts to every learner',
+landingHeroLead: 'Full control of your learning environment through head and eye tracking — personalized experience, strong privacy, and inclusive access for all users.',
+landingStartBtn: 'Start Learning Now',
+landingLoginBtn: 'Sign In',
+landingPill1: 'Touchless interaction',
+landingPill2: 'Personalized path',
+landingPill3: 'Secure data',
+landingStat1Label: 'Active Learners',
+landingStat1Sub: '↑ 18% this month',
+landingStat2Label: 'Tracking Accuracy',
+landingStat2Sub: 'Average session',
+landingBadgeTitle: 'Tracking Active',
+landingBadgeSub: 'Head tracking · 94% accuracy',
+
+// Scrolling band
+band1: 'Eye Tracking',
+band2: 'Head Tracking',
+band3: 'Adaptive Learning',
+band4: 'Inclusive Access',
+band5: 'Cloud Storage',
+band6: 'Voice Support',
+band7: 'AI Powered',
+band8: 'Full Privacy',
+
+// Features section
+featuresEyebrow: 'Platform Features',
+featuresTitle: 'Designed for every learner',
+featuresLead: 'From motion tracking to personalized learning — every tool is built around real needs.',
+feature1Title: 'Eye & Head Tracking',
+feature1Desc: 'Natural and precise control through your camera — no additional hardware needed.',
+feature2Title: 'Smart Personalization',
+feature2Desc: 'Content adapts in real-time to your level and learning pace.',
+feature3Title: 'Inclusive Access',
+feature3Desc: 'Tools designed for special needs following global accessibility standards.',
+feature4Title: 'Secure Storage',
+feature4Desc: 'Save your progress and preferences with encrypted cloud accounts.',
+
+// How it works
+howEyebrow: 'How It Works',
+howTitle: 'Three steps  to get started',
+howLead: 'Ready in one minute — no complex setup.',
+step1Num: '1',
+step1Title: 'Choose your control interface',
+step1Desc: 'Head tracking, eye tracking, or mouse — pick what suits your comfort and abilities.',
+step2Num: '2',
+step2Title: 'Automatic assessment',
+step2Desc: 'The system monitors your performance and suggests appropriate content and difficulty.',
+step3Num: '3',
+step3Title: 'Track your progress',
+step3Desc: 'A clear dashboard displays your achievements and suggests next steps.',
+
+// Mock panel
+mockProgressLabel: 'Progress Dashboard',
+mockSubjectsLabel: 'Subjects',
+subjectMath: 'Mathematics',
+subjectScience: 'Science',
+subjectArabic: 'Arabic Language',
+subjectHistory: 'History',
+statLessons: 'Lessons Completed',
+statStreak: 'Day Streak',
+statAccuracy: 'Avg. Accuracy',
+
+// Accessibility
+accessEyebrow: 'Accessibility',
+accessTitle: 'Designed to reach  everyone',
+accessLead: 'We believe learning is a right for everyone — so we built every feature with diverse needs in mind.',
+access1Title: 'Text Scaling',
+access1Desc: 'Full control over size and contrast.',
+access2Title: 'Voice Support',
+access2Desc: 'Content reading and audio guidance.',
+access3Title: 'Alternative Control',
+access3Desc: 'Special keyboards and voice input.',
+access4Title: 'Contrast Colors',
+access4Desc: 'Multiple comfortable viewing modes.',
+
+// Testimonials
+testiEyebrow: 'User Reviews',
+testiTitle: 'What the community says',
+testi1Text: 'An excellent tool for students who need an alternative interface — remarkably easy to use and very flexible to customize.',
+testi1Name: 'Mariam Al-Shahri',
+testi1Role: 'Special Education Teacher',
+testi2Text: 'Significantly improved my son\'s learning experience. The tracking is accurate and the interface is clear even for children.',
+testi2Name: 'Ahmed Al-Ghamdi',
+testi2Role: 'Parent',
+
+// FAQ
+faqEyebrow: 'FAQ',
+faqTitle: 'Quick answers',
+faq1Q: 'Do I need special equipment?',
+faq1A: 'No, the platform works with your computer\'s or phone\'s standard webcam.',
+faq2Q: 'How do you protect my data?',
+faq2A: 'You can choose between full local storage or encrypted cloud storage via Firebase — you\'re in control.',
+faq3Q: 'Does it work on tablets?',
+faq3A: 'Yes, the platform is fully responsive and supports tablets and touch screens.',
+faq4Q: 'Can I use it offline?',
+faq4A: 'Local storage mode works offline. Some cloud features require an internet connection.',
+
+// Contact
+contactTitle: 'Contact Us',
+contactDesc: 'For institutions or technical support, send us a message and we\'ll reply as soon as possible.',
+contactNamePlaceholder: 'Name',
+contactEmailPlaceholder: 'Email',
+contactMsgPlaceholder: 'Your message',
+contactLoginBtn: 'Sign In',
+contactSendBtn: 'Send',
+contactSubmitMsg: 'Thank you! We will respond shortly.',
+
+// Footer
+footerSub: 'Interactive learning for everyone',
+footerFeatures: 'Features',
+footerHow: 'How it works',
+footerFaq: 'FAQ',
+footerAccess: 'Accessibility',
+footerCopyright: '© 2026 ENSAF — All rights reserved',
+    // Status & UI
+    statusLoading: 'Loading…',
+    statusActive: 'Tracking active',
+    statusWeak: 'Weak signal',
+    statusNoFace: 'No face detected',
+    accuracyLabel: 'Accuracy',
+    recalibrate: 'Recalibrate',
+    home: 'Home',
+    themeLight: 'Light mode',
+    themeDark: 'Dark mode',
+    hintTitle: 'Hint',
+    fallbackMessage: 'Mouse mode — move the cursor to interact',
+    
+    // Welcome / Landing Page
+    welcomeTag: 'Adaptive learning with head and eye tracking',
+    welcomeFeatureHead: 'Head tracking',
+    welcomeFeatureEye: 'Eye tracking',
+    welcomeFeatureSmart: 'Smart hints',
+    welcomeFeatureReports: 'Session reports',
+    welcomeFeatureVoice: 'Voice feedback',
+    welcomeFeatureNoCalib: 'No calibration',
+    landingHowItWorks: 'Ensaf uses your webcam only to guide the cursor with head or eye movement, while mouse input remains available. It helps you focus better, save progress, and choose the learning style that fits you.',
+    landingBenefitsAdaptive: 'Adaptive learning based on behavior',
+    landingBenefitsEngaging: 'Interactive experience with head and eye tracking',
+    landingBenefitsSecure: 'Full privacy and local data handling',
+    landingBenefitsPreferences: 'Personal profile and preferences',
+    landingWelcomeGuest: 'Log in to save your progress, or continue as a guest to try the app.',
+    landingLoginCTA: 'Login / Sign Up',
+    
+    // Auth / Login / Profile
+    authTabLogin: 'Login',
+    authTabRegister: 'Sign Up',
+    authEmail: 'Email',
+    authPassword: 'Password',
+    authName: 'Name',
+    authConfirmPassword: 'Confirm Password',
+    authSubmitLogin: 'Sign In',
+    authSubmitRegister: 'Create Account',
+    authForgotPassword: 'Forgot password?',
+    authGuestContinue: 'Continue as guest',
+    authProfileButton: 'Profile',
+    authProfileTitle: 'Profile',
+    authProfileWelcome: 'Welcome, {name}',
+    authProfileEmail: 'Email',
+    authProfileModeLabel: 'Interaction mode',
+    authProfileThemeLabel: 'Theme',
+    authProfileLangLabel: 'Language',
+    authLoginDescription: 'Sign in to preserve your progress and personalized settings.',
+    authProfileSave: 'Save preferences',
+    authProfileSignOut: 'Sign out',
+    authSignedIn: 'Signed in successfully.',
+    authCreatedAccount: 'Account created successfully.',
+    authPasswordMismatch: 'Password and confirmation do not match.',
+    authResetSentMessage: 'Reset instructions have been sent to your email.',
+    authPreferencesSaved: 'Your settings were saved.',
+    authGuestEmail: 'Guest',
+    welcomeLoginCTA: 'Login / Sign Up',
+    
+    // Interaction modes
+    modeHeadOption: 'Head tracking (faster)',
+    modeEyeOption: 'Eye tracking (more accurate)',
+    modeMouseOption: 'Mouse (fallback)',
+    startLearning: 'Start learning ←',
+    welcomeNote: 'Requires a webcam and good lighting. All data is processed locally on your device.',
+    
+    // Camera Permission
+    permissionTitle: 'Camera permission required',
+    permissionDesc: 'Tracking uses the camera to follow your head or eye movement. No video is stored.',
+    permissionStep1: 'Click "Allow" in the browser permission window',
+    permissionStep2: 'Good lighting — your face should be clearly visible',
+    permissionStep3: 'Sit 50–70 cm from the screen',
+    permissionStep4: 'Move your head or eyes to steer the cursor',
+    permissionAllow: 'Allow camera',
+    permissionUseMouse: 'Use mouse instead',
+    
+    // Subjects / Quiz
+    subjectSelect: 'Choose a subject',
+    subjectHint: 'Point at a card and hold to select',
+    questionCounter: 'Question {current} of {total}',
+    resultCorrect: 'You answered {score} of {total} correctly',
+    resultTime: 'Average time per question',
+    resultHints: 'Hints',
+    resultSubject: 'Subject',
+    resultInteraction: 'Interaction method',
+    resultRetry: 'Retry',
+    resultStudy: 'Study content',
+    
+    // Lessons
+    lessonPrev: '← Previous',
+    lessonNext: 'Next →',
+    lessonQuiz: 'Quiz',
+    lessonPage: 'Lesson {current} of {total}',
+    lessonQuizButton: 'Quiz',
+    
+    // Voice feedback
+    voiceReady: 'Tracker ready. Choose a subject.',
+    voiceRecalibrating: 'Recalibrating the tracker. Look at the screen.',
+    voiceSOSActive: 'Emergency mode activated.',
+    cameraFailed: 'Camera failed. Switching to mouse mode.',
+    hintVoice: 'Hint: {hint}',
+    voiceChooseSubject: 'You chose {subject}. The quiz will start now.',
+    voiceCorrectAnswer: 'Correct answer!',
+    voiceWrongAnswerPrefix: 'The correct answer is: {answer}',
+    voiceTestComplete: 'The quiz is over. You scored {percent} percent. {message}',
+    
+    // Grading
+    gradeExcellent: 'Excellent!',
+    gradeGood: 'Good!',
+    gradeTryAgain: 'Keep trying!',
+    gradeMessageExcellent: 'Great work! Keep it up.',
+    gradeMessageGood: 'Good result. Keep practicing.',
+    gradeMessageRetry: 'Review the material and try again.',
+    
+    // Results / Stats
+    resultStatsCorrect: 'Correct',
+    resultStatsDuration: 'Duration',
+    resultStatsHints: 'Hints',
+    timeSeconds: 's',
+    resultScoreLabel: 'Score'
+  },
       zh: {
+        // Add these to your existing zh object - Landing page translations
+landingLogoSub: '自适应学习平台',
+landingHeroTitle: '智能学习界面  适应每一位学习者',
+landingHeroLead: '通过头部和眼部追踪完全控制您的学习环境 — 个性化体验、强隐私保护、为所有用户提供包容性访问。',
+landingStartBtn: '立即开始学习',
+landingLoginBtn: '登录',
+landingPill1: '免触交互',
+landingPill2: '个性化路径',
+landingPill3: '安全数据',
+landingStat1Label: '活跃学习者',
+landingStat1Sub: '↑ 本月增长18%',
+landingStat2Label: '追踪精度',
+landingStat2Sub: '平均会话',
+landingBadgeTitle: '追踪已激活',
+landingBadgeSub: '头部追踪 · 94% 精度',
+
+// Scrolling band
+band1: '眼动追踪',
+band2: '头部追踪',
+band3: '自适应学习',
+band4: '包容性访问',
+band5: '云存储',
+band6: '语音支持',
+band7: '人工智能驱动',
+band8: '完全隐私',
+
+// Features section
+featuresEyebrow: '平台功能',
+featuresTitle: '为每位学习者设计',
+featuresLead: '从运动追踪到个性化学习 — 每一个工具都基于真实需求构建。',
+feature1Title: '眼部与头部追踪',
+feature1Desc: '通过摄像头实现自然精准的控制 — 无需额外硬件。',
+feature2Title: '智能个性化',
+feature2Desc: '内容根据您的水平和学习进度实时调整。',
+feature3Title: '包容性访问',
+feature3Desc: '遵循全球无障碍标准，专为特殊需求设计的工具。',
+feature4Title: '安全存储',
+feature4Desc: '通过加密云账户保存您的进度和偏好设置。',
+
+// How it works
+howEyebrow: '工作原理',
+howTitle: '三步上手  快速开始',
+howLead: '一分钟内准备就绪 — 无需复杂设置。',
+step1Num: '1',
+step1Title: '选择您的控制界面',
+step1Desc: '头部追踪、眼部追踪或鼠标 — 选择适合您舒适度和能力的方案。',
+step2Num: '2',
+step2Title: '自动评估',
+step2Desc: '系统监控您的表现，推荐适合您的内容和难度。',
+step3Num: '3',
+step3Title: '追踪进度',
+step3Desc: '清晰的仪表板展示您的成就并建议下一步学习内容。',
+
+// Mock panel
+mockProgressLabel: '进度仪表板',
+mockSubjectsLabel: '学科',
+subjectMath: '数学',
+subjectScience: '科学',
+subjectArabic: '阿拉伯语',
+subjectHistory: '历史',
+statLessons: '已完成课程',
+statStreak: '连续学习天数',
+statAccuracy: '平均准确率',
+
+// Accessibility
+accessEyebrow: '无障碍访问',
+accessTitle: '为每个人设计  触达所有用户',
+accessLead: '我们相信学习是每个人的权利 — 因此我们构建的每个功能都考虑到了多样化的需求。',
+access1Title: '文本缩放',
+access1Desc: '完全控制字体大小和对比度。',
+access2Title: '语音支持',
+access2Desc: '内容朗读和语音指导。',
+access3Title: '替代控制',
+access3Desc: '特殊键盘和语音输入。',
+access4Title: '对比度颜色',
+access4Desc: '多种舒适观看模式。',
+
+// Testimonials
+testiEyebrow: '用户评价',
+testiTitle: '社区反馈',
+testi1Text: '对于需要替代界面的学生来说，这是一个很棒的工具 — 非常易于使用，而且定制灵活。',
+testi1Name: '玛丽亚姆·沙赫里',
+testi1Role: '特殊教育教师',
+testi2Text: '显著改善了我儿子的学习体验。追踪精确，界面清晰，即使对孩子也很友好。',
+testi2Name: '艾哈迈德·加姆迪',
+testi2Role: '家长',
+
+// FAQ
+faqEyebrow: '常见问题',
+faqTitle: '快速解答',
+faq1Q: '我需要特殊设备吗？',
+faq1A: '不需要，平台使用您电脑或手机的标准摄像头即可工作。',
+faq2Q: '你们如何保护我的数据？',
+faq2A: '您可以选择完全本地存储或通过 Firebase 加密云存储 — 您掌握控制权。',
+faq3Q: '能在平板电脑上使用吗？',
+faq3A: '可以，平台完全响应式，支持平板电脑和触摸屏。',
+faq4Q: '可以离线使用吗？',
+faq4A: '本地存储模式可离线工作。部分云功能需要互联网连接。',
+
+// Contact
+contactTitle: '联系我们',
+contactDesc: '对于机构用户或技术支持，请发送消息，我们会尽快回复。',
+contactNamePlaceholder: '姓名',
+contactEmailPlaceholder: '邮箱',
+contactMsgPlaceholder: '您的留言',
+contactLoginBtn: '登录',
+contactSendBtn: '发送',
+contactSubmitMsg: '感谢您！我们会尽快回复。',
+
+// Footer
+footerSub: '为每个人提供互动学习',
+footerFeatures: '功能',
+footerHow: '工作原理',
+footerFaq: '常见问题',
+footerAccess: '无障碍',
+footerCopyright: '© 2026 ENSAF — 保留所有权利',
         statusLoading: '加载中…',
         statusActive: '跟踪已启用',
         statusWeak: '信号弱',
@@ -484,7 +853,13 @@ class EnsafApp {
   }
 
   applyTheme(theme) {
-    document.body.classList.toggle('theme-warm', theme === 'warm');
+    // Remove ALL theme classes first — prevents theme-light and theme-warm coexisting
+    document.body.classList.remove('theme-light', 'theme-warm', 'theme-default');
+    if (theme === 'warm') {
+      document.body.classList.add('theme-warm');
+    } else {
+      document.body.classList.add('theme-light');
+    }
     localStorage.setItem('ensaf-theme', theme);
     const themeBtn = document.getElementById('theme-btn');
     if (themeBtn) {
@@ -522,6 +897,32 @@ class EnsafApp {
     if (!this.auth || !this.auth.isSignedIn()) {
       this.showLogin();
       return;
+    }
+    this.showScreen('profile');
+    this._populateProfileFields();
+  }
+
+  renderUserState() {
+    const profileBtn = document.getElementById('profile-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const welcomeUser = document.getElementById('welcome-user');
+    const authStatus = document.getElementById('auth-status');
+    const user = this.auth ? this.auth.getUser() : null;
+
+    if (profileBtn) {
+      profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+    if (logoutBtn) {
+      logoutBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+    }
+
+    if (welcomeUser) {
+      welcomeUser.textContent = user ? this.t('authProfileWelcome', { name: user.name || user.email || 'User' }) : this.t('landingWelcomeGuest');
+    }
+
+    if (authStatus) {
+      authStatus.textContent = '';
+      authStatus.className = 'auth-status';
     }
     this.showScreen('profile');
     this._populateProfileFields();
@@ -630,6 +1031,218 @@ class EnsafApp {
     if (!this.auth) this.auth = new AuthManager();
     const email = document.getElementById('login-email')?.value || '';
     const password = document.getElementById('login-password')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signIn(email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign in failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authSignedIn'), 'success');
+      this.renderUserState();
+      // auto-redirect after successful sign-in
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handleRegister() {
+    if (!this.auth) this.auth = new AuthManager();
+    const name = document.getElementById('register-name')?.value || '';
+    const email = document.getElementById('register-email')?.value || '';
+    const password = document.getElementById('register-password')?.value || '';
+    const confirm = document.getElementById('register-confirm')?.value || '';
+    if (password !== confirm) {
+      this._setAuthStatus(this.t('authPasswordMismatch'), 'error');
+      return;
+    }
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.signUp(name, email, password);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Sign up failed', 'error');
+        return;
+      }
+      // show sync status if available
+      if (result.synced === false) {
+        this._setAuthStatus('Account created but profile sync failed.', 'warning');
+      } else {
+        this._setAuthStatus(this.t('authCreatedAccount'), 'success');
+      }
+      this.renderUserState();
+      this.startFromUser();
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  async handlePasswordReset() {
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    try {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const result = await this.auth.sendPasswordReset(email);
+      if (!result || !result.success) {
+        this._setAuthStatus(result?.message || 'Reset failed', 'error');
+        return;
+      }
+      this._setAuthStatus(this.t('authResetSentMessage'), 'success');
+    } catch (e) {
+      this._setAuthStatus(e.message || String(e), 'error');
+    }
+  }
+
+  _populateProfileFields() {
+    const user = this.auth ? this.auth.getUser() : null;
+    if (!user) return;
+    const name = user.name || '';
+    const email = user.email || '';
+    const preferences = user.preferences || {};
+    const welcome = document.getElementById('profile-welcome');
+    const emailEl = document.getElementById('profile-email');
+    const modeSelect = document.getElementById('profile-mode');
+    const themeSelect = document.getElementById('profile-theme');
+    const languageSelect = document.getElementById('profile-language');
+
+    if (welcome) welcome.textContent = this.t('authProfileWelcome', { name });
+    if (emailEl) emailEl.textContent = email || this.t('authGuestEmail');
+    if (modeSelect) modeSelect.value = preferences.mode || this.state.get('mode');
+    if (themeSelect) themeSelect.value = preferences.theme || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    if (languageSelect) languageSelect.value = preferences.language || this.language;
+  }
+
+  async _saveProfilePreferences() {
+    const mode = document.getElementById('profile-mode')?.value || this.state.get('mode');
+    const theme = document.getElementById('profile-theme')?.value || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
+    const language = document.getElementById('profile-language')?.value || this.language;
+
+    if (this.auth) {
+      this._setAuthStatus(this.t('statusLoading'), 'info');
+      const res = await this.auth.savePreferences({ mode, theme, language });
+      if (res && res.success === false) {
+        this._setAuthStatus(res.message || 'Failed to save preferences', 'error');
+      } else {
+        this._setAuthStatus(this.t('authPreferencesSaved'), 'success');
+      }
+    }
+
+    this.setMode(mode, document.querySelector(`.mbtn[data-mode="${mode}"]`));
+    this.applyTheme(theme);
+    this.setLanguage(language);
+    this.renderUserState();
+  }
+
+  setupAuthForms() {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+    const forgotBtn = document.getElementById('auth-forgot-btn');
+    const guestBtn = document.getElementById('auth-guest-btn');
+    const topLogoutBtn = document.getElementById('logout-btn');
+    const profileSaveBtn = document.getElementById('profile-save-btn');
+    const signOutBtn = document.getElementById('profile-signout-btn');
+
+    console.log('[AuthForms] setup', {
+      loginTab: !!loginTab,
+      registerTab: !!registerTab,
+      loginForm: !!loginForm,
+      registerForm: !!registerForm,
+      forgotBtn: !!forgotBtn,
+      guestBtn: !!guestBtn
+    });
+
+    if (!loginForm || !registerForm) {
+      setTimeout(() => this.setupAuthForms(), 150);
+      return;
+    }
+
+    if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
+    if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (event) => {
+        console.log('[AuthForms] login form submit');
+        event.preventDefault();
+        await this.handleLogin();
+      });
+    }
+    if (registerForm) {
+      registerForm.addEventListener('submit', async (event) => {
+        console.log('[AuthForms] register form submit');
+        event.preventDefault();
+        await this.handleRegister();
+      });
+    }
+    if (forgotBtn) forgotBtn.onclick = () => {
+      console.log('[AuthForms] forgot password clicked');
+      this.handlePasswordReset();
+    };
+    if (guestBtn) {
+      if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
+        guestBtn.style.display = 'none';
+      } else {
+        guestBtn.onclick = () => {
+          if (!this.auth) this.auth = new AuthManager();
+          this.auth.continueAsGuest();
+          this.renderUserState();
+          this.startFromUser();
+        };
+      }
+    }
+    if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
+    if (signOutBtn) signOutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+    if (topLogoutBtn) topLogoutBtn.onclick = () => {
+      if (this.auth) this.auth.signOut();
+      this.renderUserState();
+      this.showLogin();
+    };
+  }
+
+  _switchAuthTab(tab) {
+    const loginTab = document.getElementById('auth-tab-login');
+    const registerTab = document.getElementById('auth-tab-register');
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+
+    if (tab === 'login') {
+      loginTab?.classList.add('act');
+      registerTab?.classList.remove('act');
+      loginForm?.classList.remove('hidden');
+      registerForm?.classList.add('hidden');
+    } else {
+      loginTab?.classList.remove('act');
+      registerTab?.classList.add('act');
+      loginForm?.classList.add('hidden');
+      registerForm?.classList.remove('hidden');
+    }
+    this._clearAuthStatus();
+  }
+
+  _setAuthStatus(message, type = 'info') {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = message;
+    authStatus.className = `auth-status ${type}`;
+  }
+
+  _clearAuthStatus() {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    authStatus.textContent = '';
+    authStatus.className = 'auth-status';
+  }
+
+  async handleLogin() {
+    console.log('[Auth] handleLogin start');
+    if (!this.auth) this.auth = new AuthManager();
+    const email = document.getElementById('login-email')?.value || '';
+    const password = document.getElementById('login-password')?.value || '';
+    console.log('[Auth] login credentials', { email: email ? '***' : '', password: password ? '***' : '' });
     try {
       this._setAuthStatus(this.t('statusLoading'), 'info');
       const result = await this.auth.signIn(email, password);
