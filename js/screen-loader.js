@@ -26,6 +26,8 @@ async function loadScreens() {
     return;
   }
 
+  console.log('[ScreenLoader] Loading screen fragments');
+
   // Load all fragments in parallel for speed
   const results = await Promise.allSettled(
     SCREEN_PARTS.map(part => fetch(part.src).then(r => {
@@ -41,6 +43,8 @@ async function loadScreens() {
       console.error(`[ScreenLoader] Failed to load ${SCREEN_PARTS[i].src}:`, result.reason);
     }
   });
+
+  console.log('[ScreenLoader] Screen fragments loaded');
 }
 
 // Set window.SCREENS_READY synchronously so ROUTER and App can await it

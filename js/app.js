@@ -562,11 +562,40 @@ class EnsafApp {
     const profileSaveBtn = document.getElementById('profile-save-btn');
     const signOutBtn = document.getElementById('profile-signout-btn');
 
+    console.log('[AuthForms] setup', {
+      loginTab: !!loginTab,
+      registerTab: !!registerTab,
+      loginForm: !!loginForm,
+      registerForm: !!registerForm,
+      forgotBtn: !!forgotBtn,
+      guestBtn: !!guestBtn
+    });
+
+    if (!loginForm || !registerForm) {
+      setTimeout(() => this.setupAuthForms(), 150);
+      return;
+    }
+
     if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
     if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
-    if (loginForm) loginForm.onsubmit = async (event) => { event.preventDefault(); await this.handleLogin(); };
-    if (registerForm) registerForm.onsubmit = async (event) => { event.preventDefault(); await this.handleRegister(); };
-    if (forgotBtn) forgotBtn.onclick = () => this.handlePasswordReset();
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (event) => {
+        console.log('[AuthForms] login form submit');
+        event.preventDefault();
+        await this.handleLogin();
+      });
+    }
+    if (registerForm) {
+      registerForm.addEventListener('submit', async (event) => {
+        console.log('[AuthForms] register form submit');
+        event.preventDefault();
+        await this.handleRegister();
+      });
+    }
+    if (forgotBtn) forgotBtn.onclick = () => {
+      console.log('[AuthForms] forgot password clicked');
+      this.handlePasswordReset();
+    };
     if (guestBtn) {
       if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
         guestBtn.style.display = 'none';
@@ -627,9 +656,11 @@ class EnsafApp {
   }
 
   async handleLogin() {
+    console.log('[Auth] handleLogin start');
     if (!this.auth) this.auth = new AuthManager();
     const email = document.getElementById('login-email')?.value || '';
     const password = document.getElementById('login-password')?.value || '';
+    console.log('[Auth] login credentials', { email: email ? '***' : '', password: password ? '***' : '' });
     try {
       this._setAuthStatus(this.t('statusLoading'), 'info');
       const result = await this.auth.signIn(email, password);

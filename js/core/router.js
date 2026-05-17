@@ -82,8 +82,27 @@ class ScreenRouter {
     // Wait for screen-loader.js to finish fetching & injecting fragments
     if (window.SCREENS_READY) {
       await window.SCREENS_READY;
-    } else if (document.readyState === 'loading') {
-      await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+    } else {
+      await new Promise(resolve => {
+        const checkReady = () => {
+          if (window.SCREENS_READY) {
+            window.SCREENS_READY.then(resolve).catch(() => resolve());
+            clearInterval(poll);
+          }
+        };
+
+        const poll = setInterval(checkReady, 20);
+        if (document.readyState !== 'loading') checkReady();
+        document.addEventListener('DOMContentLoaded', checkReady, { once: true });
+
+        setTimeout(() => {
+          clearInterval(poll);
+          if (!window.SCREENS_READY) {
+            console.warn('[Router] waited for SCREENS_READY but it never appeared');
+          }
+          resolve();
+        }, 3000);
+      });
     }
 
     // Hide again now that fragments are in DOM
