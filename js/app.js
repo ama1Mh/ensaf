@@ -484,7 +484,13 @@ class EnsafApp {
   }
 
   applyTheme(theme) {
-    document.body.classList.toggle('theme-warm', theme === 'warm');
+    // Remove ALL theme classes first — prevents theme-light and theme-warm coexisting
+    document.body.classList.remove('theme-light', 'theme-warm', 'theme-default');
+    if (theme === 'warm') {
+      document.body.classList.add('theme-warm');
+    } else {
+      document.body.classList.add('theme-light');
+    }
     localStorage.setItem('ensaf-theme', theme);
     const themeBtn = document.getElementById('theme-btn');
     if (themeBtn) {
