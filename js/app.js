@@ -801,8 +801,17 @@ footerCopyright: '© 2026 ENSAF — 保留所有权利',
       this.setLanguage(this.language);
       this.translateUI();
     }
+    
     this.renderUserState();
     this.setupAuthForms();
+// Temporary: verify event system and element existence
+console.log('[HINT] EVENT_NAMES.QUIZ_HINT =', EVENT_NAMES.QUIZ_HINT);
+console.log('[HINT] hint element =', document.getElementById('hint'));
+console.log('[HINT] htxt element =', document.getElementById('htxt'));
+     // Wire quiz hint event to display function
+  EVENTS.on(EVENT_NAMES.QUIZ_HINT, ({ hint }) => {
+    this._showHint(hint);
+  });
     console.log('[ENSAF] App initialized - Mode:', this.state.get('mode'));
   }
 
@@ -1652,13 +1661,15 @@ footerCopyright: '© 2026 ENSAF — 保留所有权利',
     }
     
     // Hesitation timeout
-    clearTimeout(this.hesitationTimeout);
-    this.hesitationTimeout = setTimeout(() => {
-      if (this.state.get('screen') === 'q') {
-        this.state.set('quiz.hesitations', this.state.get('quiz.hesitations') + 1);
-        this._showHint(q.hint);
-      }
-    }, CONFIG.QUIZ.HESITATION_TIMEOUT);
+   // Hesitation timeout
+clearTimeout(this.hesitationTimeout);
+console.log('[HINT] HESITATION_TIMEOUT =', CONFIG.QUIZ.HESITATION_TIMEOUT); // ← add this
+this.hesitationTimeout = setTimeout(() => {
+  if (this.state.get('screen') === 'question') {
+    this.state.set('quiz.hesitations', this.state.get('quiz.hesitations') + 1);
+    this._showHint(q.hint);
+  }
+}, CONFIG.QUIZ.HESITATION_TIMEOUT);
   }
 
   selectAnswer(index) {
@@ -1692,13 +1703,18 @@ footerCopyright: '© 2026 ENSAF — 保留所有权利',
     }, CONFIG.QUIZ.ANSWER_DELAY);
   }
 
-  _showHint(hint) {
-    const htxt = document.getElementById('htxt');
-    const hintEl = document.getElementById('hint');
-    if (htxt) htxt.textContent = hint;
-    if (hintEl) hintEl.classList.add('on');
-    if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('hintVoice', { hint }));
-  }
+_showHint(hint) {
+  console.log('[HINT] _showHint called, hint:', hint);
+  if (!hint) return;
+  const htxt = document.getElementById('htxt');
+  const hintEl = document.getElementById('hint');
+  console.log('[HINT] htxt:', htxt, '| hintEl:', hintEl);
+  console.log('[HINT] screen state:', this.state.get('screen'));
+  if (htxt) htxt.textContent = hint;
+  if (hintEl) hintEl.classList.add('on');
+  console.log('[HINT] classes after add:', hintEl?.className);
+  if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('hintVoice', { hint }));
+}
 
   _hideHint() {
     const hintEl = document.getElementById('hint');
