@@ -17,28 +17,29 @@ const QuizEngine = (() => {
    * @param {string} subjId - Subject ID
    * @returns {Object} First question data
    */
-  function start(subjId) {
-    subjectId = subjId;
-    currentIndex = 0;
-    score = 0;
-    hesitations = 0;
-    startTime = Date.now();
-    
-    // Get and shuffle questions
-    if (typeof DB !== 'undefined') {
-      questions = [...DB.q[subjId]];
-      shuffleArray(questions);
-    } else {
-      questions = [];
-    }
-    
-    EVENTS.emit(EVENT_NAMES.QUIZ_START, {
-      subject: subjId,
-      totalQuestions: questions.length
-    });
-    
-    return getCurrentQuestion();
+ function start(subjId) {
+  subjectId = subjId;
+  currentIndex = 0;
+  score = 0;
+  hesitations = 0;
+  startTime = Date.now();
+  
+  if (typeof DB !== 'undefined') {
+    questions = [...DB.q[subjId]];
+    shuffleArray(questions);
+  } else {
+    questions = [];
   }
+  
+  EVENTS.emit(EVENT_NAMES.QUIZ_START, {
+    subject: subjId,
+    totalQuestions: questions.length
+  });
+  
+  const firstQuestion = getCurrentQuestion();
+  startHesitationTimer(firstQuestion); // ← ADD THIS
+  return firstQuestion;
+}
 
   /**
    * Get current question data
@@ -100,31 +101,33 @@ const QuizEngine = (() => {
    * Request a hint for current question
    */
   function requestHint() {
-    const question = getCurrentQuestion();
-    if (!question) return null;
-    
-    hesitations++;
-    
-    EVENTS.emit(EVENT_NAMES.QUIZ_HINT, {
-      hint: question.hint,
-      hesitations: hesitations
-    });
-    
-    return question.hint;
-  }
+  const question = getCurrentQuestion();
+  if (!question || !question.hint) return null; // ← ADD THE !question.hint check
+  
+  hesitations++;
+  
+  EVENTS.emit(EVENT_NAMES.QUIZ_HINT, {
+    hint: question.hint,
+    hesitations: hesitations
+  });
+  
+  return question.hint;
+}
 
   /**
    * Start timer for automatic hint
    * @private
    */
-  function startHesitationTimer(question) {
-    clearTimeout(hesitationTimer);
-    hesitationTimer = setTimeout(() => {
-      if (question && question.hint) {
-        requestHint();
-      }
-    }, HESITATION_TIMEOUT);
-  }
+function startHesitationTimer(question) {
+  clearTimeout(hesitationTimer);
+  console.log('[HINT] timer started, question:', question?.q, 'timeout:', HESITATION_TIMEOUT);
+  hesitationTimer = setTimeout(() => {
+    console.log('[HINT] timer fired, hint:', question?.hint);
+    if (question && question.hint) {
+      requestHint();
+    }
+  }, HESITATION_TIMEOUT);
+}
 
   /**
    * Get full quiz results
