@@ -77,9 +77,11 @@ class AuthManager {
   }
 
   // ── Firebase bootstrap ──────────────────────────────────────
-  _waitForFirebaseAuthApi(timeoutMs = 15000) {
+  _waitForFirebaseAuthApi(timeoutMs = 10000) {
     if (!this.firebaseEnabled) return Promise.resolve(false);
     if (window.FirebaseAuthApi) return Promise.resolve(true);
+    // firebase-init.js (or its gstatic imports) failed to load: offline or blocked.
+    if (window.__firebaseFailed) return Promise.resolve(false);
 
     return new Promise(resolve => {
       const done = (ok) => {

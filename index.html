@@ -4,217 +4,290 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إنصاف — منصة التعلم التكيفي</title>
+<meta name="description" content="ENSAF — hands-free learning and assessment for students with motor disabilities (head, eye or mouse control).">
 
-<!-- MediaPipe Face Mesh (supports both head & iris tracking) -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+<!-- MediaPipe Face Mesh is loaded on demand by js/tracking/face-tracker.js
+     (only when head or eye mode starts), so mouse mode never downloads it. -->
 
-<!-- Styles -->
-
-<!-- MediaPipe Face Mesh (supports both head & iris tracking) -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
-
-<!-- Styles -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200&display=block">
+<link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/main.css">
 
-<style>
-/* Additional styles for mode indicators */
-.mode-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 100px;
-  font-size: 10px;
-  font-family: var(--fh);
-  margin-left: 4px;
-}
-
-.mode-head { background: rgba(0,240,255,.12); color: var(--cy); border: 1px solid rgba(0,240,255,.3); }
-.mode-eye  { background: rgba(139,92,246,.12); color: var(--vi2); border: 1px solid rgba(139,92,246,.3); }
-.mode-mouse { background: rgba(16,185,129,.12); color: var(--gr); border: 1px solid rgba(16,185,129,.3); }
-
-/* Particles */
-#pts {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.pt {
-  position: absolute;
-  border-radius: 50%;
-  animation: ptf linear infinite;
-  opacity: 0;
-}
-
-@keyframes ptf {
-  0% { transform: translateY(100vh) scale(0); opacity: 0; }
-  10% { opacity: .45; }
-  90% { opacity: .1; }
-  100% { transform: translateY(-5vh); opacity: 0; }
-}
-
-/* Face overlay canvas */
-#ov {
-  position: fixed;
-  top: 70px;
-  right: 18px;
-  width: 170px;
-  height: 125px;
-  min-width: 150px;
-  min-height: 110px;
-  border-radius: 22px;
-  z-index: 9996;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .5s;
-}
-
-#ov.show {
-  opacity: .7;
-}
-</style>
-
+<!-- Apply saved theme / text size before first paint (avoids a flash). -->
+<script>
+(function () {
+  try {
+    var s = JSON.parse(localStorage.getItem('ensaf-settings') || 'null') || {};
+    var legacy = localStorage.getItem('ensaf-theme');
+    var theme = s.theme || (legacy === 'warm' ? 'dark' : legacy ? 'light' : null);
+    if (!theme && window.matchMedia && matchMedia('(prefers-contrast: more)').matches) theme = 'contrast';
+    window.__ensafTheme = theme || 'light';
+    if (s.textScale) document.documentElement.style.setProperty('--text-scale', s.textScale);
+    var lang = s.lang || localStorage.getItem('ensaf-lang');
+    if (lang === 'en' || lang === 'zh') { document.documentElement.lang = lang; document.documentElement.dir = 'ltr'; }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body class="theme-light">
+<script>document.body.className = 'theme-' + (window.__ensafTheme || 'light');</script>
+
+<a class="skip-link" href="#screens-root" data-i18n="skipToContent">تخطَّ إلى المحتوى الرئيسي</a>
 
 <!-- Loading Screen -->
-<div id="load">
-  <div class="spin"></div>
-  <div class="ltxt">جاري تحميل نظام التتبع…</div>
+<div id="load" role="status" aria-live="polite">
+  <div class="spin" aria-hidden="true"></div>
+  <div class="ltxt" data-i18n="loadingApp">جارٍ التحميل…</div>
 </div>
 
-<!-- Particles Background -->
-<div id="pts"></div>
+<!-- Particles Background (decorative) -->
+<div id="pts" aria-hidden="true"></div>
 
-<!-- Webcam Preview -->
-<video id="vcam" autoplay playsinline muted></video>
-<canvas id="ov" width="200" height="150"></canvas>
+<!-- Webcam preview: stays on this device, never uploaded -->
+<video id="vcam" autoplay playsinline muted data-i18n-aria-label="cameraPreviewLabel" aria-label="معاينة الكاميرا"></video>
+<canvas id="ov" width="200" height="150" aria-hidden="true"></canvas>
 
-<!-- Gaze Cursor -->
-<div id="cursor"></div>
+<!-- Gaze / head cursor with dwell ring -->
+<div id="cursor" aria-hidden="true"></div>
 
 <!-- Top Bar -->
-<div id="bar">
-  <div class="dot" id="bdot"></div>
-  <span class="bst" id="bst" data-i18n="statusLoading">جاري التهيئة…</span>
-  <span class="mode-indicator mode-head" id="mode-indicator"><span class="material-symbols-outlined icon icon-sm">track_changes</span>تتبع الرأس</span>
-  <div class="bsep"></div>
-  <div class="cfw">
+<header id="bar" role="banner">
+  <div class="bar-status" role="status" aria-live="polite" data-i18n-aria-label="trackingStatusLabel" aria-label="حالة التتبع">
+    <span class="dot" id="bdot" aria-hidden="true"></span>
+    <span class="bst" id="bst" data-i18n="statusLoading">جاري التهيئة…</span>
+  </div>
+  <span class="mode-indicator" id="mode-indicator"></span>
+  <div class="cfw" aria-hidden="true">
     <span class="cfl" data-i18n="accuracyLabel">الدقة</span>
     <div class="cfb"><div class="cff" id="cff"></div></div>
   </div>
-  <div class="dctrl">
-    <button id="dm">−</button>
-    <span id="dv">3.5s</span>
-    <button id="dp">+</button>
+  <div class="bsep"></div>
+  <div class="dctrl" role="group" data-i18n-aria-label="dwellTimeLabel" aria-label="مدة التثبيت">
+    <span class="dlabel" data-i18n="dwellTimeLabel" aria-hidden="true">مدة التثبيت</span>
+    <button class="bbtn" id="dm" type="button" data-i18n-aria-label="dwellDecrease" aria-label="تقليل مدة التثبيت">−</button>
+    <output id="dv" aria-live="polite">3.5s</output>
+    <button class="bbtn" id="dp" type="button" data-i18n-aria-label="dwellIncrease" aria-label="زيادة مدة التثبيت">+</button>
   </div>
-  <button class="bhome" id="recal-btn" onclick="App.recalibrate?.()"><span class="material-symbols-outlined icon icon-sm">track_changes</span>إعادة المعايرة</button>
-  <button class="bhome" id="home-btn" onclick="App.home()"><span class="material-symbols-outlined icon icon-sm">home</span>الرئيسية</button>
-  <button class="bhome" id="profile-btn" onclick="App.showProfile()" style="display:none"><span class="material-symbols-outlined icon icon-sm">person</span><span data-i18n="authProfileButton">الملف</span></button>
-  <button class="bhome" id="theme-btn" title="تبديل الثيم"><span class="material-symbols-outlined icon icon-sm">light_mode</span></button>
-  <button class="bhome" id="logout-btn" style="display:none"><span class="material-symbols-outlined icon icon-sm">logout</span>تسجيل الخروج</button>
-  <select id="lang-switch" class="blang" aria-label="Language">
-    <option value="ar">العربية</option>
-    <option value="en">English</option>
-    <option value="zh">中文</option>
-  </select>
-  <div id="vi"><span class="material-symbols-outlined icon icon-sm">volume_up</span></div>
+  <button class="bbtn icon-btn" id="recal-btn" type="button" hidden><span class="material-symbols-outlined" aria-hidden="true">center_focus_strong</span><span class="btn-label" data-i18n="recalibrate">إعادة المعايرة</span></button>
+  <button class="bbtn icon-btn" id="home-btn" type="button"><span class="material-symbols-outlined" aria-hidden="true">home</span><span class="btn-label" data-i18n="home">الرئيسية</span></button>
+  <button class="bbtn icon-btn" id="settings-btn" type="button" aria-haspopup="dialog"><span class="material-symbols-outlined" aria-hidden="true">settings</span><span class="btn-label" data-i18n="settings">الإعدادات</span></button>
+  <button class="bbtn icon-btn" id="theme-btn" type="button"><span class="material-symbols-outlined" aria-hidden="true">contrast</span><span class="btn-label" id="theme-btn-label" data-i18n="themeLight">الوضع الافتراضي</span></button>
+  <button class="bbtn icon-btn" id="profile-btn" type="button" hidden><span class="material-symbols-outlined" aria-hidden="true">person</span><span class="btn-label" data-i18n="authProfileButton">الملف</span></button>
+  <button class="bbtn icon-btn" id="logout-btn" type="button" hidden><span class="material-symbols-outlined" aria-hidden="true">logout</span><span class="btn-label" data-i18n="logout">تسجيل الخروج</span></button>
+  <div class="lang-group" role="group" data-i18n-aria-label="languageLabel" aria-label="اللغة" id="lang-switch">
+    <button type="button" data-lang="ar" lang="ar" aria-pressed="true">ع<span class="sr-only">العربية</span></button>
+    <button type="button" data-lang="en" lang="en" aria-pressed="false">EN<span class="sr-only">English</span></button>
+    <button type="button" data-lang="zh" lang="zh" aria-pressed="false">中<span class="sr-only">中文</span></button>
+  </div>
+  <button class="bbtn icon-btn" id="vi" type="button" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span><span class="btn-label" data-i18n="muteVoice">كتم الصوت</span></button>
+</header>
+
+<!-- Toast for important messages (camera errors, face lost…) -->
+<div id="toast" role="alert">
+  <span class="material-symbols-outlined" aria-hidden="true">info</span>
+  <span class="toast-msg" id="toast-msg"></span>
+  <span class="toast-actions" id="toast-actions"></span>
 </div>
 
 <!-- Hint Popup -->
-<div id="hint">
-  <div class="hh"><span class="material-symbols-outlined icon icon-sm">lightbulb</span><span data-i18n="hintTitle">تلميح</span></div>
+<div id="hint" role="status" aria-live="polite">
+  <div class="hh"><span class="material-symbols-outlined" aria-hidden="true">lightbulb</span><span data-i18n="hintTitle">تلميح</span></div>
   <div id="htxt"></div>
 </div>
 
-<!-- Fallback Mode Indicator -->
-<div id="fb"><span class="material-symbols-outlined icon icon-sm">bolt</span><span data-i18n="fallbackMessage">وضع الماوس — حرّك المؤشر للتفاعل</span></div>
+<!-- Mouse-mode indicator -->
+<div id="fb"><span class="material-symbols-outlined" aria-hidden="true">mouse</span><span data-i18n="fallbackMessage">وضع الماوس — حرّك المؤشر للتفاعل</span></div>
+
+<!-- Polite announcements for screen readers -->
+<div id="live" class="sr-only" aria-live="polite"></div>
 
 <!-- Screen Fragments -->
-<div id="screens-root"></div>
+<main id="screens-root" tabindex="-1"></main>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SCRIPTS (in dependency order)                              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SOS: always reachable while learning (dwell 3 s, click, or key "Escape" twice) -->
+<button id="sos" type="button" data-dwell-ms="3000" data-i18n-aria-label="sosButtonLabel" aria-label="زر طلب المساعدة">
+  <svg viewBox="0 0 120 120" aria-hidden="true"><circle id="sosc" cx="60" cy="60" r="56" stroke-dasharray="352" stroke-dashoffset="352"></circle></svg>
+  <span class="sos-mark" aria-hidden="true">SOS</span>
+  <span class="sos-txt" data-i18n="sosButton">مساعدة</span>
+</button>
 
-<!-- Configuration -->
+<dialog id="sosm" class="ens-dialog" aria-labelledby="sos-title">
+  <div class="dlg-body">
+    <div class="sos-icon" aria-hidden="true">SOS</div>
+    <h2 id="sos-title" class="sos-msg" data-i18n="sosTitle">تم طلب المساعدة</h2>
+    <p class="screen-sub" data-i18n="sosMessage">يحتاج الطالب إلى مساعدة.</p>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="cta" id="sos-continue" data-i18n="sosContinue">أنا بخير — متابعة</button>
+    <button type="button" class="cta secondary" id="sos-home" data-i18n="sosHome">العودة إلى الرئيسية</button>
+  </div>
+</dialog>
+
+<!-- Settings -->
+<dialog id="settings" class="ens-dialog" aria-labelledby="settings-title">
+  <div class="dlg-head">
+    <h2 id="settings-title" data-i18n="settingsTitle">الإعدادات</h2>
+    <button type="button" class="close-btn" id="settings-close" data-i18n-aria-label="close" aria-label="إغلاق">×</button>
+  </div>
+  <div class="dlg-body">
+    <section class="set-group" aria-labelledby="sg-control">
+      <h3 id="sg-control" data-i18n="settingsGroupControl">التحكم</h3>
+      <div class="set-row">
+        <span class="label" id="set-mode-l" data-i18n="authProfileModeLabel">طريقة التفاعل</span>
+        <div class="seg" role="group" aria-labelledby="set-mode-l" data-setting="mode">
+          <button type="button" data-value="head" data-i18n="modeHeadShort">تتبع الرأس</button>
+          <button type="button" data-value="eye" data-i18n="modeEyeShort">تتبع العين</button>
+          <button type="button" data-value="mouse" data-i18n="modeMouseShort">الماوس</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-dwell-l" data-i18n="dwellTimeLabel">مدة التثبيت</span>
+        <div class="stepper" role="group" aria-labelledby="set-dwell-l" data-setting="dwellMs">
+          <button type="button" data-step="-1" data-i18n-aria-label="dwellDecrease" aria-label="−">−</button>
+          <output aria-live="polite"></output>
+          <button type="button" data-step="1" data-i18n-aria-label="dwellIncrease" aria-label="+">+</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-sens-l" data-i18n="settingsSensitivity">سرعة المؤشر</span>
+        <div class="stepper" role="group" aria-labelledby="set-sens-l" data-setting="sensitivity">
+          <button type="button" data-step="-1" data-i18n-aria-label="slower" aria-label="أبطأ">−</button>
+          <output aria-live="polite"></output>
+          <button type="button" data-step="1" data-i18n-aria-label="faster" aria-label="أسرع">+</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-steady-l" data-i18n="settingsSmoothing">ثبات المؤشر</span>
+        <div class="stepper" role="group" aria-labelledby="set-steady-l" data-setting="steadiness">
+          <button type="button" data-step="-1" data-i18n-aria-label="less" aria-label="أقل">−</button>
+          <output aria-live="polite"></output>
+          <button type="button" data-step="1" data-i18n-aria-label="more" aria-label="أكثر">+</button>
+        </div>
+        <span class="hint" data-i18n="settingsSmoothingHint"></span>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-mdwell-l" data-i18n="settingsMouseDwell">الاختيار بالتثبيت في وضع الماوس</span>
+        <div class="seg" role="group" aria-labelledby="set-mdwell-l" data-setting="mouseDwell">
+          <button type="button" data-value="true" data-i18n="on">تشغيل</button>
+          <button type="button" data-value="false" data-i18n="off">إيقاف</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" data-i18n="calibrate">معايرة سريعة</span>
+        <span class="hint" data-i18n="calibrateOptional"></span>
+        <div class="seg">
+          <button type="button" id="calib-start" data-i18n="calibrate">معايرة سريعة</button>
+          <button type="button" id="calib-reset" data-i18n="calibrateReset">إزالة المعايرة</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="set-group" aria-labelledby="sg-display">
+      <h3 id="sg-display" data-i18n="settingsGroupDisplay">العرض</h3>
+      <div class="set-row">
+        <span class="label" id="set-theme-l" data-i18n="authProfileThemeLabel">الثيم</span>
+        <div class="seg" role="group" aria-labelledby="set-theme-l" data-setting="theme">
+          <button type="button" data-value="light" data-i18n="themeLight">فاتح</button>
+          <button type="button" data-value="dark" data-i18n="themeDark">داكن</button>
+          <button type="button" data-value="contrast" data-i18n="themeContrast">تباين عالٍ</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-text-l" data-i18n="settingsTextSize">حجم النص</span>
+        <div class="stepper" role="group" aria-labelledby="set-text-l" data-setting="textScale">
+          <button type="button" data-step="-1" data-i18n-aria-label="smaller" aria-label="أصغر">−</button>
+          <output aria-live="polite"></output>
+          <button type="button" data-step="1" data-i18n-aria-label="larger" aria-label="أكبر">+</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-lang-l" data-i18n="languageLabel">اللغة</span>
+        <div class="seg" role="group" aria-labelledby="set-lang-l" data-setting="lang">
+          <button type="button" data-value="ar" lang="ar">العربية</button>
+          <button type="button" data-value="en" lang="en">English</button>
+          <button type="button" data-value="zh" lang="zh">中文</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="set-group" aria-labelledby="sg-sound">
+      <h3 id="sg-sound" data-i18n="settingsGroupSound">الصوت</h3>
+      <div class="set-row">
+        <span class="label" id="set-voice-l" data-i18n="settingsVoice">القراءة الصوتية</span>
+        <div class="seg" role="group" aria-labelledby="set-voice-l" data-setting="voice">
+          <button type="button" data-value="true" data-i18n="on">تشغيل</button>
+          <button type="button" data-value="false" data-i18n="off">إيقاف</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-rate-l" data-i18n="settingsSpeechRate">سرعة الكلام</span>
+        <div class="stepper" role="group" aria-labelledby="set-rate-l" data-setting="speechRate">
+          <button type="button" data-step="-1" data-i18n-aria-label="slower" aria-label="أبطأ">−</button>
+          <output aria-live="polite"></output>
+          <button type="button" data-step="1" data-i18n-aria-label="faster" aria-label="أسرع">+</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="label" id="set-snd-l" data-i18n="settingsSounds">أصوات التنبيه</span>
+        <div class="seg" role="group" aria-labelledby="set-snd-l" data-setting="sounds">
+          <button type="button" data-value="true" data-i18n="on">تشغيل</button>
+          <button type="button" data-value="false" data-i18n="off">إيقاف</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="cta secondary" id="settings-reset" data-i18n="settingsReset">استعادة الافتراضي</button>
+    <button type="button" class="cta" id="settings-done" data-i18n="settingsDone">تم</button>
+  </div>
+</dialog>
+
+<!-- Calibration overlay -->
+<div id="calib" role="dialog" aria-modal="true" aria-labelledby="calib-msg">
+  <div class="calib-dot" id="calib-dot" aria-hidden="true"></div>
+  <p class="calib-msg" id="calib-msg" aria-live="polite"></p>
+  <div class="calib-actions"><button type="button" class="cta secondary" id="calib-cancel" data-i18n="calibrateCancel">إلغاء المعايرة</button></div>
+</div>
+
+<!-- ═══ SCRIPTS (in dependency order) ═══ -->
 <script src="js/config.js"></script>
-
-<!-- Core -->
+<script src="js/i18n/translations.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/filters.js"></script>
+<script src="js/core/dwell-core.js"></script>
+<script src="js/core/hesitation.js"></script>
+<script src="js/core/report.js"></script>
+<script src="js/core/settings.js"></script>
 <script src="js/core/state.js"></script>
 <script src="js/core/events.js"></script>
 <script src="js/core/router.js"></script>
-
-<!-- Shared Utilities -->
 <script src="js/shared/utils.js"></script>
-<script src="js/shared/dom.js"></script>
 <script src="js/shared/auth.js"></script>
-
-<!-- Database -->
 <script src="js/features/database.js"></script>
-
-<!-- Voice (depends on config) -->
 <script src="js/features/voice.js"></script>
-
-<!-- Tracking Base -->
-<script src="js/tracking/base-tracker.js"></script>
-
-<!-- Head Tracker -->
-<script src="js/tracking/head-tracker.js"></script>
-
-<!-- Eye Tracker -->
-<script src="js/tracking/eye-tracker.js"></script>
-
-<!-- Interaction -->
-<script src="js/interaction/cursor.js"></script>
+<script src="js/features/sounds.js"></script>
+<script src="js/tracking/face-tracker.js"></script>
 <script src="js/interaction/dwell.js"></script>
-
-<!-- Screen Loader -->
 <script src="js/screen-loader.js"></script>
-
-<!-- Features -->
-<script src="js/features/quiz.js"></script>
-<script src="js/features/lessons.js"></script>
-
-<!-- Main Application -->
-<script type="module" src="js/shared/firebase-init.js"></script>
+<script type="module" src="js/shared/firebase-init.js" onerror="window.__firebaseFailed=true;window.dispatchEvent(new CustomEvent('firebase-ready',{detail:{ok:false}}))"></script>
 <script src="js/app.js"></script>
 
-<!-- Initialize Particles -->
+<!-- Decorative particles (skipped when the user prefers reduced motion) -->
 <script>
-(function() {
-  const container = document.getElementById('pts');
-  if (!container) return;
-  
-  const colors = [
-    'rgba(0,240,255,.3)',
-    'rgba(109,40,217,.3)',
-    'rgba(251,191,36,.2)',
-    'rgba(16,185,129,.2)'
-  ];
-  
-  for (let i = 0; i < 22; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'pt';
-    const size = Math.random() * 3 + 1;
-    particle.style.cssText = `
-      width: ${size}px;
-      height: ${size}px;
-      left: ${Math.random() * 100}%;
-      background: ${colors[i % 4]};
-      animation-duration: ${Math.random() * 18 + 8}s;
-      animation-delay: ${Math.random() * 18}s;
-    `;
-    container.appendChild(particle);
+(function () {
+  var container = document.getElementById('pts');
+  if (!container || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  for (var i = 0; i < 18; i++) {
+    var p = document.createElement('div');
+    p.className = 'pt';
+    var size = Math.random() * 3 + 1;
+    p.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (Math.random() * 100) + '%;' +
+      'animation-duration:' + (Math.random() * 18 + 10) + 's;animation-delay:' + (Math.random() * 18) + 's;';
+    container.appendChild(p);
   }
 })();
 </script>
-
 </body>
 </html>

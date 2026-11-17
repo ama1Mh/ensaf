@@ -1,14 +1,14 @@
-<div class="scr" id="sq">
+<section class="scr" id="sq" aria-labelledby="qtxt">
   <div class="qwrap">
     <div class="qmeta">
       <span class="qctr" id="qc">Question 1 of 5</span>
-      <div class="qprog"><div class="qpf" id="qpf"></div></div>
-      <span class="qpts" id="qpts"><span class="material-symbols-outlined icon icon-sm">star</span>0</span>
+      <div class="qprog" role="progressbar" id="qprog" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria-label="quizProgressLabel" aria-label="Quiz progress"><div class="qpf" id="qpf"></div></div>
+      <span class="qpts" id="qpts"></span>
     </div>
     <div class="qbox">
-      <div class="qtag" id="qtag"><span class="material-symbols-outlined icon icon-sm">menu_book</span>Subject</div>
-      <div class="qtxt" id="qtxt">...</div>
+      <div class="qtag" id="qtag"></div>
+      <h1 class="qtxt" id="qtxt" tabindex="-1">…</h1>
     </div>
-    <div class="agrid" id="agrid"></div>
+    <div class="agrid" id="agrid" role="group" aria-labelledby="qtxt"></div>
   </div>
-</div>
+</section>

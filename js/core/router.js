@@ -153,7 +153,8 @@ class ScreenRouter {
    * or the legacy 1-letter codes ('w','s','p','q','l','r') that app.js uses.
    */
   navigate(screenId, params = {}) {
-    if (this.transitioning) return;
+    // A navigation requested during the 50 ms transition is queued, not lost.
+    if (this.transitioning) { this._pending = [screenId, params]; return; }
 
     // Let the app redirect (e.g. protected screen while signed out)
     if (typeof this.guard === 'function') {
@@ -200,6 +201,7 @@ class ScreenRouter {
       this.previousScreen = this.currentScreen;
       this.currentScreen  = mappedId;
       this.transitioning  = false;
+      if (this._pending) { const [id, p] = this._pending; this._pending = null; this.navigate(id, p); return; }
 
       if (target.onEnter) target.onEnter(params);
 

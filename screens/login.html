@@ -1,42 +1,96 @@
-<div class="scr" id="login">
+<section class="scr" id="login" aria-labelledby="login-title">
   <div class="auth-card">
     <div class="auth-header">
       <div>
-        <div class="wlogo">ENSAF</div>
-        <div class="auth-sub" data-i18n="authLoginDescription">Sign in to preserve your progress and personalized settings.</div>
+        <h1 class="wlogo" id="login-title" lang="en">ENSAF</h1>
+        <p class="auth-sub" data-i18n="authLoginDescription">Sign in to preserve your progress and personalized settings.</p>
       </div>
+      <button type="button" class="close-btn" id="auth-back-btn" data-i18n-aria-label="authBackHome" aria-label="Back to home">×</button>
     </div>
 
-    <div class="auth-tabs">
-      <button id="auth-tab-login" class="auth-tab act" data-i18n="authTabLogin">Login</button>
-      <button id="auth-tab-register" class="auth-tab" data-i18n="authTabRegister">Sign Up</button>
+    <!-- Guest first: the quickest, fully hands-free way in -->
+    <div class="auth-guest">
+      <button id="auth-guest-btn" class="cta secondary" type="button">
+        <span class="material-symbols-outlined" aria-hidden="true">person</span>
+        <span data-i18n="authGuestContinue">Continue as guest</span>
+      </button>
+      <span class="field-hint" data-i18n="authGuestHint">No account needed — start right away.</span>
+    </div>
+    <div class="auth-divider" aria-hidden="true"><span data-i18n="authOr">or</span></div>
+
+    <div class="auth-tabs" role="tablist" data-i18n-aria-label="authFormLabel" aria-label="Account form">
+      <button id="auth-tab-login" class="auth-tab" type="button" role="tab" aria-selected="true" aria-controls="auth-login-form" data-i18n="authTabLogin">Login</button>
+      <button id="auth-tab-register" class="auth-tab" type="button" role="tab" aria-selected="false" aria-controls="auth-register-form" tabindex="-1" data-i18n="authTabRegister">Sign Up</button>
     </div>
 
-    <div id="auth-status" class="auth-status"></div>
+    <div id="auth-status" class="auth-status" role="alert" aria-live="assertive"></div>
 
-    <form id="auth-login-form" class="auth-form">
-      <label class="auth-label" for="login-email" data-i18n="authEmail">Email</label>
-      <input id="login-email" class="auth-input" type="email" autocomplete="username" placeholder="name@example.com" />
-      <label class="auth-label" for="login-password" data-i18n="authPassword">Password</label>
-      <input id="login-password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" />
-      <button class="cta" type="submit" data-i18n="authSubmitLogin">Sign In</button>
-      <button id="auth-forgot-btn" type="button" class="link-button" data-i18n="authForgotPassword">Forgot password?</button>
+    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login" novalidate>
+      <div class="field">
+        <label class="auth-label" for="login-email" data-i18n="authEmail">Email</label>
+        <input id="login-email" class="auth-input" type="email" inputmode="email" autocomplete="username" dir="ltr" placeholder="name@example.com" aria-describedby="login-email-err" />
+        <span class="field-error" id="login-email-err"></span>
+      </div>
+      <div class="field">
+        <label class="auth-label" for="login-password" data-i18n="authPassword">Password</label>
+        <div class="input-wrap">
+          <input id="login-password" class="auth-input" type="password" autocomplete="current-password" dir="ltr" aria-describedby="login-password-err" />
+          <button type="button" class="pw-toggle" aria-controls="login-password" aria-pressed="false">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+            <span class="pw-label" data-i18n="authShowPassword">Show password</span>
+          </button>
+        </div>
+        <span class="field-error" id="login-password-err"></span>
+      </div>
+      <div class="form-actions">
+        <button class="cta" type="submit" id="login-submit">
+          <span class="spinner-inline" aria-hidden="true"></span>
+          <span data-i18n="authSubmitLogin">Sign In</span>
+        </button>
+        <button id="auth-forgot-btn" type="button" class="link-button" data-i18n="authForgotPassword">Forgot password?</button>
+      </div>
     </form>
 
-    <form id="auth-register-form" class="auth-form hidden">
-      <label class="auth-label" for="register-name" data-i18n="authName">Name</label>
-      <input id="register-name" class="auth-input" type="text" placeholder="Your name" />
-      <label class="auth-label" for="register-email" data-i18n="authEmail">Email</label>
-      <input id="register-email" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com" />
-      <label class="auth-label" for="register-password" data-i18n="authPassword">Password</label>
-      <input id="register-password" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••" />
-      <label class="auth-label" for="register-confirm" data-i18n="authConfirmPassword">Confirm Password</label>
-      <input id="register-confirm" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••" />
-      <button class="cta" type="submit" data-i18n="authSubmitRegister">Create Account</button>
+    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" novalidate hidden>
+      <div class="field">
+        <label class="auth-label" for="register-name" data-i18n="authName">Name</label>
+        <input id="register-name" class="auth-input" type="text" autocomplete="name" aria-describedby="register-name-err" />
+        <span class="field-error" id="register-name-err"></span>
+      </div>
+      <div class="field">
+        <label class="auth-label" for="register-email" data-i18n="authEmail">Email</label>
+        <input id="register-email" class="auth-input" type="email" inputmode="email" autocomplete="email" dir="ltr" placeholder="name@example.com" aria-describedby="register-email-err" />
+        <span class="field-error" id="register-email-err"></span>
+      </div>
+      <div class="field">
+        <label class="auth-label" for="register-password" data-i18n="authPassword">Password</label>
+        <div class="input-wrap">
+          <input id="register-password" class="auth-input" type="password" autocomplete="new-password" dir="ltr" aria-describedby="register-password-hint register-password-err" />
+          <button type="button" class="pw-toggle" aria-controls="register-password" aria-pressed="false">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+            <span class="pw-label" data-i18n="authShowPassword">Show password</span>
+          </button>
+        </div>
+        <span class="field-hint" id="register-password-hint" data-i18n="authPasswordHint">At least 6 characters</span>
+        <span class="field-error" id="register-password-err"></span>
+      </div>
+      <div class="field">
+        <label class="auth-label" for="register-confirm" data-i18n="authConfirmPassword">Confirm Password</label>
+        <div class="input-wrap">
+          <input id="register-confirm" class="auth-input" type="password" autocomplete="new-password" dir="ltr" aria-describedby="register-confirm-err" />
+          <button type="button" class="pw-toggle" aria-controls="register-confirm" aria-pressed="false">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+            <span class="pw-label" data-i18n="authShowPassword">Show password</span>
+          </button>
+        </div>
+        <span class="field-error" id="register-confirm-err"></span>
+      </div>
+      <div class="form-actions">
+        <button class="cta" type="submit" id="register-submit">
+          <span class="spinner-inline" aria-hidden="true"></span>
+          <span data-i18n="authSubmitRegister">Create Account</span>
+        </button>
+      </div>
     </form>
-
-    <div class="auth-footer">
-      <button id="auth-guest-btn" class="cta secondary" type="button" data-i18n="authGuestContinue">Continue as guest</button>
-    </div>
   </div>
-</div>
+</section>

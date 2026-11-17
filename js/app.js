@@ -1,2039 +1,1242 @@
 /**
- * ENSAF Main Application
- * Orchestrates all modules: tracking, interaction, quiz, lessons
+ * ENSAF main application.
+ *
+ * Responsibilities (each section is marked below):
+ *   1. Boot: settings, theme, language, icons, router guard, auth
+ *   2. Input: head / eye tracker or mouse → cursor → DwellController
+ *   3. Top bar, settings dialog, SOS dialog, calibration
+ *   4. Auth screens (login / register / guest) and profile
+ *   5. Learning flow: subjects → lesson → quiz (hint after hesitation) → report
+ *
+ * Every selection gives the same feedback: visual state + voice + optional
+ * sound. All visible text comes from js/i18n/translations.js.
  */
+
+// Firebase auth error codes that AuthManager does not map itself.
+const AUTH_CODE_KEYS = {
+  'missing-fields': 'authErrMissingFields',
+  'firebase-unavailable': 'authErrUnavailable',
+  'reset-unavailable': 'authErrUnavailable',
+  'auth/missing-email': 'authErrMissingEmail',
+  'timeout': 'authErrNetwork'
+};
+
+const LEARNING_SCREENS = ['permission', 'subjects', 'question', 'lesson', 'result'];
+const SOS_SCREENS = new Set(['sp', 'ss', 'sq', 'sl', 'sr']);
+const THEMES = ['light', 'dark', 'contrast'];
+
 class EnsafApp {
   constructor() {
     this.state = STATE;
-    this.tracker = null;
-    this.dwell = null;
-    this.hesitationTimeout = null;
-    this.language = localStorage.getItem('ensaf-lang') || 'ar';
     this.auth = null;
-    this.translations = {
-      ar: {
-
-        // Landing page translations - Add to existing ar object
-landingLogoSub: 'منصة التعلم التكيّفي',
-landingHeroTitle: 'واجهة تعليمية ذكية  تتكيّف مع كل متعلّم',
-landingHeroLead: 'تحكّم في بيئة التعلم بالكامل عبر تتبّع الرأس والعين — تجربة مخصصة، خصوصية محكمة، ووصول شامل لجميع المستخدمين.',
-landingStartBtn: 'ابدأ التعلم الآن',
-landingLoginBtn: 'تسجيل الدخول',
-landingPill1: 'تفاعل بدون لمس',
-landingPill2: 'مسار مخصص',
-landingPill3: 'بيانات آمنة',
-landingStat1Label: 'المتعلمون النشطون',
-landingStat1Sub: '↑ ١٨٪ هذا الشهر',
-landingStat2Label: 'دقة التتبع',
-landingStat2Sub: 'متوسط الجلسة',
-landingBadgeTitle: 'التتبع نشط',
-landingBadgeSub: 'تتبع الرأس · دقة ٩٤٪',
-
-// Scrolling band
-band1: 'تتبع العين',
-band2: 'تتبع الرأس',
-band3: 'تعلم تكيفي',
-band4: 'وصول شامل',
-band5: 'حفظ في السحابة',
-band6: 'دعم صوتي',
-band7: 'ذكاء اصطناعي',
-band8: 'خصوصية تامة',
-
-// Features section
-featuresEyebrow: 'مزايا المنصة',
-featuresTitle: 'مصمَّم لكل متعلّم',
-featuresLead: 'من تتبع الحركة إلى التعلم المخصص — كل أداة مبنية على احتياجات حقيقية.',
-feature1Title: 'تتبع العين والرأس',
-feature1Desc: 'تحكّم طبيعي ودقيق عبر الكاميرا دون أي أجهزة إضافية.',
-feature2Title: 'تخصيص ذكي',
-feature2Desc: 'المحتوى يتكيّف لحظياً مع مستواك وسرعة تقدمك.',
-feature3Title: 'وصول شامل',
-feature3Desc: 'أدوات موجهة لذوي الاحتياجات الخاصة بمعايير عالمية.',
-feature4Title: 'حفظ آمن',
-feature4Desc: 'احفظ تقدمك وتفضيلاتك عبر حساب مشفّر في السحابة.',
-
-// How it works
-howEyebrow: 'كيف يعمل',
-howTitle: 'ثلاث خطوات  للبدء',
-howLead: 'جاهز في دقيقة واحدة، بدون إعداد معقد.',
-step1Num: '١',
-step1Title: 'اختر واجهة التحكم',
-step1Desc: 'تتبع الرأس، العين، أو الماوس — اختر ما يناسب راحتك وإمكانياتك.',
-step2Num: '٢',
-step2Title: 'التقييم التلقائي',
-step2Desc: 'يرصد النظام أداءك ويقترح المحتوى والصعوبة المناسبة لك.',
-step3Num: '٣',
-step3Title: 'تابع تقدّمك',
-step3Desc: 'لوحة تحكم واضحة تعرض إنجازاتك وتقترح الخطوة القادمة.',
-
-// Mock panel
-mockProgressLabel: 'لوحة التقدم',
-mockSubjectsLabel: 'المواد الدراسية',
-subjectMath: 'الرياضيات',
-subjectScience: 'العلوم',
-subjectArabic: 'اللغة العربية',
-subjectHistory: 'التاريخ',
-statLessons: 'درس مكتمل',
-statStreak: 'يوم متواصل',
-statAccuracy: 'متوسط الدقة',
-
-// Accessibility
-accessEyebrow: 'إمكانية الوصول',
-accessTitle: 'مصمَّم ليصل  للجميع',
-accessLead: 'نؤمن بأن التعلم حق للجميع — لذا بنينا كل ميزة مع مراعاة الاحتياجات المتنوعة.',
-access1Title: 'تكبير النص',
-access1Desc: 'تحكم كامل في الحجم والتباين.',
-access2Title: 'دعم صوتي',
-access2Desc: 'قراءة المحتوى وإرشادات مسموعة.',
-access3Title: 'تحكم بديل',
-access3Desc: 'لوحات مفاتيح خاصة وإدخال صوتي.',
-access4Title: 'ألوان التباين',
-access4Desc: 'أوضاع متعددة للرؤية المريحة.',
-
-// Testimonials
-testiEyebrow: 'آراء مستخدمين',
-testiTitle: 'ماذا يقول المجتمع',
-testi1Text: 'أداة رائعة لطلابي الذين يحتاجون لواجهة بديلة — سهل الاستخدام بشكل لافت ومرن جداً في التخصيص.',
-testi1Name: 'مريم الشهري',
-testi1Role: 'معلمة تربية خاصة',
-testi2Text: 'حسّنت تجربة التعلم لابني بشكل ملحوظ. التتبع دقيق والواجهة واضحة حتى للأطفال.',
-testi2Name: 'أحمد الغامدي',
-testi2Role: 'ولي أمر',
-
-// FAQ
-faqEyebrow: 'أسئلة شائعة',
-faqTitle: 'إجابات سريعة',
-faq1Q: 'هل أحتاج جهازاً خاصاً؟',
-faq1A: 'لا، تعمل المنصة باستخدام كاميرا الويب العادية الموجودة في حاسوبك أو هاتفك.',
-faq2Q: 'كيف تحمي بياناتي؟',
-faq2A: 'يمكنك الاختيار بين الحفظ المحلي الكامل أو السحابة المشفّرة عبر Firebase — أنت المتحكم.',
-faq3Q: 'هل تعمل على الأجهزة اللوحية؟',
-faq3A: 'نعم، المنصة متجاوبة بالكامل وتدعم الشاشات اللوحية واللمس.',
-faq4Q: 'هل يمكن استخدامها بدون انترنت؟',
-faq4A: 'وضع الحفظ المحلي يعمل دون اتصال. بعض الميزات السحابية تحتاج اتصالاً.',
-
-// Contact
-contactTitle: 'تواصل معنا',
-contactDesc: 'للمؤسسات أو الدعم التقني، أرسل لنا رسالة وسنرد في أقرب وقت.',
-contactNamePlaceholder: 'الاسم',
-contactEmailPlaceholder: 'البريد الإلكتروني',
-contactMsgPlaceholder: 'رسالتك',
-contactLoginBtn: 'تسجيل الدخول',
-contactSendBtn: 'إرسال',
-contactSubmitMsg: 'شكراً! سنرد قريباً.',
-
-// Footer
-footerSub: 'تعلم تفاعلي للجميع',
-footerFeatures: 'المزايا',
-footerHow: 'كيف يعمل',
-footerFaq: 'الأسئلة',
-footerAccess: 'الوصول',
-footerCopyright: '© 2026 إنصاف — جميع الحقوق محفوظة',
-        statusLoading: 'جاري التهيئة…',
-        statusActive: 'التتبع نشط',
-        statusWeak: 'إشارة ضعيفة',
-        statusNoFace: 'لا يوجد وجه',
-        accuracyLabel: 'الدقة',
-        recalibrate: 'إعادة المعايرة',
-        home: 'الرئيسية',
-        themeLight: 'الوضع الافتراضي',
-        themeDark: 'الوضع الليلي',
-        hintTitle: 'تلميح',
-        fallbackMessage: 'وضع الماوس — حرّك المؤشر للتفاعل',
-        welcomeTag: 'منصة التعلم بتتبع حركة الرأس والعين',
-        welcomeFeatureHead: 'تتبع الرأس',
-        welcomeFeatureEye: 'تتبع العين',
-        welcomeFeatureSmart: 'تلميحات ذكية',
-        welcomeFeatureReports: 'تقارير الجلسة',
-        welcomeFeatureVoice: 'قراءة صوتية',
-        welcomeFeatureNoCalib: 'بدون معايرة',
-        landingHowItWorks: 'إنصاف يستخدم الكاميرا فقط لتوجيه المؤشر من خلال حركة الرأس أو العين مع دعم الماوس كبديل. يساعدك هذا النظام على التعلم بتركيز أكبر، وحفظ التقدم الشخصي، واختيار تجربة تعليمية تتناسب مع مهاراتك.',
-        landingBenefitsAdaptive: 'تعلم شخصي مبني على السلوك',
-        landingBenefitsEngaging: 'تجربة تفاعلية مع تتبع العين والرأس',
-        landingBenefitsSecure: 'خصوصية كاملة وعرض محلي للبيانات',
-        landingBenefitsPreferences: 'ملف شخصي وتفضيلات مخصصة',
-        landingWelcomeGuest: 'سجل الدخول لتحفظ بياناتك، أو استمر كزائر لتجربة التطبيق.',
-        authTabLogin: 'تسجيل الدخول',
-        authTabRegister: 'إنشاء حساب',
-        authEmail: 'البريد الإلكتروني',
-        authPassword: 'كلمة المرور',
-        authName: 'الاسم',
-        authConfirmPassword: 'تأكيد كلمة المرور',
-        authSubmitLogin: 'دخول',
-        authSubmitRegister: 'إنشاء حساب',
-        authForgotPassword: 'نسيت كلمة المرور؟',
-        authGuestContinue: 'المتابعة كزائر',
-        authProfileButton: 'الملف',
-        authProfileTitle: 'الملف الشخصي',
-        authProfileWelcome: 'مرحباً، {name}',
-        authProfileEmail: 'البريد الإلكتروني',
-        authProfileModeLabel: 'طريقة التفاعل',
-        authProfileThemeLabel: 'الثيم',
-        authProfileLangLabel: 'اللغة',
-        authLoginDescription: 'يسجل الدخول للحفاظ على تقدمك وخياراتك الشخصية.',
-        authProfileSave: 'حفظ التفضيلات',
-        authProfileSignOut: 'تسجيل الخروج',
-        authSignedIn: 'تم تسجيل الدخول بنجاح.',
-        authCreatedAccount: 'تم إنشاء الحساب بنجاح.',
-        authPasswordMismatch: 'كلمة المرور والتأكيد غير متطابقتين.',
-        authResetSentMessage: 'تم إرسال تعليمات إعادة التعيين إلى بريدك الإلكتروني.',
-        authPreferencesSaved: 'تم حفظ إعداداتك.',
-        authGuestEmail: 'زائر',
-        landingLoginCTA: 'تسجيل الدخول / إنشاء حساب',
-        welcomeLoginCTA: 'تسجيل الدخول / إنشاء حساب',
-        modeEyeOption: 'تتبع العين (أدق)',
-        modeMouseOption: 'الماوس (بديل)',
-        startLearning: 'ابدأ التعلم ←',
-        welcomeNote: 'يتطلب كاميرا ويب وإضاءة جيدة. جميع البيانات تُعالج محلياً على جهازك.',
-        permissionTitle: 'إذن الكاميرا مطلوب',
-        permissionDesc: 'يستخدم التتبع الكاميرا لرصد حركة رأسك أو عينيك. لا يتم تخزين أي مقاطع فيديو.',
-        permissionStep1: 'انقر "السماح" في نافذة إذن المتصفح',
-        permissionStep2: 'إضاءة جيدة — يجب أن يكون وجهك مرئياً بوضوح',
-        permissionStep3: 'اجلس على بُعد 50–70 سم من الشاشة',
-        permissionStep4: 'حرّك رأسك أو عينيك لتوجيه المؤشر',
-        permissionAllow: 'السماح بالكاميرا',
-        permissionUseMouse: 'استخدام الماوس بدلاً من ذلك',
-        subjectSelect: 'اختر مادة دراسية',
-        subjectHint: 'وجّه المؤشر نحو البطاقة وثبّته للاختيار',
-        questionCounter: 'السؤال {current} من {total}',
-        resultCorrect: 'أجبت على {score} من {total} بشكل صحيح',
-        resultTime: 'متوسط وقت السؤال',
-        resultHints: 'تلميحات',
-        resultSubject: 'المادة',
-        resultInteraction: 'طريقة التفاعل',
-        resultRetry: 'إعادة المحاولة',
-        resultStudy: 'محتوى تعليمي',
-        lessonPrev: '← السابق',
-        lessonNext: 'التالي →',
-        lessonQuiz: 'اختبار',
-        voiceReady: 'نظام التتبع جاهز. اختر مادة دراسية.',
-        voiceRecalibrating: 'جاري إعادة ضبط التتبع. انظر مباشرة إلى الشاشة.',
-        voiceSOSActive: 'تم تفعيل وضع الطوارئ.',
-        cameraFailed: 'تعذر تشغيل الكاميرا. جاري التبديل إلى وضع الماوس.',
-        hintVoice: 'تلميح: {hint}',
-        gradeExcellent: 'ممتاز!',
-        gradeGood: 'جيد!',
-        gradeTryAgain: 'استمر في المحاولة!',
-        gradeMessageExcellent: 'عمل رائع! استمر بهذا المستوى.',
-        gradeMessageGood: 'نتيجة جيدة. استمر في التدريب.',
-        gradeMessageRetry: 'راجع المادة وحاول مجدداً.',
-        voiceChooseSubject: 'اخترت {subject}. سيبدأ الاختبار الآن.',
-        voiceCorrectAnswer: 'إجابة صحيحة!',
-        voiceWrongAnswerPrefix: 'الإجابة الصحيحة هي: {answer}',
-        resultStatsCorrect: 'صحيح',
-        resultStatsDuration: 'المدة',
-        resultStatsHints: 'تلميحات',
-        timeSeconds: 'ث',
-        resultScoreLabel: 'النتيجة',
-        lessonPage: 'الدرس {current} من {total}',
-        lessonQuizButton: 'اختبار',
-        voiceTestComplete: 'انتهى الاختبار. حصلت على {percent} بالمئة. {message}'
-      },
-       en: {
-        // Add these to your existing en object - Landing page translations
-landingLogoSub: 'Adaptive Learning Platform',
-landingHeroTitle: 'An intelligent learning interface  that adapts to every learner',
-landingHeroLead: 'Full control of your learning environment through head and eye tracking — personalized experience, strong privacy, and inclusive access for all users.',
-landingStartBtn: 'Start Learning Now',
-landingLoginBtn: 'Sign In',
-landingPill1: 'Touchless interaction',
-landingPill2: 'Personalized path',
-landingPill3: 'Secure data',
-landingStat1Label: 'Active Learners',
-landingStat1Sub: '↑ 18% this month',
-landingStat2Label: 'Tracking Accuracy',
-landingStat2Sub: 'Average session',
-landingBadgeTitle: 'Tracking Active',
-landingBadgeSub: 'Head tracking · 94% accuracy',
-
-// Scrolling band
-band1: 'Eye Tracking',
-band2: 'Head Tracking',
-band3: 'Adaptive Learning',
-band4: 'Inclusive Access',
-band5: 'Cloud Storage',
-band6: 'Voice Support',
-band7: 'AI Powered',
-band8: 'Full Privacy',
-
-// Features section
-featuresEyebrow: 'Platform Features',
-featuresTitle: 'Designed for every learner',
-featuresLead: 'From motion tracking to personalized learning — every tool is built around real needs.',
-feature1Title: 'Eye & Head Tracking',
-feature1Desc: 'Natural and precise control through your camera — no additional hardware needed.',
-feature2Title: 'Smart Personalization',
-feature2Desc: 'Content adapts in real-time to your level and learning pace.',
-feature3Title: 'Inclusive Access',
-feature3Desc: 'Tools designed for special needs following global accessibility standards.',
-feature4Title: 'Secure Storage',
-feature4Desc: 'Save your progress and preferences with encrypted cloud accounts.',
-
-// How it works
-howEyebrow: 'How It Works',
-howTitle: 'Three steps  to get started',
-howLead: 'Ready in one minute — no complex setup.',
-step1Num: '1',
-step1Title: 'Choose your control interface',
-step1Desc: 'Head tracking, eye tracking, or mouse — pick what suits your comfort and abilities.',
-step2Num: '2',
-step2Title: 'Automatic assessment',
-step2Desc: 'The system monitors your performance and suggests appropriate content and difficulty.',
-step3Num: '3',
-step3Title: 'Track your progress',
-step3Desc: 'A clear dashboard displays your achievements and suggests next steps.',
-
-// Mock panel
-mockProgressLabel: 'Progress Dashboard',
-mockSubjectsLabel: 'Subjects',
-subjectMath: 'Mathematics',
-subjectScience: 'Science',
-subjectArabic: 'Arabic Language',
-subjectHistory: 'History',
-statLessons: 'Lessons Completed',
-statStreak: 'Day Streak',
-statAccuracy: 'Avg. Accuracy',
-
-// Accessibility
-accessEyebrow: 'Accessibility',
-accessTitle: 'Designed to reach  everyone',
-accessLead: 'We believe learning is a right for everyone — so we built every feature with diverse needs in mind.',
-access1Title: 'Text Scaling',
-access1Desc: 'Full control over size and contrast.',
-access2Title: 'Voice Support',
-access2Desc: 'Content reading and audio guidance.',
-access3Title: 'Alternative Control',
-access3Desc: 'Special keyboards and voice input.',
-access4Title: 'Contrast Colors',
-access4Desc: 'Multiple comfortable viewing modes.',
-
-// Testimonials
-testiEyebrow: 'User Reviews',
-testiTitle: 'What the community says',
-testi1Text: 'An excellent tool for students who need an alternative interface — remarkably easy to use and very flexible to customize.',
-testi1Name: 'Mariam Al-Shahri',
-testi1Role: 'Special Education Teacher',
-testi2Text: 'Significantly improved my son\'s learning experience. The tracking is accurate and the interface is clear even for children.',
-testi2Name: 'Ahmed Al-Ghamdi',
-testi2Role: 'Parent',
-
-// FAQ
-faqEyebrow: 'FAQ',
-faqTitle: 'Quick answers',
-faq1Q: 'Do I need special equipment?',
-faq1A: 'No, the platform works with your computer\'s or phone\'s standard webcam.',
-faq2Q: 'How do you protect my data?',
-faq2A: 'You can choose between full local storage or encrypted cloud storage via Firebase — you\'re in control.',
-faq3Q: 'Does it work on tablets?',
-faq3A: 'Yes, the platform is fully responsive and supports tablets and touch screens.',
-faq4Q: 'Can I use it offline?',
-faq4A: 'Local storage mode works offline. Some cloud features require an internet connection.',
-
-// Contact
-contactTitle: 'Contact Us',
-contactDesc: 'For institutions or technical support, send us a message and we\'ll reply as soon as possible.',
-contactNamePlaceholder: 'Name',
-contactEmailPlaceholder: 'Email',
-contactMsgPlaceholder: 'Your message',
-contactLoginBtn: 'Sign In',
-contactSendBtn: 'Send',
-contactSubmitMsg: 'Thank you! We will respond shortly.',
-
-// Footer
-footerSub: 'Interactive learning for everyone',
-footerFeatures: 'Features',
-footerHow: 'How it works',
-footerFaq: 'FAQ',
-footerAccess: 'Accessibility',
-footerCopyright: '© 2026 ENSAF — All rights reserved',
-    // Status & UI
-    statusLoading: 'Loading…',
-    statusActive: 'Tracking active',
-    statusWeak: 'Weak signal',
-    statusNoFace: 'No face detected',
-    accuracyLabel: 'Accuracy',
-    recalibrate: 'Recalibrate',
-    home: 'Home',
-    themeLight: 'Light mode',
-    themeDark: 'Dark mode',
-    hintTitle: 'Hint',
-    fallbackMessage: 'Mouse mode — move the cursor to interact',
-    
-    // Welcome / Landing Page
-    welcomeTag: 'Adaptive learning with head and eye tracking',
-    welcomeFeatureHead: 'Head tracking',
-    welcomeFeatureEye: 'Eye tracking',
-    welcomeFeatureSmart: 'Smart hints',
-    welcomeFeatureReports: 'Session reports',
-    welcomeFeatureVoice: 'Voice feedback',
-    welcomeFeatureNoCalib: 'No calibration',
-    landingHowItWorks: 'Ensaf uses your webcam only to guide the cursor with head or eye movement, while mouse input remains available. It helps you focus better, save progress, and choose the learning style that fits you.',
-    landingBenefitsAdaptive: 'Adaptive learning based on behavior',
-    landingBenefitsEngaging: 'Interactive experience with head and eye tracking',
-    landingBenefitsSecure: 'Full privacy and local data handling',
-    landingBenefitsPreferences: 'Personal profile and preferences',
-    landingWelcomeGuest: 'Log in to save your progress, or continue as a guest to try the app.',
-    landingLoginCTA: 'Login / Sign Up',
-    
-    // Auth / Login / Profile
-    authTabLogin: 'Login',
-    authTabRegister: 'Sign Up',
-    authEmail: 'Email',
-    authPassword: 'Password',
-    authName: 'Name',
-    authConfirmPassword: 'Confirm Password',
-    authSubmitLogin: 'Sign In',
-    authSubmitRegister: 'Create Account',
-    authForgotPassword: 'Forgot password?',
-    authGuestContinue: 'Continue as guest',
-    authProfileButton: 'Profile',
-    authProfileTitle: 'Profile',
-    authProfileWelcome: 'Welcome, {name}',
-    authProfileEmail: 'Email',
-    authProfileModeLabel: 'Interaction mode',
-    authProfileThemeLabel: 'Theme',
-    authProfileLangLabel: 'Language',
-    authLoginDescription: 'Sign in to preserve your progress and personalized settings.',
-    authProfileSave: 'Save preferences',
-    authProfileSignOut: 'Sign out',
-    authSignedIn: 'Signed in successfully.',
-    authCreatedAccount: 'Account created successfully.',
-    authPasswordMismatch: 'Password and confirmation do not match.',
-    authResetSentMessage: 'Reset instructions have been sent to your email.',
-    authPreferencesSaved: 'Your settings were saved.',
-    authGuestEmail: 'Guest',
-    welcomeLoginCTA: 'Login / Sign Up',
-    
-    // Interaction modes
-    modeHeadOption: 'Head tracking (faster)',
-    modeEyeOption: 'Eye tracking (more accurate)',
-    modeMouseOption: 'Mouse (fallback)',
-    startLearning: 'Start learning ←',
-    welcomeNote: 'Requires a webcam and good lighting. All data is processed locally on your device.',
-    
-    // Camera Permission
-    permissionTitle: 'Camera permission required',
-    permissionDesc: 'Tracking uses the camera to follow your head or eye movement. No video is stored.',
-    permissionStep1: 'Click "Allow" in the browser permission window',
-    permissionStep2: 'Good lighting — your face should be clearly visible',
-    permissionStep3: 'Sit 50–70 cm from the screen',
-    permissionStep4: 'Move your head or eyes to steer the cursor',
-    permissionAllow: 'Allow camera',
-    permissionUseMouse: 'Use mouse instead',
-    
-    // Subjects / Quiz
-    subjectSelect: 'Choose a subject',
-    subjectHint: 'Point at a card and hold to select',
-    questionCounter: 'Question {current} of {total}',
-    resultCorrect: 'You answered {score} of {total} correctly',
-    resultTime: 'Average time per question',
-    resultHints: 'Hints',
-    resultSubject: 'Subject',
-    resultInteraction: 'Interaction method',
-    resultRetry: 'Retry',
-    resultStudy: 'Study content',
-    
-    // Lessons
-    lessonPrev: '← Previous',
-    lessonNext: 'Next →',
-    lessonQuiz: 'Quiz',
-    lessonPage: 'Lesson {current} of {total}',
-    lessonQuizButton: 'Quiz',
-    
-    // Voice feedback
-    voiceReady: 'Tracker ready. Choose a subject.',
-    voiceRecalibrating: 'Recalibrating the tracker. Look at the screen.',
-    voiceSOSActive: 'Emergency mode activated.',
-    cameraFailed: 'Camera failed. Switching to mouse mode.',
-    hintVoice: 'Hint: {hint}',
-    voiceChooseSubject: 'You chose {subject}. The quiz will start now.',
-    voiceCorrectAnswer: 'Correct answer!',
-    voiceWrongAnswerPrefix: 'The correct answer is: {answer}',
-    voiceTestComplete: 'The quiz is over. You scored {percent} percent. {message}',
-    
-    // Grading
-    gradeExcellent: 'Excellent!',
-    gradeGood: 'Good!',
-    gradeTryAgain: 'Keep trying!',
-    gradeMessageExcellent: 'Great work! Keep it up.',
-    gradeMessageGood: 'Good result. Keep practicing.',
-    gradeMessageRetry: 'Review the material and try again.',
-    
-    // Results / Stats
-    resultStatsCorrect: 'Correct',
-    resultStatsDuration: 'Duration',
-    resultStatsHints: 'Hints',
-    timeSeconds: 's',
-    resultScoreLabel: 'Score'
-  },
-      zh: {
-        // Add these to your existing zh object - Landing page translations
-landingLogoSub: '自适应学习平台',
-landingHeroTitle: '智能学习界面  适应每一位学习者',
-landingHeroLead: '通过头部和眼部追踪完全控制您的学习环境 — 个性化体验、强隐私保护、为所有用户提供包容性访问。',
-landingStartBtn: '立即开始学习',
-landingLoginBtn: '登录',
-landingPill1: '免触交互',
-landingPill2: '个性化路径',
-landingPill3: '安全数据',
-landingStat1Label: '活跃学习者',
-landingStat1Sub: '↑ 本月增长18%',
-landingStat2Label: '追踪精度',
-landingStat2Sub: '平均会话',
-landingBadgeTitle: '追踪已激活',
-landingBadgeSub: '头部追踪 · 94% 精度',
-
-// Scrolling band
-band1: '眼动追踪',
-band2: '头部追踪',
-band3: '自适应学习',
-band4: '包容性访问',
-band5: '云存储',
-band6: '语音支持',
-band7: '人工智能驱动',
-band8: '完全隐私',
-
-// Features section
-featuresEyebrow: '平台功能',
-featuresTitle: '为每位学习者设计',
-featuresLead: '从运动追踪到个性化学习 — 每一个工具都基于真实需求构建。',
-feature1Title: '眼部与头部追踪',
-feature1Desc: '通过摄像头实现自然精准的控制 — 无需额外硬件。',
-feature2Title: '智能个性化',
-feature2Desc: '内容根据您的水平和学习进度实时调整。',
-feature3Title: '包容性访问',
-feature3Desc: '遵循全球无障碍标准，专为特殊需求设计的工具。',
-feature4Title: '安全存储',
-feature4Desc: '通过加密云账户保存您的进度和偏好设置。',
-
-// How it works
-howEyebrow: '工作原理',
-howTitle: '三步上手  快速开始',
-howLead: '一分钟内准备就绪 — 无需复杂设置。',
-step1Num: '1',
-step1Title: '选择您的控制界面',
-step1Desc: '头部追踪、眼部追踪或鼠标 — 选择适合您舒适度和能力的方案。',
-step2Num: '2',
-step2Title: '自动评估',
-step2Desc: '系统监控您的表现，推荐适合您的内容和难度。',
-step3Num: '3',
-step3Title: '追踪进度',
-step3Desc: '清晰的仪表板展示您的成就并建议下一步学习内容。',
-
-// Mock panel
-mockProgressLabel: '进度仪表板',
-mockSubjectsLabel: '学科',
-subjectMath: '数学',
-subjectScience: '科学',
-subjectArabic: '阿拉伯语',
-subjectHistory: '历史',
-statLessons: '已完成课程',
-statStreak: '连续学习天数',
-statAccuracy: '平均准确率',
-
-// Accessibility
-accessEyebrow: '无障碍访问',
-accessTitle: '为每个人设计  触达所有用户',
-accessLead: '我们相信学习是每个人的权利 — 因此我们构建的每个功能都考虑到了多样化的需求。',
-access1Title: '文本缩放',
-access1Desc: '完全控制字体大小和对比度。',
-access2Title: '语音支持',
-access2Desc: '内容朗读和语音指导。',
-access3Title: '替代控制',
-access3Desc: '特殊键盘和语音输入。',
-access4Title: '对比度颜色',
-access4Desc: '多种舒适观看模式。',
-
-// Testimonials
-testiEyebrow: '用户评价',
-testiTitle: '社区反馈',
-testi1Text: '对于需要替代界面的学生来说，这是一个很棒的工具 — 非常易于使用，而且定制灵活。',
-testi1Name: '玛丽亚姆·沙赫里',
-testi1Role: '特殊教育教师',
-testi2Text: '显著改善了我儿子的学习体验。追踪精确，界面清晰，即使对孩子也很友好。',
-testi2Name: '艾哈迈德·加姆迪',
-testi2Role: '家长',
-
-// FAQ
-faqEyebrow: '常见问题',
-faqTitle: '快速解答',
-faq1Q: '我需要特殊设备吗？',
-faq1A: '不需要，平台使用您电脑或手机的标准摄像头即可工作。',
-faq2Q: '你们如何保护我的数据？',
-faq2A: '您可以选择完全本地存储或通过 Firebase 加密云存储 — 您掌握控制权。',
-faq3Q: '能在平板电脑上使用吗？',
-faq3A: '可以，平台完全响应式，支持平板电脑和触摸屏。',
-faq4Q: '可以离线使用吗？',
-faq4A: '本地存储模式可离线工作。部分云功能需要互联网连接。',
-
-// Contact
-contactTitle: '联系我们',
-contactDesc: '对于机构用户或技术支持，请发送消息，我们会尽快回复。',
-contactNamePlaceholder: '姓名',
-contactEmailPlaceholder: '邮箱',
-contactMsgPlaceholder: '您的留言',
-contactLoginBtn: '登录',
-contactSendBtn: '发送',
-contactSubmitMsg: '感谢您！我们会尽快回复。',
-
-// Footer
-footerSub: '为每个人提供互动学习',
-footerFeatures: '功能',
-footerHow: '工作原理',
-footerFaq: '常见问题',
-footerAccess: '无障碍',
-footerCopyright: '© 2026 ENSAF — 保留所有权利',
-        statusLoading: '加载中…',
-        statusActive: '跟踪已启用',
-        statusWeak: '信号弱',
-        statusNoFace: '未检测到人脸',
-        accuracyLabel: '精度',
-        recalibrate: '重新校准',
-        home: '首页',
-        themeLight: '亮色模式',
-        themeDark: '深色模式',
-        hintTitle: '提示',
-        fallbackMessage: '鼠标模式——移动光标进行交互',
-        welcomeTag: '头部和眼动追踪的自适应学习',
-        welcomeFeatureHead: '头部追踪',
-        welcomeFeatureEye: '眼动追踪',
-        welcomeFeatureSmart: '智能提示',
-        welcomeFeatureReports: '会话报告',
-        welcomeFeatureVoice: '语音反馈',
-        welcomeFeatureNoCalib: '无需校准',
-        landingHowItWorks: 'Ensaf 仅使用摄像头通过头部或眼睛运动引导光标，并同时保留鼠标输入。它帮助您更专注地学习，保存进度，并选择适合自己的学习方式。',
-        landingBenefitsAdaptive: '基于行为的自适应学习',
-        landingBenefitsEngaging: '头部与眼动追踪的互动体验',
-        landingBenefitsSecure: '完全隐私，本地数据处理',
-        landingBenefitsPreferences: '个人档案与偏好设置',
-        landingWelcomeGuest: '登录以保存进度，或作为访客继续体验应用。',
-        authTabLogin: '登录',
-        authTabRegister: '创建账号',
-        authEmail: '邮箱',
-        authPassword: '密码',
-        authName: '姓名',
-        authConfirmPassword: '确认密码',
-        authSubmitLogin: '登录',
-        authSubmitRegister: '创建账号',
-        authForgotPassword: '忘记密码？',
-        authGuestContinue: '以访客身份继续',
-        authProfileButton: '个人资料',
-        authProfileTitle: '个人资料',
-        authProfileWelcome: '欢迎，{name}',
-        authProfileEmail: '邮箱',
-        authProfileModeLabel: '交互模式',
-        authProfileThemeLabel: '主题',
-        authProfileLangLabel: '语言',
-        authLoginDescription: '登录以保存您的进度和个性化设置。',
-        authProfileSave: '保存偏好',
-        authProfileSignOut: '注销',
-        authSignedIn: '登录成功。',
-        authCreatedAccount: '账号创建成功。',
-        authPasswordMismatch: '密码与确认密码不一致。',
-        authResetSentMessage: '重置说明已发送到您的邮箱。',
-        authPreferencesSaved: '已保存您的设置。',
-        authGuestEmail: '访客',
-        landingLoginCTA: '登录 / 创建账号',
-        welcomeLoginCTA: '登录 / 创建账号',
-        modeEyeOption: '眼动追踪（更准确）',
-        modeMouseOption: '鼠标（备用）',
-        startLearning: '开始学习 ←',
-        welcomeNote: '需要摄像头和良好照明。所有数据均在您的设备上本地处理。',
-        permissionTitle: '需要摄像头权限',
-        permissionDesc: '跟踪使用摄像头跟踪您的头部或眼睛移动。不会存储视频。',
-        permissionStep1: '在浏览器权限窗口中点击“允许”',
-        permissionStep2: '良好照明——您的面部应清晰可见',
-        permissionStep3: '与屏幕保持50-70厘米距离',
-        permissionStep4: '移动头部或眼睛来控制光标',
-        permissionAllow: '允许摄像头',
-        permissionUseMouse: '使用鼠标作为替代',
-        subjectSelect: '选择学习科目',
-        subjectHint: '对准卡片并停留以选择',
-        questionCounter: '第{current}题，共{total}题',
-        resultCorrect: '正确回答了{score} / {total}',
-        resultTime: '每题平均时间',
-        resultHints: '提示',
-        resultSubject: '科目',
-        resultInteraction: '交互方式',
-        resultRetry: '再次尝试',
-        resultStudy: '学习内容',
-        lessonPrev: '← 上一页',
-        lessonNext: '下一页 →',
-        lessonQuiz: '测验',
-        voiceReady: '跟踪系统已就绪。请选择一个科目。',
-        voiceRecalibrating: '正在重新校准跟踪系统。请直视屏幕。',
-        voiceSOSActive: '已激活紧急模式。',
-        cameraFailed: '摄像头无法启动。正在切换到鼠标模式。',
-        hintVoice: '提示：{hint}',
-        gradeExcellent: '优秀！',
-        gradeGood: '良好！',
-        gradeTryAgain: '继续努力！',
-        gradeMessageExcellent: '表现很好！请继续保持。',
-        gradeMessageGood: '结果不错。继续练习。',
-        gradeMessageRetry: '请复习内容并重试。',
-        voiceChooseSubject: '您已选择 {subject}。测验现在开始。',
-        voiceCorrectAnswer: '回答正确！',
-        voiceWrongAnswerPrefix: '正确答案是：{answer}',
-        resultStatsCorrect: '正确',
-        resultStatsDuration: '时长',
-        resultStatsHints: '提示',
-        timeSeconds: '秒',
-        resultScoreLabel: '得分',
-        lessonPage: '第{current}课，共{total}课',
-        lessonQuizButton: '测验',
-        voiceTestComplete: '测验结束。您的得分是 {percent}%。{message}'
-      }
-    };
+    this.tracker = null;
+    this.stream = null;
+    this.inputReady = false;       // a working input mode has been set up
+    this.answerLocked = false;     // prevents double answers
+    this._authBusy = false;
+    this._applyingRemote = false;
+    this._toastTimer = null;
+    this._lastFaceToast = 0;
+    this.lesson = { list: [], index: 0 };
+    this.hesitation = new HesitationTimer({
+      timeoutMs: CONFIG.QUIZ.HESITATION_TIMEOUT,
+      onHesitate: () => this._onHesitate()
+    });
   }
 
-  getIcon(name, size = 'sm') {
-    return `<span class="material-symbols-outlined icon icon-${size}">${name}</span>`;
+  // ═══ i18n helpers ═════════════════════════════════════════════
+  get language() { return I18N.lang; }
+  t(key, vars) { return I18N.t(key, vars); }
+  icon(name) { return `<span class="material-symbols-outlined" aria-hidden="true">${name}</span>`; }
+  esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  speak(text) { VoiceManager.speak(text); }
+  announce(text) {
+    const live = document.getElementById('live');
+    if (!live) return;
+    live.textContent = '';
+    setTimeout(() => { live.textContent = text; }, 30);
   }
 
-  iconLabel(name, label) {
-    return `${this.getIcon(name)}${label}`;
+  // ═══ 1. Boot ══════════════════════════════════════════════════
+  init() {
+    const s = Settings.load();
+    this._watchIcons();
+    this.applyTheme(s.theme);
+    document.documentElement.style.setProperty('--text-scale', s.textScale);
+    VoiceManager.setEnabled(s.voice);
+    VoiceManager.setRate(s.speechRate);
+    Sounds.setEnabled(s.sounds);
+    VoiceManager.on('start', () => document.getElementById('vi')?.classList.add('speaking'));
+    VoiceManager.on('end', () => document.getElementById('vi')?.classList.remove('speaking'));
+    VoiceManager.on('missing', () => this.toast(this.t('voiceUnavailable'), 'info', 8000));
+
+    DwellController.init({ dwellMs: s.dwellMs, cursor: document.getElementById('cursor') });
+    DwellController.onSelect = () => Sounds.play('select');
+
+    this._bindTopBar();
+    this._bindSettings();
+    this._bindSOS();
+    this._bindCalibration();
+    this._bindKeyboard();
+    this._bindLanding();
+    this._bindAuthForms();
+    this._bindProfile();
+    this._bindPermission();
+    this._bindResult();
+    this._bindPointer();
+
+    this.setLanguage(s.lang);
+    this._renderMode();
+    this._setStatus('statusTrackingOff', 'off');
+    Settings.onChange((data, changed) => this._onSettingsChange(data, changed));
+
+    // Auth + router: start routing once we know whether a session exists
+    // (or after 2.5 s — offline/blocked Firebase must not block the app).
+    this.auth = new AuthManager();
+    this.auth.onChange((user, reason) => this._onAuthChange(user, reason));
+    const ready = this.auth.init();
+    ROUTER.guard = (name) => this._guard(name);
+    EVENTS.on(EVENT_NAMES.SCREEN_CHANGE, ({ screen }) => this._onScreenChange(screen));
+    Promise.race([ready, new Promise(r => setTimeout(r, 2500))]).then(() => {
+      this.renderUserState();
+      ROUTER.start();
+      document.getElementById('load')?.classList.add('out');
+    });
+
+    this._maybeResumeTracking();
   }
 
-  t(key, vars = {}) {
-    const message = (this.translations[this.language] && this.translations[this.language][key]) || this.translations.ar[key] || key;
-    return Object.keys(vars).reduce((text, k) => text.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k]), message);
-  }
-
-  getSubjectLabel(subject) {
-    if (!subject) return this.t('resultSubject');
-    if (!subject.name) return '';
-    return typeof subject.name === 'object' ? subject.name[this.language] || subject.name.ar : subject.name;
+  _watchIcons() {
+    // Hide icon ligature text until the icon font is ready; drop icons if it fails.
+    const html = document.documentElement;
+    const markReady = () => { html.classList.add('icons-ready'); html.classList.remove('icons-failed'); };
+    const fail = setTimeout(() => { if (!html.classList.contains('icons-ready')) html.classList.add('icons-failed'); }, 6000);
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('24px "Material Symbols Outlined"', 'home')
+        .then(f => { if (f && f.length) { clearTimeout(fail); markReady(); } })
+        .catch(() => {});
+    }
+    // Icons are decorative: make sure screen readers never read "volume_up".
+    const hide = rootEl => rootEl.querySelectorAll?.('.material-symbols-outlined:not([aria-hidden])').forEach(el => el.setAttribute('aria-hidden', 'true'));
+    hide(document);
+    new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) { hide(n); if (n.matches?.('.material-symbols-outlined')) n.setAttribute('aria-hidden', 'true'); } })))
+      .observe(document.body, { childList: true, subtree: true });
   }
 
   setLanguage(lang) {
-    if (!this.translations[lang]) lang = 'ar';
-    this.language = lang;
-    localStorage.setItem('ensaf-lang', lang);
-    if (this.state && typeof this.state.set === 'function') {
-      this.state.set('lang', lang);
-    }
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    if (typeof VoiceManager !== 'undefined' && typeof VoiceManager.setLang === 'function') {
-      const voiceLangs = { ar: 'ar-SA', en: 'en-US', zh: 'zh-CN' };
-      VoiceManager.setLang(voiceLangs[lang] || 'ar-SA');
-    }
+    const l = I18N.setLang(lang);
+    VoiceManager.setLang(I18N.speechLangFor(l));
     this.translateUI();
+    // Re-render dynamic content in the new language.
+    const screen = this.state.get('screen');
+    if (screen === 'subjects') this.buildSubjectsGrid();
+    else if (screen === 'question') this.showQuestion({ rerender: true });
+    else if (screen === 'lesson') this._renderLesson();
+    else if (screen === 'result') this.showResult({ rerender: true });
+    else if (screen === 'profile') this._populateProfile();
   }
 
   translateUI() {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = this.t(el.dataset.i18n);
-    });
-
-    const langSwitch = document.getElementById('lang-switch');
-    if (langSwitch) langSwitch.value = this.language;
-
-    const recalBtn = document.getElementById('recal-btn');
-    if (recalBtn) recalBtn.innerHTML = this.iconLabel('track_changes', this.t('recalibrate'));
-
-    const homeBtn = document.getElementById('home-btn');
-    if (homeBtn) homeBtn.innerHTML = this.iconLabel('home', this.t('home'));
-
-    const themeBtn = document.getElementById('theme-btn');
-    if (themeBtn) {
-      const theme = document.body.classList.contains('theme-warm') ? 'dark' : 'light';
-      themeBtn.title = this.t(theme === 'dark' ? 'themeDark' : 'themeLight');
-    }
-
-    const fb = document.getElementById('fb');
-    if (fb) fb.innerHTML = `${this.getIcon('bolt')} ${this.t('fallbackMessage')}`;
-
-    const indicator = document.getElementById('mode-indicator');
-    const currentMode = this.state.get('mode');
-    if (indicator) {
-      switch (currentMode) {
-        case 'head': indicator.innerHTML = this.iconLabel('track_changes', this.t('modeHeadOption')); break;
-        case 'eye': indicator.innerHTML = this.iconLabel('visibility', this.t('modeEyeOption')); break;
-        case 'mouse': indicator.innerHTML = this.iconLabel('mouse', this.t('modeMouseOption')); break;
-      }
-    }
-
-    document.querySelectorAll('.mbtn span[data-i18n]').forEach(el => {
-      el.textContent = this.t(el.dataset.i18n);
-    });
-
-    if (document.getElementById('qc')) {
-      const index = this.state.get('quiz.index');
-      const total = (this.state.get('quiz.questions') || []).length;
-      document.getElementById('qc').textContent = this.t('questionCounter', { current: index + 1, total });
-    }
-  }
-
-  init() {
-    // Hide loader after animation
-    setTimeout(() => {
-      const loader = document.getElementById('load');
-      if (loader) loader.classList.add('out');
-    }, 1600);
-    
-    // Setup event listeners - with null checks
-    const dmBtn = document.getElementById('dm');
-    const dpBtn = document.getElementById('dp');
-    const themeBtn = document.getElementById('theme-btn');
-    const langSwitch = document.getElementById('lang-switch');
-    
-    if (dmBtn) dmBtn.onclick = () => this.adjustDwell(-500);
-    if (dpBtn) dpBtn.onclick = () => this.adjustDwell(+500);
-    if (themeBtn) themeBtn.onclick = () => this.toggleTheme();
-    if (langSwitch) langSwitch.onchange = () => this.setLanguage(langSwitch.value);
-    
-    // Mode buttons
-    document.querySelectorAll('.mbtn').forEach(btn => {
-      btn.onclick = () => this.setMode(btn.dataset.mode, btn);
-    });
-
-    this.initTheme();
-    this.setLanguage(this.language);
-    this.translateUI();
-    this.auth = new AuthManager();
-    this.auth.init();
-    if (this.auth.isSignedIn()) {
-      const prefs = this.auth.getUser()?.preferences || {};
-      if (prefs.language) this.language = prefs.language;
-      if (prefs.theme) this.applyTheme(prefs.theme);
-      if (prefs.mode) this.setMode(prefs.mode, document.querySelector(`[data-mode="${prefs.mode}"]`));
-      this.setLanguage(this.language);
-      this.translateUI();
-    }
-    
+    I18N.apply(document);
+    document.title = `${this.language === 'ar' ? 'إنصاف' : 'ENSAF'} — ${this.t('landingLogoSub')}`;
+    document.querySelectorAll('#lang-switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === this.language)));
+    this._renderTopBar();
+    this._renderMode();
+    this._renderSettings();
     this.renderUserState();
-    this.setupAuthForms();
-// Temporary: verify event system and element existence
-console.log('[HINT] EVENT_NAMES.QUIZ_HINT =', EVENT_NAMES.QUIZ_HINT);
-console.log('[HINT] hint element =', document.getElementById('hint'));
-console.log('[HINT] htxt element =', document.getElementById('htxt'));
-     // Wire quiz hint event to display function
-  EVENTS.on(EVENT_NAMES.QUIZ_HINT, ({ hint }) => {
-    this._showHint(hint);
-  });
-    console.log('[ENSAF] App initialized - Mode:', this.state.get('mode'));
-  }
-
-  setMode(mode, button) {
-    this.state.set('mode', mode);
-    
-    // Update button styles
-    document.querySelectorAll('.mbtn').forEach(b => b.classList.remove('act'));
-    if (button) button.classList.add('act');
-    
-    // Update mode indicator in top bar
-    const indicator = document.getElementById('mode-indicator');
-    if (indicator) {
-      indicator.className = 'mode-indicator';
-      switch(mode) {
-        case 'head':
-          indicator.classList.add('mode-head');
-          indicator.innerHTML = this.iconLabel('track_changes', this.t('modeHeadOption'));
-          break;
-        case 'eye':
-          indicator.classList.add('mode-eye');
-          indicator.innerHTML = this.iconLabel('visibility', this.t('modeEyeOption'));
-          break;
-        case 'mouse':
-          indicator.classList.add('mode-mouse');
-          indicator.innerHTML = this.iconLabel('mouse', this.t('modeMouseOption'));
-          break;
-      }
-    }
-    
-    // Show/hide fallback indicator
-    const fb = document.getElementById('fb');
-    if (fb) {
-      fb.classList.toggle('on', mode === 'mouse');
-    }
-    
-    console.log('[ENSAF] Mode changed to:', mode);
-  }
-
-  initTheme() {
-    const savedTheme = localStorage.getItem('ensaf-theme') || 'default';
-    this.applyTheme(savedTheme);
-  }
-
-  toggleTheme() {
-    const nextTheme = document.body.classList.contains('theme-warm') ? 'default' : 'warm';
-    this.applyTheme(nextTheme);
+    // Icon-only top-bar buttons: tooltip = their (visually hidden) label.
+    document.querySelectorAll('#bar .icon-btn').forEach(b => {
+      const l = b.querySelector('.btn-label');
+      if (l) b.title = l.textContent;
+    });
   }
 
   applyTheme(theme) {
-    // Remove ALL theme classes first — prevents theme-light and theme-warm coexisting
-    document.body.classList.remove('theme-light', 'theme-warm', 'theme-default');
-    if (theme === 'warm') {
-      document.body.classList.add('theme-warm');
-    } else {
-      document.body.classList.add('theme-light');
-    }
-    localStorage.setItem('ensaf-theme', theme);
-    const themeBtn = document.getElementById('theme-btn');
-    if (themeBtn) {
-      themeBtn.innerHTML = this.getIcon(theme === 'warm' ? 'dark_mode' : 'light_mode');
-      themeBtn.title = theme === 'warm' ? 'الوضع الليلي' : 'الوضع الافتراضي';
+    const t = THEMES.includes(theme) ? theme : 'light';
+    document.body.classList.remove('theme-light', 'theme-dark', 'theme-contrast', 'theme-warm');
+    document.body.classList.add(`theme-${t}`);
+  }
+
+  _guard(name) {
+    const user = this.auth && this.auth.getUser();
+    if (LEARNING_SCREENS.includes(name) && !user) return 'login';
+    if (name === 'profile' && (!user || user.isGuest)) return 'login';
+    if (['subjects', 'question', 'lesson', 'result'].includes(name) && !this.inputReady) return 'permission';
+    const q = this.state.get('quiz.questions') || [];
+    if ((name === 'question' || name === 'result') && !q.length) return 'subjects';
+    if (name === 'lesson' && !this.lesson.list.length) return 'subjects';
+    return name;
+  }
+
+  _onScreenChange(domId) {
+    const names = { sw: 'welcome', sp: 'permission', ss: 'subjects', sq: 'question', sl: 'lesson', sr: 'result', login: 'login', profile: 'profile' };
+    const name = names[domId] || domId;
+    this.state.set('screen', name);
+    DwellController.disarm();
+    if (name !== 'question') { this.hesitation.stop(); this._hideHint(); }
+    document.getElementById('sos')?.classList.toggle('show', SOS_SCREENS.has(domId));
+    if (name === 'login') this._onLoginShown();
+    if (name === 'subjects' && !document.querySelector('#sgrid .scard')) this.buildSubjectsGrid();
+    if (name === 'profile') this._populateProfile();
+    // Move focus to the screen heading so keyboard / screen-reader users start at the top.
+    const scr = document.getElementById(domId);
+    const heading = scr && scr.querySelector('h1');
+    if (heading && name !== 'welcome') {
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
     }
   }
 
-  start() {
-    if (!this.auth || !this.auth.isSignedIn()) {
-      this.showScreen('login');
+  showScreen(name) {
+    const legacy = { w: 'welcome', p: 'permission', s: 'subjects', q: 'question', l: 'lesson', r: 'result' };
+    ROUTER.navigate(legacy[name] || name);
+  }
+
+  // ═══ 2. Input: tracker / mouse → cursor → dwell ═══════════════
+  _bindPointer() {
+    this.cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      if (this.tracker) return;   // head/eye mode owns the cursor
+      if (!Settings.get('mouseDwell')) return;
+      this._pointer(e.clientX, e.clientY);
+    }, { passive: true });
+    document.addEventListener('mouseleave', () => { if (!this.tracker) DwellController.update(-1, -1); });
+  }
+
+  _pointer(x, y) {
+    if (this.cursor) {
+      this.cursor.classList.add('on');
+      this.cursor.style.transform = `translate(${x}px, ${y}px)`;
+    }
+    DwellController.update(x, y);
+  }
+
+  _renderMode() {
+    const mode = Settings.get('mode');
+    const ind = document.getElementById('mode-indicator');
+    const icons = { head: 'face', eye: 'visibility', mouse: 'mouse' };
+    const labels = { head: 'modeHeadShort', eye: 'modeEyeShort', mouse: 'modeMouseShort' };
+    if (ind) ind.innerHTML = `${this.icon(icons[mode])}<span>${this.esc(this.t(labels[mode]))}</span>`;
+    document.getElementById('recal-btn').hidden = !this.tracker;
+    document.querySelectorAll('.mbtn').forEach(b => b.classList.toggle('act', b.dataset.mode === mode));
+    if (!this.tracker && this.cursor && (mode !== 'mouse' || !Settings.get('mouseDwell'))) this.cursor.classList.remove('on');
+  }
+
+  _setStatus(key, cls) {
+    const st = document.getElementById('bst');
+    const dot = document.getElementById('bdot');
+    if (st) { st.dataset.i18n = key; st.textContent = this.t(key); }
+    if (dot) dot.className = `dot ${cls || ''}`;
+  }
+
+  async _maybeResumeTracking() {
+    // If the student already allowed the camera before, restart tracking on load
+    // so they can use the whole app (including login) hands-free.
+    const mode = Settings.get('mode');
+    if (mode === 'mouse' || !navigator.permissions?.query) return;
+    try {
+      const p = await navigator.permissions.query({ name: 'camera' });
+      if (p.state === 'granted') this.requestCamera(mode, { navigate: false, quiet: true });
+    } catch (e) { /* not supported */ }
+  }
+
+  /** Entry point for the mode cards on the permission screen. */
+  chooseMode(mode) {
+    if (mode === 'mouse') { this.useMouse(); return; }
+    this.requestCamera(mode, { navigate: true });
+  }
+
+  useMouse({ navigate = true } = {}) {
+    this.stopTracking();
+    Settings.set({ mode: 'mouse' });
+    this.inputReady = true;
+    this._setStatus('statusMouse', 'ok');
+    this._renderMode();
+    // Brief notice only, so it never covers buttons (the mode stays visible in the top bar).
+    const fb = document.getElementById('fb');
+    if (fb && Settings.get('mouseDwell')) { fb.classList.add('on'); clearTimeout(this._fbTimer); this._fbTimer = setTimeout(() => fb.classList.remove('on'), 4000); }
+    if (navigate) this.showScreen('subjects');
+  }
+
+  async requestCamera(mode, { navigate = true, quiet = false } = {}) {
+    if (this._cameraStarting) return;
+    this._cameraStarting = true;
+    const permStatus = document.getElementById('perm-status');
+    if (permStatus) permStatus.textContent = this.t('cameraStarting');
+    this._setStatus('cameraStarting', 'wn');
+    this.stopTracking();
+    Settings.set({ mode });
+
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: CONFIG.CAMERA.WIDTH }, height: { ideal: CONFIG.CAMERA.HEIGHT }, facingMode: CONFIG.CAMERA.FACING_MODE, frameRate: { ideal: CONFIG.CAMERA.FRAMERATE } },
+        audio: false
+      });
+    } catch (err) {
+      this._cameraStarting = false;
+      const key = (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) ? 'cameraDenied'
+        : (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError' || err.name === 'TypeError')) ? 'cameraMissing'
+        : (err && err.name === 'NotReadableError') ? 'cameraBusy' : 'cameraMissing';
+      console.warn('[ENSAF] camera error', err && err.name);
+      this._fallbackToMouse(key, { navigate, quiet });
       return;
     }
-    this.startFromUser();
+
+    const video = document.getElementById('vcam');
+    video.srcObject = this.stream;
+    try { await video.play(); } catch (e) { /* autoplay with muted is allowed */ }
+
+    const tracker = new FaceTracker({
+      mode,
+      getSettings: () => Settings.get(),
+      onPoint: (x, y, info) => this._onTrackerPoint(x, y, info),
+      onStatus: s => this._onTrackerStatus(s)
+    });
+    try {
+      await tracker.start(video);
+    } catch (err) {
+      console.warn('[ENSAF] tracker failed to load', err && err.message);
+      tracker.stop();
+      this._cameraStarting = false;
+      this.stopTracking();
+      this._fallbackToMouse('trackerLoadFailed', { navigate, quiet });
+      return;
+    }
+    this.tracker = tracker;
+    this._cameraStarting = false;
+    this.inputReady = true;
+    video.classList.add('show');
+    this.cursor.classList.add('on');
+    if (permStatus) permStatus.textContent = '';
+    this._setStatus('statusActive', 'ok');
+    this._renderMode();
+    if (!quiet) this.speak(this.t('voiceReady'));
+    if (navigate) this.showScreen('subjects');
   }
 
-  startFromUser() {
-    const mode = this.state.get('mode');
-    if (mode === 'mouse') {
-      this._setupMouseMode();
-      this.showScreen('s');
-      this.buildSubjectsGrid();
-    } else {
-      this.showScreen('p');
+  stopTracking() {
+    if (this.tracker) { this.tracker.stop(); this.tracker = null; }
+    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+    const video = document.getElementById('vcam');
+    if (video) { video.classList.remove('show'); video.srcObject = null; }
+    this._renderMode();
+  }
+
+  _fallbackToMouse(messageKey, { navigate = true, quiet = false } = {}) {
+    const permStatus = document.getElementById('perm-status');
+    if (permStatus) permStatus.textContent = this.t(messageKey);
+    this.useMouse({ navigate });
+    if (!quiet) {
+      this.toast(this.t(messageKey), 'warn', 10000);
+      this.speak(this.t(messageKey));
     }
   }
 
-  showLogin() {
-    this.showScreen('login');
-    this.renderUserState();
-    this._clearAuthStatus();
+  _onTrackerPoint(x, y, info) {
+    const cff = document.getElementById('cff');
+    if (cff) cff.style.width = `${Math.round(info.confidence * 100)}%`;
+    this.cursor.classList.toggle('low', info.face && info.confidence < 0.55);
+    this.cursor.classList.toggle('lost', !info.face);
+    if (!info.face) { DwellController.update(-1, -1); return; }   // never select while the face is lost
+    this._pointer(x, y);
   }
+
+  _onTrackerStatus(status) {
+    if (status === 'noface') {
+      this._setStatus('statusNoFace', '');
+      const now = Date.now();
+      if (now - this._lastFaceToast > 15000) {
+        this._lastFaceToast = now;
+        this.toast(this.t('faceLost'), 'warn', 0, [
+          { key: 'switchToMouse', run: () => this.useMouse({ navigate: false }) },
+          { key: 'dismiss', run: () => this.hideToast() }
+        ], 'face');
+        this.speak(this.t('faceLost'));
+      }
+    } else if (status === 'face') {
+      this._setStatus('statusActive', 'ok');
+      if (this._toastTag === 'face') this.hideToast();
+    } else if (status === 'lowlight') {
+      this._setStatus('statusWeak', 'wn');
+      this.toast(this.t('lowLight'), 'warn', 10000);
+      this.speak(this.t('lowLight'));
+    } else if (status === 'light-ok') {
+      this._setStatus('statusActive', 'ok');
+    }
+  }
+
+  recalibrate() {
+    if (!this.tracker) return;
+    this.speak(this.t('voiceRecalibrating'));
+    // Give the student a moment to look straight at the screen, then re-centre.
+    setTimeout(() => this.tracker && this.tracker.recenter(), 1500);
+  }
+
+  // ═══ Toast ════════════════════════════════════════════════════
+  toast(message, type = 'info', ms = 6000, actions = [], tag = null) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    clearTimeout(this._toastTimer);
+    el.className = `on ${type}`;
+    this._toastTag = tag;
+    document.getElementById('toast-msg').textContent = message;
+    const act = document.getElementById('toast-actions');
+    act.innerHTML = '';
+    const list = actions.length ? actions : [{ key: 'dismiss', run: () => this.hideToast() }];
+    list.forEach(a => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'bbtn';
+      b.textContent = this.t(a.key);
+      b.addEventListener('click', () => { a.run(); if (a.key !== 'dismiss') this.hideToast(); });
+      act.appendChild(b);
+    });
+    if (ms > 0) this._toastTimer = setTimeout(() => this.hideToast(), ms);
+  }
+
+  hideToast() {
+    const el = document.getElementById('toast');
+    if (el) el.className = '';
+    this._toastTag = null;
+  }
+
+  // ═══ 3. Top bar, settings, SOS, calibration ═══════════════════
+  _bindTopBar() {
+    const on = (id, fn) => document.getElementById(id)?.addEventListener('click', fn);
+    on('dm', () => Settings.step('dwellMs', -1));
+    on('dp', () => Settings.step('dwellMs', +1));
+    on('home-btn', () => this.home());
+    on('settings-btn', () => this.openSettings());
+    on('recal-btn', () => this.recalibrate());
+    on('profile-btn', () => this.showProfile());
+    on('logout-btn', () => this.signOut());
+    on('vi', () => Settings.set({ voice: !Settings.get('voice') }));
+    on('theme-btn', () => {
+      const cur = Settings.get('theme');
+      Settings.set({ theme: THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length] });
+    });
+    document.querySelectorAll('#lang-switch button').forEach(b => b.addEventListener('click', () => Settings.set({ lang: b.dataset.lang })));
+  }
+
+  _renderTopBar() {
+    const s = Settings.get();
+    const dv = document.getElementById('dv');
+    if (dv) { dv.textContent = `${(s.dwellMs / 1000).toFixed(1)}s`; dv.setAttribute('aria-label', this.t('dwellValue', { s: (s.dwellMs / 1000).toFixed(1) })); }
+    const themeKey = { light: 'themeLight', dark: 'themeDark', contrast: 'themeContrast' }[s.theme];
+    const tl = document.getElementById('theme-btn-label');
+    if (tl) { tl.dataset.i18n = themeKey; tl.textContent = this.t(themeKey); }
+    document.getElementById('theme-btn')?.setAttribute('aria-label', this.t('themeSwitch', { theme: this.t(themeKey) }));
+    const vi = document.getElementById('vi');
+    if (vi) {
+      vi.setAttribute('aria-pressed', String(!s.voice));
+      const ic = vi.querySelector('.material-symbols-outlined');
+      if (ic) ic.textContent = s.voice ? 'volume_up' : 'volume_off';
+    }
+  }
+
+  _bindSettings() {
+    const dlg = document.getElementById('settings');
+    dlg.querySelectorAll('.seg[data-setting] button').forEach(b => b.addEventListener('click', () => {
+      const key = b.closest('[data-setting]').dataset.setting;
+      let v = b.dataset.value;
+      if (v === 'true' || v === 'false') v = v === 'true';
+      if (key === 'mode') { this._switchModeInPlace(v); return; }
+      Settings.set({ [key]: v });
+    }));
+    dlg.querySelectorAll('.stepper[data-setting] button').forEach(b => b.addEventListener('click', () => {
+      Settings.step(b.closest('[data-setting]').dataset.setting, Number(b.dataset.step));
+    }));
+    document.getElementById('settings-close').addEventListener('click', () => dlg.close());
+    document.getElementById('settings-done').addEventListener('click', () => dlg.close());
+    document.getElementById('settings-reset').addEventListener('click', () => {
+      Settings.reset();
+      this.announce(this.t('settingsResetDone'));
+      this.speak(this.t('settingsResetDone'));
+    });
+    dlg.addEventListener('close', () => { this.hesitation.resume(); DwellController.disarm(); });
+  }
+
+  openSettings() {
+    const dlg = document.getElementById('settings');
+    if (dlg.open) return;
+    this._renderSettings();
+    this.hesitation.pause();
+    dlg.showModal();
+    DwellController.disarm();
+  }
+
+  _switchModeInPlace(mode) {
+    if (mode === Settings.get('mode') && (mode === 'mouse' ? !this.tracker : !!this.tracker)) return;
+    if (mode === 'mouse') this.useMouse({ navigate: false });
+    else this.requestCamera(mode, { navigate: false });
+  }
+
+  _renderSettings() {
+    const s = Settings.get();
+    const dlg = document.getElementById('settings');
+    if (!dlg) return;
+    dlg.querySelectorAll('.seg[data-setting]').forEach(g => {
+      const v = String(s[g.dataset.setting]);
+      g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === v)));
+    });
+    const fmt = {
+      dwellMs: v => this.t('dwellValue', { s: (v / 1000).toFixed(1) }),
+      sensitivity: v => this.t('percentValue', { n: Math.round(v * 100) }),
+      steadiness: v => this.t('percentValue', { n: Math.round(v * 100) }),
+      textScale: v => this.t('percentValue', { n: Math.round(v * 100) }),
+      speechRate: v => this.t('percentValue', { n: Math.round(v * 100) })
+    };
+    dlg.querySelectorAll('.stepper[data-setting]').forEach(st => {
+      const k = st.dataset.setting;
+      const r = Settings.RANGES[k];
+      st.querySelector('output').textContent = fmt[k](s[k]);
+      st.querySelector('[data-step="-1"]').disabled = s[k] <= r.min;
+      st.querySelector('[data-step="1"]').disabled = s[k] >= r.max;
+    });
+    const dm = document.getElementById('dm'); const dp = document.getElementById('dp');
+    if (dm) dm.disabled = s.dwellMs <= Settings.RANGES.dwellMs.min;
+    if (dp) dp.disabled = s.dwellMs >= Settings.RANGES.dwellMs.max;
+  }
+
+  _onSettingsChange(s, changed) {
+    if (changed.includes('theme')) this.applyTheme(s.theme);
+    if (changed.includes('textScale')) document.documentElement.style.setProperty('--text-scale', s.textScale);
+    if (changed.includes('dwellMs')) DwellController.setDwellTime(s.dwellMs);
+    if (changed.includes('voice')) VoiceManager.setEnabled(s.voice);
+    if (changed.includes('speechRate')) { VoiceManager.setRate(s.speechRate); this.speak(this.t('settingsSpeechRate')); }
+    if (changed.includes('sounds')) { Sounds.setEnabled(s.sounds); Sounds.play('select'); }
+    if (changed.includes('steadiness') && this.tracker) this.tracker.applySettings();
+    if (changed.includes('mouseDwell') && !s.mouseDwell && !this.tracker) { DwellController.update(-1, -1); this.cursor.classList.remove('on'); }
+    if (changed.includes('lang')) this.setLanguage(s.lang);
+    else { this._renderTopBar(); this._renderSettings(); this._renderMode(); }
+    // Persist to the signed-in user's profile (debounced). Calibration stays on this device.
+    if (!this._applyingRemote && this.auth && this.auth.getUser() && !this.auth.getUser().isGuest) {
+      clearTimeout(this._prefTimer);
+      this._prefTimer = setTimeout(() => {
+        const { calibration, ...prefs } = Settings.get();
+        this.auth.savePreferences(prefs).then(res => {
+          if (res && res.success === false) console.warn('[ENSAF] could not save preferences:', res.code);
+        });
+      }, 1200);
+    }
+  }
+
+  _bindSOS() {
+    const sos = document.getElementById('sos');
+    const dlg = document.getElementById('sosm');
+    sos.addEventListener('click', () => this.triggerSOS());
+    document.getElementById('sos-continue').addEventListener('click', () => this.closeSOS());
+    document.getElementById('sos-home').addEventListener('click', () => { this.closeSOS(); this.home(); });
+    dlg.addEventListener('cancel', () => this.closeSOS());
+    dlg.addEventListener('close', () => { this.state.set('sos.active', false); DwellController.disarm(); });
+  }
+
+  triggerSOS() {
+    const dlg = document.getElementById('sosm');
+    if (dlg.open) return;
+    document.getElementById('settings')?.open && document.getElementById('settings').close();
+    this.hesitation.pause();
+    this.state.set('sos.active', true);
+    dlg.showModal();
+    DwellController.disarm();
+    Sounds.play('sos');
+    this.speak(`${this.t('sosTitle')}. ${this.t('sosMessage')}`);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    EVENTS.emit(EVENT_NAMES.SOS_TRIGGER);
+  }
+
+  closeSOS() {
+    const dlg = document.getElementById('sosm');
+    if (dlg.open) dlg.close();
+    VoiceManager.stop();
+    this.hesitation.resume();
+    EVENTS.emit(EVENT_NAMES.SOS_CLOSE);
+  }
+
+  _bindCalibration() {
+    document.getElementById('calib-start').addEventListener('click', () => {
+      document.getElementById('settings').close();
+      this.calibrate();
+    });
+    document.getElementById('calib-reset').addEventListener('click', () => {
+      Settings.set({ calibration: null });
+      if (this.tracker) this.tracker._recentered = false;
+      this.announce(this.t('calibrateRemoved'));
+      this.speak(this.t('calibrateRemoved'));
+    });
+    document.getElementById('calib-cancel').addEventListener('click', () => { this._calibAbort = true; });
+  }
+
+  /** Optional 5-point calibration: centre + 4 corners, ~3 s per point. */
+  async calibrate() {
+    if (!this.tracker) {
+      this.toast(this.t('calibrateNeedsCamera'), 'info');
+      this.speak(this.t('calibrateNeedsCamera'));
+      return;
+    }
+    const overlay = document.getElementById('calib');
+    const dot = document.getElementById('calib-dot');
+    const msg = document.getElementById('calib-msg');
+    const points = [[0.5, 0.5], [0.12, 0.15], [0.88, 0.15], [0.88, 0.85], [0.12, 0.85]];
+    const samples = [];
+    this._calibAbort = false;
+    overlay.classList.add('on');
+    this.hesitation.pause();
+    msg.textContent = this.t('calibrateIntro');
+    this.speak(this.t('calibrateIntro'));
+    await new Promise(r => setTimeout(r, 2500));
+    const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+    for (let i = 0; i < points.length && !this._calibAbort; i++) {
+      const [px, py] = points[i];
+      dot.style.left = `${px * 100}%`;
+      dot.style.top = `${py * 100}%`;
+      dot.style.setProperty('--p', 0);
+      msg.textContent = this.t('calibratePoint', { n: i + 1, total: points.length });
+      const xs = [], ys = [];
+      const start = performance.now();
+      while (performance.now() - start < 2800 && !this._calibAbort) {
+        await new Promise(r => setTimeout(r, 50));
+        const el = performance.now() - start;
+        dot.style.setProperty('--p', Math.min(1, el / 2800));
+        const raw = this.tracker && this.tracker.getRaw();
+        if (raw && el > 1000) { xs.push(raw.x); ys.push(raw.y); }   // skip the first second (eye/head travel)
+      }
+      if (xs.length < 5) { this._calibAbort = true; break; }
+      samples.push({ px, py, x: median(xs), y: median(ys) });
+    }
+
+    overlay.classList.remove('on');
+    this.hesitation.resume();
+    DwellController.disarm();
+    if (this._calibAbort || samples.length < 5) {
+      if (samples.length < 5 && !this._calibAbort) this.toast(this.t('faceLost'), 'warn');
+      return;
+    }
+    // Linear fit per axis: screen = 0.5 + (raw − centre) × gain.
+    const c = samples[0];
+    const gain = axis => {
+      const pts = samples.slice(1);
+      let num = 0, den = 0;
+      pts.forEach(p => { const d = p[axis] - c[axis]; num += d * ((axis === 'x' ? p.px : p.py) - 0.5); den += d * d; });
+      return den > 1e-9 ? num / den : null;
+    };
+    const sx = gain('x'), sy = gain('y');
+    if (!sx || !sy || !isFinite(sx) || !isFinite(sy)) { this.toast(this.t('authErrUnknown'), 'warn'); return; }
+    const mode = Settings.get('mode');
+    Settings.set({ calibration: { [mode]: { cx: c.x, cy: c.y, sx, sy } } });
+    this.tracker._recentered = false;
+    this.tracker.filter.reset();
+    this.toast(this.t('calibrateDone'), 'info');
+    this.speak(this.t('calibrateDone'));
+  }
+
+  _bindKeyboard() {
+    document.addEventListener('keydown', e => {
+      if (e.target.closest('input, textarea, select')) return;
+      // Number keys 1–4 answer the current question (another input method).
+      if (this.state.get('screen') === 'question' && /^[1-4]$/.test(e.key) && !document.querySelector('dialog[open]')) {
+        const btn = document.querySelector(`#agrid .abtn[data-i="${Number(e.key) - 1}"]`);
+        if (btn) { e.preventDefault(); btn.click(); }
+      }
+    });
+    // Any interaction unlocks audio (browsers block sound until a gesture).
+    ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => Sounds.unlock(), { once: true }));
+  }
+
+  // ═══ Landing page behaviour (scripts inside fragments do not run) ═
+  _bindLanding() {
+    const sw = document.getElementById('sw');
+    if (!sw) return;
+    sw.querySelectorAll('.lnd-faq-q').forEach((btn, i) => {
+      const item = btn.parentElement;
+      const answer = item.querySelector('.lnd-faq-a');
+      if (answer) { answer.id = answer.id || `faq-a-${i}`; btn.setAttribute('aria-controls', answer.id); }
+      btn.setAttribute('aria-expanded', 'false');
+      btn.addEventListener('click', () => {
+        const open = !item.classList.contains('open');
+        sw.querySelectorAll('.lnd-faq-item.open').forEach(o => {
+          o.classList.remove('open');
+          o.querySelector('.lnd-faq-q').setAttribute('aria-expanded', 'false');
+          o.querySelector('.lnd-faq-a').style.maxHeight = '';
+        });
+        if (open) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+          answer.style.maxHeight = `${answer.scrollHeight + 40}px`;
+        }
+      });
+    });
+    // In-page links scroll inside the landing screen instead of changing the route.
+    sw.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+      const target = sw.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    }));
+    const form = sw.querySelector('.lnd-cform');
+    if (form) {
+      form.removeAttribute('onsubmit');
+      form.onsubmit = null;
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const st = form.querySelector('.lnd-cstatus');
+        if (st) st.textContent = this.t('contactSubmitMsg');
+        form.reset();
+      });
+    }
+  }
+
+  // ═══ 4. Auth screens and profile ══════════════════════════════
+  start() {
+    if (!this.auth || !this.auth.isSignedIn()) { this.showLogin(); return; }
+    this.showScreen(this.inputReady ? 'subjects' : 'permission');
+  }
+
+  showLogin() { this.showScreen('login'); }
 
   showProfile() {
-    if (!this.auth || !this.auth.isSignedIn()) {
-      this.showLogin();
-      return;
-    }
+    const u = this.auth && this.auth.getUser();
+    if (!u || u.isGuest) { this.showLogin(); return; }
     this.showScreen('profile');
-    this._populateProfileFields();
+  }
+
+  async signOut() {
+    if (this.auth) await this.auth.signOut();
+    this.stopTracking();
+    this.inputReady = false;
+    this._setStatus('statusTrackingOff', 'off');
+    this.announce(this.t('authSignedOut'));
+    this.showLogin();
   }
 
   renderUserState() {
-    const profileBtn = document.getElementById('profile-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const welcomeUser = document.getElementById('welcome-user');
-    const authStatus = document.getElementById('auth-status');
     const user = this.auth ? this.auth.getUser() : null;
-
-    if (profileBtn) {
-      profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
-    }
-    if (logoutBtn) {
-      logoutBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
-    }
-
-    if (welcomeUser) {
-      welcomeUser.textContent = user ? this.t('authProfileWelcome', { name: user.name || user.email || 'User' }) : this.t('landingWelcomeGuest');
-    }
-
-    if (authStatus) {
-      authStatus.textContent = '';
-      authStatus.className = 'auth-status';
-    }
-    this.showScreen('profile');
-    this._populateProfileFields();
+    const signedIn = !!(user && !user.isGuest);
+    const pb = document.getElementById('profile-btn');
+    const lb = document.getElementById('logout-btn');
+    if (pb) pb.hidden = !signedIn;
+    if (lb) lb.hidden = !user;
   }
 
-  renderUserState() {
-    const profileBtn = document.getElementById('profile-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const welcomeUser = document.getElementById('welcome-user');
-    const authStatus = document.getElementById('auth-status');
-    const user = this.auth ? this.auth.getUser() : null;
-
-    if (profileBtn) {
-      profileBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
+  _onAuthChange(user, reason) {
+    this.renderUserState();
+    if (user && !user.isGuest && (reason === 'profile' || reason === 'signed-in') && user.preferences) {
+      // Apply the preferences saved in the account (calibration stays local).
+      this._applyingRemote = true;
+      const { calibration, ...prefs } = user.preferences;
+      Settings.set(prefs);
+      this._applyingRemote = false;
     }
-    if (logoutBtn) {
-      logoutBtn.style.display = user && !user.isGuest ? 'inline-flex' : 'none';
-    }
-
-    if (welcomeUser) {
-      welcomeUser.textContent = user ? this.t('authProfileWelcome', { name: user.name || user.email || 'User' }) : this.t('landingWelcomeGuest');
-    }
-
-    if (authStatus) {
-      authStatus.textContent = '';
-      authStatus.className = 'auth-status';
-    }
+    const screen = this.state.get('screen');
+    if (!user && (LEARNING_SCREENS.includes(screen) || screen === 'profile') && ROUTER._started) this.showLogin();
   }
 
-  setupAuthForms() {
-    const loginTab = document.getElementById('auth-tab-login');
-    const registerTab = document.getElementById('auth-tab-register');
-    const loginForm = document.getElementById('auth-login-form');
-    const registerForm = document.getElementById('auth-register-form');
-    const forgotBtn = document.getElementById('auth-forgot-btn');
-    const guestBtn = document.getElementById('auth-guest-btn');
-    const topLogoutBtn = document.getElementById('logout-btn');
-    const profileSaveBtn = document.getElementById('profile-save-btn');
-    const signOutBtn = document.getElementById('profile-signout-btn');
-
-    if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
-    if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
-    if (loginForm) loginForm.onsubmit = async (event) => { event.preventDefault(); await this.handleLogin(); };
-    if (registerForm) registerForm.onsubmit = async (event) => { event.preventDefault(); await this.handleRegister(); };
-    if (forgotBtn) forgotBtn.onclick = () => this.handlePasswordReset();
-    if (guestBtn) {
-      if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
-        guestBtn.style.display = 'none';
-      } else {
-        guestBtn.onclick = () => {
-          if (!this.auth) this.auth = new AuthManager();
-          this.auth.continueAsGuest();
-          this.renderUserState();
-          this.startFromUser();
-        };
+  _bindAuthForms() {
+    const $ = id => document.getElementById(id);
+    $('auth-tab-login')?.addEventListener('click', () => this._switchAuthTab('login'));
+    $('auth-tab-register')?.addEventListener('click', () => this._switchAuthTab('register'));
+    document.querySelector('#login .auth-tabs')?.addEventListener('keydown', e => {
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+        e.preventDefault();
+        const next = document.activeElement.id === 'auth-tab-login' ? 'register' : 'login';
+        this._switchAuthTab(next);
+        $(`auth-tab-${next}`).focus();
       }
-    }
-    if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
-    if (signOutBtn) signOutBtn.onclick = () => {
-      if (this.auth) this.auth.signOut();
+    });
+    $('auth-login-form')?.addEventListener('submit', e => { e.preventDefault(); this.handleLogin(); });
+    $('auth-register-form')?.addEventListener('submit', e => { e.preventDefault(); this.handleRegister(); });
+    $('auth-forgot-btn')?.addEventListener('click', () => this.handlePasswordReset());
+    $('auth-back-btn')?.addEventListener('click', () => this.home());
+    $('auth-guest-btn')?.addEventListener('click', () => {
+      this.auth.continueAsGuest();
       this.renderUserState();
-      this.showLogin();
-    };
-    if (topLogoutBtn) topLogoutBtn.onclick = () => {
-      if (this.auth) this.auth.signOut();
-      this.renderUserState();
-      this.showLogin();
-    };
+      this.showScreen(this.inputReady ? 'subjects' : 'permission');
+    });
+    document.querySelectorAll('#login .pw-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const input = $(btn.getAttribute('aria-controls'));
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', String(show));
+      const lbl = btn.querySelector('.pw-label');
+      lbl.dataset.i18n = show ? 'authHidePassword' : 'authShowPassword';
+      lbl.textContent = this.t(lbl.dataset.i18n);
+      btn.querySelector('.material-symbols-outlined').textContent = show ? 'visibility_off' : 'visibility';
+    }));
+    document.querySelectorAll('#login .auth-input').forEach(inp => inp.addEventListener('input', () => this._fieldError(inp.id, null)));
+  }
+
+  _onLoginShown() {
+    this._clearAuthStatus();
+    if (!navigator.onLine) this._setAuthStatus(this.t('authErrOffline'), 'warning');
+    else if (window.__firebaseFailed) this._setAuthStatus(this.t('authErrUnavailable'), 'warning');
   }
 
   _switchAuthTab(tab) {
-    const loginTab = document.getElementById('auth-tab-login');
-    const registerTab = document.getElementById('auth-tab-register');
-    const loginForm = document.getElementById('auth-login-form');
-    const registerForm = document.getElementById('auth-register-form');
-
-    if (tab === 'login') {
-      loginTab?.classList.add('act');
-      registerTab?.classList.remove('act');
-      loginForm?.classList.remove('hidden');
-      registerForm?.classList.add('hidden');
-    } else {
-      loginTab?.classList.remove('act');
-      registerTab?.classList.add('act');
-      loginForm?.classList.add('hidden');
-      registerForm?.classList.remove('hidden');
-    }
+    const isLogin = tab === 'login';
+    const lt = document.getElementById('auth-tab-login');
+    const rt = document.getElementById('auth-tab-register');
+    lt.setAttribute('aria-selected', String(isLogin)); lt.tabIndex = isLogin ? 0 : -1;
+    rt.setAttribute('aria-selected', String(!isLogin)); rt.tabIndex = isLogin ? -1 : 0;
+    document.getElementById('auth-login-form').hidden = !isLogin;
+    document.getElementById('auth-register-form').hidden = isLogin;
     this._clearAuthStatus();
+    document.querySelectorAll('#login .field-error').forEach(e => { e.textContent = ''; e.classList.remove('on'); });
+    document.querySelectorAll('#login .auth-input').forEach(i => i.removeAttribute('aria-invalid'));
   }
 
-  _setAuthStatus(message, type = 'info') {
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) return;
-    authStatus.textContent = message;
-    authStatus.className = `auth-status ${type}`;
+  _setAuthStatus(message, type = 'info', targetId = 'auth-status') {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    el.textContent = message;
+    el.className = `auth-status ${type}`;
   }
 
-  _clearAuthStatus() {
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) return;
-    authStatus.textContent = '';
-    authStatus.className = 'auth-status';
+  _clearAuthStatus(targetId = 'auth-status') {
+    const el = document.getElementById(targetId);
+    if (el) { el.textContent = ''; el.className = 'auth-status'; }
+  }
+
+  _fieldError(inputId, key) {
+    const input = document.getElementById(inputId);
+    const err = document.getElementById(`${inputId}-err`);
+    if (!input || !err) return;
+    if (key) {
+      input.setAttribute('aria-invalid', 'true');
+      err.textContent = this.t(key);
+      err.classList.add('on');
+    } else {
+      input.removeAttribute('aria-invalid');
+      err.textContent = '';
+      err.classList.remove('on');
+    }
+  }
+
+  _authMessageKey(res) {
+    if (!res) return 'authErrUnknown';
+    if (res.errorKey && this.t(res.errorKey) !== res.errorKey) return res.errorKey;
+    return AUTH_CODE_KEYS[res.code] || 'authErrUnknown';
+  }
+
+  _setBusy(formId, busy, labelKey) {
+    const btn = document.querySelector(`#${formId} button[type=submit]`);
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.setAttribute('aria-busy', String(busy));
+    const label = btn.querySelector('[data-i18n]');
+    if (!btn.dataset.idleKey) btn.dataset.idleKey = label.dataset.i18n;
+    label.dataset.i18n = busy ? labelKey : btn.dataset.idleKey;
+    label.textContent = this.t(label.dataset.i18n);
+  }
+
+  /** Runs an auth call with a timeout so a blocked network never hangs the UI. */
+  async _withTimeout(promise, ms = 15000) {
+    return Promise.race([promise, new Promise(r => setTimeout(() => r({ success: false, code: 'timeout' }), ms))]);
+  }
+
+  _validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  async _runAuth(formId, busyKey, fn) {
+    if (this._authBusy) return null;      // no double submits
+    this._authBusy = true;
+    this._clearAuthStatus();
+    this._setBusy(formId, true, busyKey);
+    this._setAuthStatus(this.t(busyKey), 'info');
+    try {
+      if (!navigator.onLine) return { success: false, errorKey: 'authErrOffline' };
+      return await this._withTimeout(fn());
+    } catch (e) {
+      console.warn('[ENSAF] auth error', e);
+      return { success: false, code: 'unknown' };
+    } finally {
+      this._authBusy = false;
+      this._setBusy(formId, false, busyKey);
+    }
+  }
+
+  _showAuthError(res) {
+    const key = this._authMessageKey(res);
+    this._setAuthStatus(this.t(key), 'error');
+    this.speak(this.t(key));
+    // Point the student at the field the error is about.
+    const fieldFor = { authErrInvalidEmail: '-email', authErrEmailInUse: '-email', authErrWeakPassword: '-password', authErrInvalidCredentials: '-password' };
+    const form = document.getElementById('auth-login-form').hidden ? 'register' : 'login';
+    if (fieldFor[key]) this._fieldError(form + fieldFor[key], key);
   }
 
   async handleLogin() {
-    if (!this.auth) this.auth = new AuthManager();
-    const email = document.getElementById('login-email')?.value || '';
-    const password = document.getElementById('login-password')?.value || '';
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.signIn(email, password);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Sign in failed', 'error');
-        return;
-      }
-      this._setAuthStatus(this.t('authSignedIn'), 'success');
-      this.renderUserState();
-      // auto-redirect after successful sign-in
-      this.startFromUser();
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    let bad = false;
+    this._fieldError('login-email', null); this._fieldError('login-password', null);
+    if (!email) { this._fieldError('login-email', 'authErrMissingEmail'); bad = true; }
+    else if (!this._validEmail(email)) { this._fieldError('login-email', 'authErrInvalidEmail'); bad = true; }
+    if (!password) { this._fieldError('login-password', 'authErrMissingPassword'); bad = true; }
+    if (bad) { this._focusFirstInvalid('auth-login-form'); return; }
+
+    const res = await this._runAuth('auth-login-form', 'authSigningIn', () => this.auth.signIn(email, password));
+    if (!res) return;
+    if (!res.success) { this._showAuthError(res); return; }
+    this._setAuthStatus(this.t('authSignedIn'), 'success');
+    this.speak(this.t('authSignedIn'));
+    this.renderUserState();
+    setTimeout(() => this.start(), 600);
   }
 
   async handleRegister() {
-    if (!this.auth) this.auth = new AuthManager();
-    const name = document.getElementById('register-name')?.value || '';
-    const email = document.getElementById('register-email')?.value || '';
-    const password = document.getElementById('register-password')?.value || '';
-    const confirm = document.getElementById('register-confirm')?.value || '';
-    if (password !== confirm) {
-      this._setAuthStatus(this.t('authPasswordMismatch'), 'error');
-      return;
-    }
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.signUp(name, email, password);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Sign up failed', 'error');
-        return;
-      }
-      // show sync status if available
-      if (result.synced === false) {
-        this._setAuthStatus('Account created but profile sync failed.', 'warning');
-      } else {
-        this._setAuthStatus(this.t('authCreatedAccount'), 'success');
-      }
-      this.renderUserState();
-      this.startFromUser();
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
+    const v = id => document.getElementById(id).value;
+    const name = v('register-name').trim(), email = v('register-email').trim();
+    const password = v('register-password'), confirm = v('register-confirm');
+    ['register-name', 'register-email', 'register-password', 'register-confirm'].forEach(id => this._fieldError(id, null));
+    let bad = false;
+    if (!name) { this._fieldError('register-name', 'authErrMissingName'); bad = true; }
+    if (!email) { this._fieldError('register-email', 'authErrMissingEmail'); bad = true; }
+    else if (!this._validEmail(email)) { this._fieldError('register-email', 'authErrInvalidEmail'); bad = true; }
+    if (!password) { this._fieldError('register-password', 'authErrMissingPassword'); bad = true; }
+    else if (password.length < 6) { this._fieldError('register-password', 'authErrWeakPassword'); bad = true; }
+    if (password && confirm !== password) { this._fieldError('register-confirm', 'authPasswordMismatch'); bad = true; }
+    if (bad) { this._focusFirstInvalid('auth-register-form'); return; }
+
+    const res = await this._runAuth('auth-register-form', 'authCreating', () => this.auth.signUp(name, email, password));
+    if (!res) return;
+    if (!res.success) { this._showAuthError(res); return; }
+    const msg = res.synced === false ? 'authSyncWarning' : 'authCreatedAccount';
+    this._setAuthStatus(this.t(msg), res.synced === false ? 'warning' : 'success');
+    this.speak(this.t(msg));
+    this.renderUserState();
+    setTimeout(() => this.start(), 900);
   }
 
   async handlePasswordReset() {
-    if (!this.auth) this.auth = new AuthManager();
-    const email = document.getElementById('login-email')?.value || '';
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.sendPasswordReset(email);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Reset failed', 'error');
-        return;
-      }
-      this._setAuthStatus(this.t('authResetSentMessage'), 'success');
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
+    const email = document.getElementById('login-email').value.trim();
+    this._fieldError('login-email', null);
+    if (!email) { this._fieldError('login-email', 'authErrMissingEmail'); this._focusFirstInvalid('auth-login-form'); return; }
+    if (!this._validEmail(email)) { this._fieldError('login-email', 'authErrInvalidEmail'); this._focusFirstInvalid('auth-login-form'); return; }
+    const res = await this._runAuth('auth-login-form', 'authSending', () => this.auth.sendPasswordReset(email));
+    if (!res) return;
+    if (!res.success) { this._showAuthError(res); return; }
+    this._setAuthStatus(this.t('authResetSentMessage'), 'success');
+    this.speak(this.t('authResetSentMessage'));
   }
 
-  _populateProfileFields() {
-    const user = this.auth ? this.auth.getUser() : null;
+  _focusFirstInvalid(formId) {
+    const first = document.querySelector(`#${formId} [aria-invalid="true"]`);
+    if (first) first.focus();
+    const err = first && document.getElementById(`${first.id}-err`);
+    if (err) this.speak(err.textContent);
+  }
+
+  _bindProfile() {
+    document.getElementById('profile-close-btn')?.addEventListener('click', () => this.home());
+    document.getElementById('profile-signout-btn')?.addEventListener('click', () => this.signOut());
+    document.querySelectorAll('#profile .seg[data-profile] button').forEach(b => b.addEventListener('click', () => {
+      b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    }));
+    document.getElementById('profile-save-btn')?.addEventListener('click', () => this._saveProfile());
+  }
+
+  _populateProfile() {
+    const user = this.auth && this.auth.getUser();
     if (!user) return;
-    const name = user.name || '';
-    const email = user.email || '';
-    const preferences = user.preferences || {};
-    const welcome = document.getElementById('profile-welcome');
-    const emailEl = document.getElementById('profile-email');
-    const modeSelect = document.getElementById('profile-mode');
-    const themeSelect = document.getElementById('profile-theme');
-    const languageSelect = document.getElementById('profile-language');
-
-    if (welcome) welcome.textContent = this.t('authProfileWelcome', { name });
-    if (emailEl) emailEl.textContent = email || this.t('authGuestEmail');
-    if (modeSelect) modeSelect.value = preferences.mode || this.state.get('mode');
-    if (themeSelect) themeSelect.value = preferences.theme || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
-    if (languageSelect) languageSelect.value = preferences.language || this.language;
-  }
-
-  async _saveProfilePreferences() {
-    const mode = document.getElementById('profile-mode')?.value || this.state.get('mode');
-    const theme = document.getElementById('profile-theme')?.value || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
-    const language = document.getElementById('profile-language')?.value || this.language;
-
-    if (this.auth) {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const res = await this.auth.savePreferences({ mode, theme, language });
-      if (res && res.success === false) {
-        this._setAuthStatus(res.message || 'Failed to save preferences', 'error');
-      } else {
-        this._setAuthStatus(this.t('authPreferencesSaved'), 'success');
-      }
-    }
-
-    this.setMode(mode, document.querySelector(`.mbtn[data-mode="${mode}"]`));
-    this.applyTheme(theme);
-    this.setLanguage(language);
-    this.renderUserState();
-  }
-
-  setupAuthForms() {
-    const loginTab = document.getElementById('auth-tab-login');
-    const registerTab = document.getElementById('auth-tab-register');
-    const loginForm = document.getElementById('auth-login-form');
-    const registerForm = document.getElementById('auth-register-form');
-    const forgotBtn = document.getElementById('auth-forgot-btn');
-    const guestBtn = document.getElementById('auth-guest-btn');
-    const topLogoutBtn = document.getElementById('logout-btn');
-    const profileSaveBtn = document.getElementById('profile-save-btn');
-    const signOutBtn = document.getElementById('profile-signout-btn');
-
-    console.log('[AuthForms] setup', {
-      loginTab: !!loginTab,
-      registerTab: !!registerTab,
-      loginForm: !!loginForm,
-      registerForm: !!registerForm,
-      forgotBtn: !!forgotBtn,
-      guestBtn: !!guestBtn
+    const s = Settings.get();
+    const w = document.getElementById('profile-welcome');
+    if (w) w.textContent = this.t('authProfileWelcome', { name: user.name || '' });
+    const em = document.getElementById('profile-email');
+    if (em) em.textContent = user.email || this.t('authGuestEmail');
+    document.querySelectorAll('#profile .seg[data-profile]').forEach(g => {
+      const v = String(s[g.dataset.profile]);
+      g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === v)));
     });
-
-    if (!loginForm || !registerForm) {
-      setTimeout(() => this.setupAuthForms(), 150);
-      return;
-    }
-
-    if (loginTab) loginTab.onclick = () => this._switchAuthTab('login');
-    if (registerTab) registerTab.onclick = () => this._switchAuthTab('register');
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (event) => {
-        console.log('[AuthForms] login form submit');
-        event.preventDefault();
-        await this.handleLogin();
-      });
-    }
-    if (registerForm) {
-      registerForm.addEventListener('submit', async (event) => {
-        console.log('[AuthForms] register form submit');
-        event.preventDefault();
-        await this.handleRegister();
-      });
-    }
-    if (forgotBtn) forgotBtn.onclick = () => {
-      console.log('[AuthForms] forgot password clicked');
-      this.handlePasswordReset();
-    };
-    if (guestBtn) {
-      if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
-        guestBtn.style.display = 'none';
-      } else {
-        guestBtn.onclick = () => {
-          if (!this.auth) this.auth = new AuthManager();
-          this.auth.continueAsGuest();
-          this.renderUserState();
-          this.startFromUser();
-        };
-      }
-    }
-    if (profileSaveBtn) profileSaveBtn.onclick = async () => { await this._saveProfilePreferences(); };
-    if (signOutBtn) signOutBtn.onclick = () => {
-      if (this.auth) this.auth.signOut();
-      this.renderUserState();
-      this.showLogin();
-    };
-    if (topLogoutBtn) topLogoutBtn.onclick = () => {
-      if (this.auth) this.auth.signOut();
-      this.renderUserState();
-      this.showLogin();
-    };
   }
 
-  _switchAuthTab(tab) {
-    const loginTab = document.getElementById('auth-tab-login');
-    const registerTab = document.getElementById('auth-tab-register');
-    const loginForm = document.getElementById('auth-login-form');
-    const registerForm = document.getElementById('auth-register-form');
-
-    if (tab === 'login') {
-      loginTab?.classList.add('act');
-      registerTab?.classList.remove('act');
-      loginForm?.classList.remove('hidden');
-      registerForm?.classList.add('hidden');
-    } else {
-      loginTab?.classList.remove('act');
-      registerTab?.classList.add('act');
-      loginForm?.classList.add('hidden');
-      registerForm?.classList.remove('hidden');
-    }
-    this._clearAuthStatus();
+  async _saveProfile() {
+    const pick = k => document.querySelector(`#profile .seg[data-profile="${k}"] button[aria-pressed="true"]`)?.dataset.value;
+    const patch = { mode: pick('mode'), theme: pick('theme'), lang: pick('lang') };
+    const btn = document.getElementById('profile-save-btn');
+    btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+    this._setAuthStatus(this.t('authSaving'), 'info', 'profile-status');
+    const modeChanged = patch.mode !== Settings.get('mode');
+    this._applyingRemote = true;            // we save explicitly below
+    Settings.set(patch);
+    this._applyingRemote = false;
+    const { calibration, ...prefs } = Settings.get();
+    const res = await this._withTimeout(this.auth.savePreferences(prefs));
+    btn.disabled = false; btn.setAttribute('aria-busy', 'false');
+    if (res && res.success === false) this._setAuthStatus(this.t(this._authMessageKey(res)), 'error', 'profile-status');
+    else { this._setAuthStatus(this.t('authPreferencesSaved'), 'success', 'profile-status'); this.speak(this.t('authPreferencesSaved')); }
+    if (modeChanged && this.inputReady) this._switchModeInPlace(patch.mode);
   }
 
-  _setAuthStatus(message, type = 'info') {
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) return;
-    authStatus.textContent = message;
-    authStatus.className = `auth-status ${type}`;
+  _bindPermission() {
+    document.querySelectorAll('#sp .mbtn').forEach(b => b.addEventListener('click', () => this.chooseMode(b.dataset.mode)));
   }
 
-  _clearAuthStatus() {
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) return;
-    authStatus.textContent = '';
-    authStatus.className = 'auth-status';
-  }
-
-  async handleLogin() {
-    console.log('[Auth] handleLogin start');
-    if (!this.auth) this.auth = new AuthManager();
-    const email = document.getElementById('login-email')?.value || '';
-    const password = document.getElementById('login-password')?.value || '';
-    console.log('[Auth] login credentials', { email: email ? '***' : '', password: password ? '***' : '' });
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.signIn(email, password);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Sign in failed', 'error');
-        return;
-      }
-      this._setAuthStatus(this.t('authSignedIn'), 'success');
-      this.renderUserState();
-      // auto-redirect after successful sign-in
-      this.startFromUser();
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
-  }
-
-  async handleRegister() {
-    if (!this.auth) this.auth = new AuthManager();
-    const name = document.getElementById('register-name')?.value || '';
-    const email = document.getElementById('register-email')?.value || '';
-    const password = document.getElementById('register-password')?.value || '';
-    const confirm = document.getElementById('register-confirm')?.value || '';
-    if (password !== confirm) {
-      this._setAuthStatus(this.t('authPasswordMismatch'), 'error');
-      return;
-    }
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.signUp(name, email, password);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Sign up failed', 'error');
-        return;
-      }
-      // show sync status if available
-      if (result.synced === false) {
-        this._setAuthStatus('Account created but profile sync failed.', 'warning');
-      } else {
-        this._setAuthStatus(this.t('authCreatedAccount'), 'success');
-      }
-      this.renderUserState();
-      this.startFromUser();
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
-  }
-
-  async handlePasswordReset() {
-    if (!this.auth) this.auth = new AuthManager();
-    const email = document.getElementById('login-email')?.value || '';
-    try {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const result = await this.auth.sendPasswordReset(email);
-      if (!result || !result.success) {
-        this._setAuthStatus(result?.message || 'Reset failed', 'error');
-        return;
-      }
-      this._setAuthStatus(this.t('authResetSentMessage'), 'success');
-    } catch (e) {
-      this._setAuthStatus(e.message || String(e), 'error');
-    }
-  }
-
-  _populateProfileFields() {
-    const user = this.auth ? this.auth.getUser() : null;
-    if (!user) return;
-    const name = user.name || '';
-    const email = user.email || '';
-    const preferences = user.preferences || {};
-    const welcome = document.getElementById('profile-welcome');
-    const emailEl = document.getElementById('profile-email');
-    const modeSelect = document.getElementById('profile-mode');
-    const themeSelect = document.getElementById('profile-theme');
-    const languageSelect = document.getElementById('profile-language');
-
-    if (welcome) welcome.textContent = this.t('authProfileWelcome', { name });
-    if (emailEl) emailEl.textContent = email || this.t('authGuestEmail');
-    if (modeSelect) modeSelect.value = preferences.mode || this.state.get('mode');
-    if (themeSelect) themeSelect.value = preferences.theme || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
-    if (languageSelect) languageSelect.value = preferences.language || this.language;
-  }
-
-  async _saveProfilePreferences() {
-    const mode = document.getElementById('profile-mode')?.value || this.state.get('mode');
-    const theme = document.getElementById('profile-theme')?.value || (document.body.classList.contains('theme-warm') ? 'warm' : 'default');
-    const language = document.getElementById('profile-language')?.value || this.language;
-
-    if (this.auth) {
-      this._setAuthStatus(this.t('statusLoading'), 'info');
-      const res = await this.auth.savePreferences({ mode, theme, language });
-      if (res && res.success === false) {
-        this._setAuthStatus(res.message || 'Failed to save preferences', 'error');
-      } else {
-        this._setAuthStatus(this.t('authPreferencesSaved'), 'success');
-      }
-    }
-
-    this.setMode(mode, document.querySelector(`.mbtn[data-mode="${mode}"]`));
-    this.applyTheme(theme);
-    this.setLanguage(language);
-    this.renderUserState();
-  }
-
-  useMouse() {
-    const mouseBtn = document.querySelector('[data-mode="mouse"]');
-    this.setMode('mouse', mouseBtn);
-    this._setupMouseMode();
-    this.showScreen('s');
-    this.buildSubjectsGrid();
-  }
-
-  async requestCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: CONFIG.CAMERA.WIDTH,
-          height: CONFIG.CAMERA.HEIGHT,
-          facingMode: CONFIG.CAMERA.FACING_MODE,
-          frameRate: CONFIG.CAMERA.FRAMERATE
-        }
-      });
-      
-      const video = document.getElementById('vcam');
-      if (video) {
-        video.srcObject = stream;
-        video.classList.add('show');
-      }
-      
-      // Initialize tracker based on mode
-      const mode = this.state.get('mode');
-      console.log('[ENSAF] Starting tracker for mode:', mode);
-      
-      if (mode === 'head') {
-        this.tracker = new HeadTracker();
-      } else if (mode === 'eye') {
-        this.tracker = new EyeTracker();
-      } else {
-        this.tracker = new HeadTracker(); // Default
-      }
-      
-      if (this.tracker) {
-        await this.tracker.startCamera(video);
-        this.tracker.onUpdate((x, y, conf, tracking) => {
-          this._onTrackingUpdate(x, y, conf, tracking);
-        });
-        
-        const cursor = document.getElementById('cursor');
-        if (cursor) cursor.classList.add('on');
-        
-        this._showUI();
-        this.showScreen('s');
-        this.buildSubjectsGrid();
-        
-        // Use VoiceManager from voice.js
-        if (typeof VoiceManager !== 'undefined') {
-          VoiceManager.speak(this.t('voiceReady'));
-        }
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      this._switchToMouse();
-    }
-  }
-
-  _onTrackingUpdate(x, y, confidence, tracking) {
-    // Update cursor position
-    const cursor = document.getElementById('cursor');
-    if (cursor) {
-      cursor.style.left = x + 'px';
-      cursor.style.top = y + 'px';
-    }
-    
-    // Update status bar
-    const statusDot = document.getElementById('bdot');
-    const statusText = document.getElementById('bst');
-    const confFill = document.getElementById('cff');
-    
-    if (confFill) confFill.style.width = (confidence * 100) + '%';
-    
-    if (tracking && confidence > 0.55) {
-      if (cursor) cursor.classList.remove('low');
-      if (statusDot) statusDot.className = 'dot ok';
-      if (statusText) statusText.textContent = 'التتبع نشط';
-    } else if (tracking && confidence > 0.25) {
-      if (cursor) cursor.classList.add('low');
-      if (statusDot) statusDot.className = 'dot wn';
-      if (statusText) statusText.textContent = 'إشارة ضعيفة';
-    } else {
-      if (cursor) cursor.classList.remove('low');
-      if (statusDot) statusDot.className = 'dot';
-      if (statusText) statusText.textContent = 'لا يوجد وجه';
-    }
-    
-    // Update dwell
-    if (this.dwell) {
-      this.dwell.update(x, y);
-    }
-    
-    // Check SOS proximity
-    this._checkSOS(x, y);
-  }
-
-  _setupMouseMode() {
-    const cursor = document.getElementById('cursor');
-    if (cursor) cursor.classList.add('on');
-    
-    document.addEventListener('mousemove', (e) => {
-      const cur = document.getElementById('cursor');
-      if (cur) {
-        cur.style.left = e.clientX + 'px';
-        cur.style.top = e.clientY + 'px';
-      }
-      
-      if (this.dwell) {
-        this.dwell.update(e.clientX, e.clientY);
-      }
-    });
-    
-    this._showUI();
-    this.state.set('tracking.active', true);
-    this.state.set('tracking.confidence', 0.9);
-  }
-
-  _switchToMouse() {
-    alert(this.t('cameraFailed'));
-    this.useMouse();
-  }
-
-  _showUI() {
-    const bar = document.getElementById('bar');
-    const vi = document.getElementById('vi');
-    
-    if (bar) bar.classList.add('show');
-    if (vi) vi.style.display = 'flex';
-  }
-
-  showScreen(screenId) {
-    // Map every legacy 1-letter code AND old DOM ids to canonical router names
-    const legacyMap = {
-      // 1-letter codes used throughout app.js
-      'w':  'welcome',
-      'p':  'permission',
-      's':  'subjects',
-      'q':  'question',
-      'l':  'lesson',
-      'r':  'result',
-      // short DOM ids (in case called directly)
-      'sw': 'welcome',
-      'sp': 'permission',
-      'ss': 'subjects',
-      'sq': 'question',
-      'sl': 'lesson',
-      'sr': 'result',
-    };
-
-    const canonical = legacyMap[screenId] || screenId;  // 'login', 'profile' pass through unchanged
-    this.state.set('screen', canonical);
-    ROUTER.navigate(canonical);
-  }
-
+  // ═══ 5. Learning flow ═════════════════════════════════════════
   buildSubjectsGrid() {
     const grid = document.getElementById('sgrid');
-    if (!grid) {
-      console.error('[ENSAF] Subjects grid element not found');
-      return;
-    }
-    
-    if (typeof DB === 'undefined') {
-      console.error('[ENSAF] Database not loaded');
-      return;
-    }
-    
-    grid.innerHTML = DB.subjects.map(s => `
-      <div class="scard" data-c="${s.color}" data-id="${s.id}">
-        
-        <div class="sem">${this.getIcon(s.icon, 'lg')}</div>
-        <div class="snm">${this.getSubjectLabel(s)}</div>
-        <div class="sct">${DB.getQuestionCount(s.id)} Q</div>
-      </div>
-    `).join('');
-    
-    // Setup dwell
-    if (this.dwell && this.dwell.destroy) this.dwell.destroy();
-    
-    const cards = Array.from(grid.querySelectorAll('.scard'));
-    cards.forEach(card => {
-      card.onclick = () => this.selectSubject(card.dataset.id);
-    });
-    const isMouseMode = this.state.get('mode') === 'mouse';
-    if (!isMouseMode) {
-      this.dwell = new DwellSystem({
-        onSelect: (id) => this.selectSubject(id),
-        onProgress: (id, progress, active) => {
-          const el = grid.querySelector(`[data-id="${id}"]`);
-          if (!el) return;
-          el.classList.toggle('gz', active);
-        }
-      });
-      this.dwell.setDwellTime(this.state.get('dwell.ms'));
-      this.dwell.setItems(cards.map(card => ({
-        id: card.dataset.id,
-        element: card
-      })));
-    } else {
-      this.dwell = null;
-    }
+    if (!grid || typeof DB === 'undefined') return;
+    grid.innerHTML = DB.subjects.map(s => {
+      const name = DB.localize(s.name, this.language);
+      const n = DB.getQuestionCount(s.id);
+      return `<button type="button" class="scard" data-id="${s.id}" aria-label="${this.esc(this.t('subjectCardLabel', { subject: name, n }))}">
+        <span class="sem">${this.icon(s.icon)}</span>
+        <span class="snm">${this.esc(name)}</span>
+        <span class="sct">${this.esc(this.t('questionsCount', { n }))}</span>
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.scard').forEach(card => card.addEventListener('click', () => this.selectSubject(card.dataset.id)));
   }
 
   selectSubject(subjectId) {
+    if (this._selectingSubject) return;
+    this._selectingSubject = true;
+    setTimeout(() => { this._selectingSubject = false; }, 800);
     this.state.set('quiz.subject', subjectId);
-    this.dwell = null;
-    
-    if (typeof DB === 'undefined') return;
-    
-    const questions = DB.getQuestions(subjectId, CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
-    
-    this.state.set('quiz.questions', questions);
+    const subject = DB.getSubject(subjectId);
+    this.speak(this.t('voiceChooseSubject', { subject: DB.localize(subject.name, this.language) }));
+    this._prepareQuiz();
+    this.lesson = { list: DB.lessons[subjectId] || [], index: 0 };
+    setTimeout(() => (this.lesson.list.length ? this.showLesson() : this.showQuestion()), 400);
+  }
+
+  /** Picks the questions (kept unlocalised so a language switch can re-render them). */
+  _prepareQuiz() {
+    const subjectId = this.state.get('quiz.subject');
+    const all = [...(DB.q[subjectId] || DB.q.math)];
+    for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+    this.state.set('quiz.questions', all.slice(0, CONFIG.QUIZ.QUESTIONS_PER_ROUND));
     this.state.set('quiz.index', 0);
     this.state.set('quiz.score', 0);
     this.state.set('quiz.hesitations', 0);
     this.state.set('quiz.startTime', Date.now());
-    
-    const subject = DB.getSubject(subjectId);
-    const selectedSubjectLabel = this.getSubjectLabel(subject);
-    if (typeof VoiceManager !== 'undefined') {
-      VoiceManager.speak(this.t('voiceChooseSubject', { subject: selectedSubjectLabel }));
-    }
-    
-    const hasLessons = DB.getLessons(subjectId, this.language).length > 0;
-    setTimeout(() => hasLessons ? this.showLesson() : this.showQuestion(), 500);
+    this.state.set('quiz.answered', null);
   }
 
-  showQuestion() {
-    const index = this.state.get('quiz.index');
-    const questions = this.state.get('quiz.questions');
-    
-    if (!questions || index >= questions.length) {
-      this.showResult();
-      return;
-    }
-    
-    this.showScreen('q');
-    this._hideHint();
-    
-    const q = questions[index];
-    const subject = DB.getSubject(this.state.get('quiz.subject'));
-    const selectedSubjectLabel = this.getSubjectLabel(subject);
-    const total = questions.length;
-    
-    const qc = document.getElementById('qc');
-    const qpf = document.getElementById('qpf');
-    const qpts = document.getElementById('qpts');
-    const qtag = document.getElementById('qtag');
-    const qtxt = document.getElementById('qtxt');
-    
-    if (qc) qc.textContent = this.t('questionCounter', { current: index + 1, total });
-    if (qpf) qpf.style.width = `${(index / total) * 100}%`;
-    if (qpts) qpts.innerHTML = `${this.getIcon('star')} ${this.state.get('quiz.score')}`;
-    if (qtag) qtag.innerHTML = `${this.getIcon(subject ? subject.icon : 'menu_book')} ${selectedSubjectLabel}`;
-    if (qtxt) qtxt.textContent = typeof q.q === 'object' ? (q.q[this.language] || q.q.ar || '') : q.q;
-    
-    const answersGrid = document.getElementById('agrid');
-    if (!answersGrid) return;
-    
-    const letters = this.language === 'ar' ? ['أ', 'ب', 'ج', 'د'] : ['A', 'B', 'C', 'D'];
-    answersGrid.innerHTML = q.opts.map((opt, i) => {
-      const answerText = typeof opt === 'object' ? (opt[this.language] || opt.ar || '') : opt;
-      return `
-        <div class="abtn" data-i="${i}">
-          <div class="altr">${letters[i]}</div>
-          <div class="atxt">${answerText}</div>
-          <div class="adw"><div class="adwf" id="df${i}"></div></div>
-        </div>
-      `;
-    }).join('');
-    
-    if (typeof VoiceManager !== 'undefined') {
-      const questionText = typeof q.q === 'object' ? (q.q[this.language] || q.q.ar || '') : q.q;
-      VoiceManager.speak(questionText);
-    }
-    
-    // Setup dwell for answers
-    if (this.dwell && this.dwell.destroy) this.dwell.destroy();
-    
-    const buttons = Array.from(answersGrid.querySelectorAll('.abtn'));
-    buttons.forEach(btn => {
-      btn.onclick = () => this.selectAnswer(parseInt(btn.dataset.i));
-    });
-    const isMouseMode = this.state.get('mode') === 'mouse';
-    if (!isMouseMode) {
-      this.dwell = new DwellSystem({
-        onSelect: (id) => this.selectAnswer(parseInt(id)),
-        onProgress: (id, progress, active) => {
-          const btn = answersGrid.querySelector(`[data-i="${id}"]`);
-          if (!btn) return;
-          btn.classList.toggle('gz', active && progress < 1);
-          const fill = document.getElementById(`df${id}`);
-          if (fill) fill.style.width = active ? (progress * 100) + '%' : '0%';
-        }
-      });
-      this.dwell.setDwellTime(this.state.get('dwell.ms'));
-      this.dwell.setItems(buttons.map(btn => ({
-        id: btn.dataset.i,
-        element: btn
-      })));
-    } else {
-      this.dwell = null;
-    }
-    
-    // Hesitation timeout
-   // Hesitation timeout
-clearTimeout(this.hesitationTimeout);
-console.log('[HINT] HESITATION_TIMEOUT =', CONFIG.QUIZ.HESITATION_TIMEOUT); // ← add this
-this.hesitationTimeout = setTimeout(() => {
-  if (this.state.get('screen') === 'question') {
-    this.state.set('quiz.hesitations', this.state.get('quiz.hesitations') + 1);
-    this._showHint(q.hint);
+  _currentQuestion() {
+    const qs = this.state.get('quiz.questions') || [];
+    const raw = qs[this.state.get('quiz.index')];
+    return raw ? DB.localizeQuestion(raw, this.language) : null;
   }
-}, CONFIG.QUIZ.HESITATION_TIMEOUT);
+
+  showQuestion({ rerender = false } = {}) {
+    const questions = this.state.get('quiz.questions') || [];
+    const index = this.state.get('quiz.index');
+    if (!questions.length) { this.showScreen('subjects'); return; }
+    if (index >= questions.length) { this.showResult(); return; }
+    if (!rerender) {
+      this.answerLocked = false;
+      this.state.set('quiz.answered', null);
+      this.showScreen('question');
+      this._hideHint();
+    }
+    const q = this._currentQuestion();
+    const subject = DB.getSubject(this.state.get('quiz.subject'));
+    const total = questions.length;
+    const $ = id => document.getElementById(id);
+    $('qc').textContent = this.t('questionCounter', { current: index + 1, total });
+    const pct = Math.round((index / total) * 100);
+    $('qpf').style.width = `${pct}%`;
+    $('qprog').setAttribute('aria-valuenow', String(pct));
+    const score = this.state.get('quiz.score');
+    $('qpts').innerHTML = `${this.icon('star')}<span>${this.esc(this.t('pointsLabel', { n: score }))}</span>`;
+    $('qtag').innerHTML = `${this.icon(subject ? subject.icon : 'menu_book')}<span>${this.esc(DB.localize(subject?.name, this.language))}</span>`;
+    $('qtxt').textContent = q.q;
+
+    const letters = this.language === 'ar' ? ['أ', 'ب', 'ج', 'د'] : ['A', 'B', 'C', 'D'];
+    $('agrid').innerHTML = q.opts.map((opt, i) => `
+      <button type="button" class="abtn" data-i="${i}" aria-label="${this.esc(this.t('answerOption', { letter: letters[i], text: opt }))}">
+        <span class="altr" aria-hidden="true">${letters[i]}</span>
+        <span class="atxt">${this.esc(opt)}</span>
+        <span class="afb" aria-hidden="true"></span>
+      </button>`).join('');
+    $('agrid').querySelectorAll('.abtn').forEach(btn => btn.addEventListener('click', () => this.selectAnswer(Number(btn.dataset.i))));
+
+    const answered = this.state.get('quiz.answered');
+    if (answered !== null && answered !== undefined) this._markAnswers(answered, q.ans);
+
+    if (!rerender || answered === null) {
+      // Read the question and the options aloud.
+      const opts = q.opts.map((o, i) => `${letters[i]}: ${o}`).join('. ');
+      this.speak(`${q.q}. ${opts}`);
+    }
+    if (!rerender) this.hesitation.start();
+    if (rerender && document.getElementById('hint').classList.contains('on')) this._showHint(q.hint, { silent: true });
+  }
+
+  _markAnswers(chosen, correctIndex) {
+    document.querySelectorAll('#agrid .abtn').forEach((btn, i) => {
+      btn.setAttribute('aria-disabled', 'true');
+      const fb = btn.querySelector('.afb');
+      if (i === correctIndex) {
+        btn.classList.add('ok');
+        fb.innerHTML = `<span class="afb-icon">✓</span>${this.esc(this.t(i === chosen ? 'feedbackCorrect' : 'feedbackRightAnswer'))}`;
+        fb.removeAttribute('aria-hidden');
+      } else if (i === chosen) {
+        btn.classList.add('no');
+        fb.innerHTML = `<span class="afb-icon">✗</span>${this.esc(this.t('feedbackYourAnswer'))}`;
+        fb.removeAttribute('aria-hidden');
+      } else {
+        btn.classList.add('dim');
+      }
+    });
   }
 
   selectAnswer(index) {
-    clearTimeout(this.hesitationTimeout);
-    this.dwell = null;
-    
-    const questions = this.state.get('quiz.questions');
-    const qIndex = this.state.get('quiz.index');
-    const q = questions[qIndex];
+    if (this.answerLocked || this.state.get('screen') !== 'question') return;
+    this.answerLocked = true;
+    this.hesitation.stop();
+    this._hideHint();
+    const q = this._currentQuestion();
     const correct = index === q.ans;
-    
-    document.querySelectorAll('.abtn').forEach((btn, i) => {
-      if (i === q.ans) btn.classList.add('ok');
-      else if (i === index && !correct) btn.classList.add('no');
-    });
-    
+    this.state.set('quiz.answered', index);
+    this._markAnswers(index, q.ans);
+    let message;
     if (correct) {
       this.state.set('quiz.score', this.state.get('quiz.score') + 1);
-      if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('voiceCorrectAnswer'));
+      message = this.t('voiceCorrectAnswer');
+      Sounds.play('correct');
     } else {
-      if (typeof VoiceManager !== 'undefined') {
-        const answerValue = q.opts[q.ans];
-        const answerText = typeof answerValue === 'object' ? (answerValue[this.language] || answerValue.ar || '') : answerValue;
-        VoiceManager.speak(this.t('voiceWrongAnswerPrefix', { answer: answerText }));
-      }
+      message = `${this.t('feedbackWrong')}. ${this.t('voiceWrongAnswerPrefix', { answer: q.opts[q.ans] })}`;
+      Sounds.play('wrong');
     }
-    
+    document.getElementById('qpts').innerHTML = `${this.icon('star')}<span>${this.esc(this.t('pointsLabel', { n: this.state.get('quiz.score') }))}</span>`;
+    this.announce(message);
+    this.speak(message);
+    EVENTS.emit(EVENT_NAMES.QUIZ_ANSWER, { index, correct });
+    const qIndex = this.state.get('quiz.index');
     setTimeout(() => {
+      if (this.state.get('screen') !== 'question' || this.state.get('quiz.index') !== qIndex) return;
       this.state.set('quiz.index', qIndex + 1);
       this.showQuestion();
-    }, CONFIG.QUIZ.ANSWER_DELAY);
+    }, correct ? CONFIG.QUIZ.ANSWER_DELAY : CONFIG.QUIZ.ANSWER_DELAY + 1300);
   }
 
-_showHint(hint) {
-  console.log('[HINT] _showHint called, hint:', hint);
-  if (!hint) return;
-  const htxt = document.getElementById('htxt');
-  const hintEl = document.getElementById('hint');
-  console.log('[HINT] htxt:', htxt, '| hintEl:', hintEl);
-  console.log('[HINT] screen state:', this.state.get('screen'));
-  if (htxt) htxt.textContent = hint;
-  if (hintEl) hintEl.classList.add('on');
-  console.log('[HINT] classes after add:', hintEl?.className);
-  if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('hintVoice', { hint }));
-}
-
-  _hideHint() {
-    const hintEl = document.getElementById('hint');
-    if (hintEl) hintEl.classList.remove('on');
+  _onHesitate() {
+    if (this.state.get('screen') !== 'question' || this.answerLocked) return;
+    const q = this._currentQuestion();
+    if (!q || !q.hint) return;
+    this.state.set('quiz.hesitations', this.state.get('quiz.hesitations') + 1);
+    this._showHint(q.hint);
+    EVENTS.emit(EVENT_NAMES.QUIZ_HINT, { hint: q.hint });
   }
 
-  showResult() {
-    this.showScreen('r');
-    this.dwell = null;
-    
-    const score = this.state.get('quiz.score');
-    const total = this.state.get('quiz.questions').length;
-    const percent = Math.round((score / total) * 100);
-    const duration = Math.round((Date.now() - this.state.get('quiz.startTime')) / 1000);
+  _showHint(hint, { silent = false } = {}) {
+    if (!hint) return;
+    document.getElementById('htxt').textContent = hint;
+    document.getElementById('hint').classList.add('on');
+    if (!silent) { Sounds.play('hint'); this.speak(this.t('hintVoice', { hint })); }
+  }
+
+  _hideHint() { document.getElementById('hint')?.classList.remove('on'); }
+
+  showResult({ rerender = false } = {}) {
+    const questions = this.state.get('quiz.questions') || [];
+    if (!rerender) {
+      this.state.set('quiz.durationMs', Date.now() - this.state.get('quiz.startTime'));
+      this.showScreen('result');
+    }
+    const r = computeReport({
+      score: this.state.get('quiz.score'),
+      total: questions.length,
+      durationMs: this.state.get('quiz.durationMs'),
+      hints: this.state.get('quiz.hesitations')
+    });
     const subject = DB.getSubject(this.state.get('quiz.subject'));
-    const selectedSubjectLabel = this.getSubjectLabel(subject);
-    const hesitations = this.state.get('quiz.hesitations');
-    
-    // Determine grade
-    let icon, label, message;
-    if (percent >= 90) {
-      icon = 'emoji_events'; label = this.t('gradeExcellent'); message = this.t('gradeMessageExcellent');
-    } else if (percent >= 70) {
-      icon = 'star'; label = this.t('gradeGood'); message = this.t('gradeMessageGood');
-    } else if (percent >= 50) {
-      icon = 'thumb_up'; label = this.t('gradeGood'); message = this.t('gradeMessageGood');
-    } else {
-      icon = 'fitness_center'; label = this.t('gradeTryAgain'); message = this.t('gradeMessageRetry');
+    const label = { excellent: 'gradeExcellent', good: 'gradeGood', fair: 'gradeFair', retry: 'gradeTryAgain' }[r.grade];
+    const msg = { excellent: 'gradeMessageExcellent', good: 'gradeMessageGood', fair: 'gradeMessageGood', retry: 'gradeMessageRetry' }[r.grade];
+    const $ = id => document.getElementById(id);
+    const sec = this.t('timeSeconds');
+    $('rb').innerHTML = `<span class="material-symbols-outlined icon-lg" aria-hidden="true">${r.icon}</span>`;
+    $('rs').textContent = `${r.percent}%`;
+    $('rs').setAttribute('aria-label', `${this.t('resultScoreLabel')}: ${r.percent}%`);
+    $('rl').textContent = this.t(label);
+    $('ru').textContent = this.t('resultCorrect', { score: r.score, total: r.total });
+    $('rst').innerHTML = `
+      <div class="rstat"><div class="rsv">${r.score}/${r.total}</div><div class="rsl">${this.esc(this.t('resultStatsCorrect'))}</div></div>
+      <div class="rstat"><div class="rsv">${r.durationSec}${this.esc(sec)}</div><div class="rsl">${this.esc(this.t('resultStatsDuration'))}</div></div>
+      <div class="rstat"><div class="rsv">${r.hints}</div><div class="rsl">${this.esc(this.t('resultStatsHints'))}</div></div>`;
+    const modeKey = { head: 'modeHeadShort', eye: 'modeEyeShort', mouse: 'modeMouseShort' }[Settings.get('mode')];
+    $('rrep').innerHTML = `
+      <div class="rrow"><span class="rlb">${this.esc(this.t('resultSubject'))}</span><span class="rvl">${this.icon(subject ? subject.icon : 'menu_book')}${this.esc(DB.localize(subject?.name, this.language))}</span></div>
+      <div class="rrow"><span class="rlb">${this.esc(this.t('resultScoreLabel'))}</span><span class="rvl ${r.passed ? 'g' : 'w'}">${r.passed ? '✓' : '!'} ${r.percent}% — ${this.esc(this.t(r.passed ? 'resultPassed' : 'resultNotPassed'))}</span></div>
+      <div class="rrow"><span class="rlb">${this.esc(this.t('resultAvgPerQuestion'))}</span><span class="rvl">${r.avgSec}${this.esc(sec)}</span></div>
+      <div class="rrow"><span class="rlb">${this.esc(this.t('resultInteraction'))}</span><span class="rvl">${this.esc(this.t(modeKey))}</span></div>`;
+    if (!rerender) {
+      Sounds.play(r.passed ? 'correct' : 'hint');
+      this.speak(this.t('voiceTestComplete', { percent: r.percent, message: this.t(msg) }));
+      EVENTS.emit(EVENT_NAMES.QUIZ_COMPLETE, r);
     }
-    
-    const rb = document.getElementById('rb');
-    const rs = document.getElementById('rs');
-    const rl = document.getElementById('rl');
-    const ru = document.getElementById('ru');
-    const rst = document.getElementById('rst');
-    const rrep = document.getElementById('rrep');
-    
-    if (rb) rb.innerHTML = `${this.getIcon(icon, 'lg')}`;
-    if (rs) rs.textContent = percent + '%';
-    if (rl) rl.textContent = label;
-    if (ru) ru.textContent = this.t('resultCorrect', { score, total });
-    
-    if (rst) {
-      rst.innerHTML = `
-        <div class="rstat"><div class="rsv">${score}/${total}</div><div class="rsl">${this.t('resultStatsCorrect')}</div></div>
-        <div class="rstat"><div class="rsv">${duration}${this.t('timeSeconds')}</div><div class="rsl">${this.t('resultStatsDuration')}</div></div>
-        <div class="rstat"><div class="rsv">${hesitations}</div><div class="rsl">${this.t('resultStatsHints')}</div></div>
-      `;
-    }
-    
-    if (rrep) {
-      const modeLabel = this._getModeLabel();
-      rrep.innerHTML = `
-        <div class="rrow"><span class="rlb">${this.t('resultSubject')}</span><span class="rvl">${this.getIcon(subject ? subject.icon : 'menu_book')} ${selectedSubjectLabel}</span></div>
-        <div class="rrow"><span class="rlb">${this.t('resultScoreLabel')}</span><span class="rvl ${percent >= 70 ? 'g' : 'w'}">${percent}%</span></div>
-        <div class="rrow"><span class="rlb">${this.t('resultStatsDuration')}</span><span class="rvl">${Math.round(duration / total)}${this.t('timeSeconds')}</span></div>
-        <div class="rrow"><span class="rlb">${this.t('resultInteraction')}</span><span class="rvl">${modeLabel}</span></div>
-      `;
-    }
-    
-    if (typeof VoiceManager !== 'undefined') {
-      VoiceManager.speak(this.t('voiceTestComplete', { percent, message }));
-    }
-    
-    // Setup result buttons
-    setTimeout(() => {
-      const actions = document.querySelector('.racts');
-      if (!actions) return;
-      
-      const btns = Array.from(actions.querySelectorAll('button'));
-      btns.forEach(b => {
-        const text = b.textContent.trim();
-        if (text.includes('إعادة')) b.dataset.ra = 'retry';
-        else if (text.includes('الرئيسية')) b.dataset.ra = 'home';
-        else if (text.includes('محتوى')) b.dataset.ra = 'study';
-      });
-      
-      const targets = btns.filter(b => b.dataset.ra);
-      const isMouseMode = this.state.get('mode') === 'mouse';
-      const handleResultAction = (id) => {
-        this.dwell = null;
-        if (id === 'retry') this.retry();
-        else if (id === 'home') this.home();
-        else if (id === 'study') this.showLesson();
-      };
-      targets.forEach(btn => {
-        btn.onclick = () => handleResultAction(btn.dataset.ra);
-      });
-      
-      if (!isMouseMode) {
-        this.dwell = new DwellSystem({
-          onSelect: handleResultAction,
-          onProgress: (id, progress, active) => {
-            const btn = actions.querySelector(`[data-ra="${id}"]`);
-            if (!btn) return;
-            btn.style.outline = active ? `2px solid rgba(0,240,255,${progress})` : '';
-            btn.style.transform = active ? `scale(${1 + progress * 0.04})` : '';
-          }
-        });
-        
-        this.dwell.setDwellTime(this.state.get('dwell.ms'));
-        this.dwell.setItems(targets.map(b => ({ id: b.dataset.ra, element: b })));
-      } else {
-        this.dwell = null;
-      }
-    }, 150);
   }
 
-  _getModeLabel() {
-    const mode = this.state.get('mode');
-    switch(mode) {
-      case 'head': return this.t('modeHeadOption');
-      case 'eye': return this.t('modeEyeOption');
-      case 'mouse': return this.t('modeMouseOption');
-      default: return mode || this.t('home');
-    }
+  _bindResult() {
+    document.querySelectorAll('#sr [data-ra]').forEach(b => b.addEventListener('click', () => {
+      const a = b.dataset.ra;
+      if (a === 'retry') this.retry();
+      else if (a === 'home') this.home();
+      else if (a === 'study') this.showLesson();
+    }));
   }
 
   showLesson() {
-    if (typeof DB === 'undefined') return;
-    
-    const lessons = DB.getLessons(this.state.get('quiz.subject'), this.language);
-    if (!lessons.length) return;
-    
-    let lessonIndex = 0;
-    
-    const showLessonPage = (idx) => {
-      this.showScreen('l');
-      const lesson = lessons[idx];
-      
-      const lc = document.getElementById('lc');
-      const lpf = document.getElementById('lpf');
-      const lbox = document.getElementById('lbox');
-      const lnav = document.getElementById('lnav');
-      
-      if (lc) lc.textContent = this.t('lessonPage', { current: idx + 1, total: lessons.length });
-      if (lpf) lpf.style.width = `${((idx + 1) / lessons.length) * 100}%`;
-      if (lbox) lbox.innerHTML = `
-        <div class="ltit">${lesson.title}</div>
-        <div class="lp">${lesson.body}</div>
-      `;
-      
-      if (lnav) {
-        lnav.innerHTML = `
-          ${idx > 0 ? `<button class="lbtn" data-a="prev">${this.t('lessonPrev')}</button>` : ''}
-          <div class="lsep"></div>
-          ${idx < lessons.length - 1 ? 
-            `<button class="lbtn pri" data-a="next">${this.t('lessonNext')}</button>` : 
-            `<button class="lbtn pri" data-a="quiz">${this.t('lessonQuizButton')} <span class="material-symbols-outlined icon icon-sm">edit</span></button>`}
-        `;
-      }
-      
-      if (typeof VoiceManager !== 'undefined') {
-        const lessonTitle = typeof lesson.title === 'object' ? (lesson.title[this.language] || lesson.title.ar || '') : lesson.title;
-        const lessonBody = typeof lesson.body === 'object' ? (lesson.body[this.language] || lesson.body.ar || '') : lesson.body;
-        VoiceManager.speak(`${lessonTitle}. ${lessonBody.replace(/<[^>]+>/g, '')}`);
-      }
-      
-      if (this.dwell && this.dwell.destroy) this.dwell.destroy();
-      
-      const navBtns = lnav ? Array.from(lnav.querySelectorAll('.lbtn')) : [];
-      const isMouseMode = this.state.get('mode') === 'mouse';
-      navBtns.forEach(btn => {
-        btn.onclick = () => {
-          const action = btn.dataset.a;
-          if (action === 'next') showLessonPage(idx + 1);
-          else if (action === 'prev') showLessonPage(idx - 1);
-          else {
-            const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
-            this.state.set('quiz.questions', questions);
-            this.state.set('quiz.index', 0);
-            this.state.set('quiz.score', 0);
-            this.state.set('quiz.hesitations', 0);
-            this.state.set('quiz.startTime', Date.now());
-            this.showQuestion();
-          }
-        };
-      });
-      if (!isMouseMode) {
-        this.dwell = new DwellSystem({
-          onSelect: (action) => {
-            if (action === 'next') showLessonPage(idx + 1);
-            else if (action === 'prev') showLessonPage(idx - 1);
-            else {
-              const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
-              this.state.set('quiz.questions', questions);
-              this.state.set('quiz.index', 0);
-              this.state.set('quiz.score', 0);
-              this.state.set('quiz.hesitations', 0);
-              this.state.set('quiz.startTime', Date.now());
-              this.showQuestion();
-            }
-          },
-          onProgress: (action, progress, active) => {
-            const btn = lnav ? lnav.querySelector(`[data-a="${action}"]`) : null;
-            if (btn) btn.classList.toggle('gz', active);
-          }
-        });
-        this.dwell.setDwellTime(this.state.get('dwell.ms'));
-        this.dwell.setItems(navBtns.map(btn => ({ id: btn.dataset.a, element: btn })));
+    const subjectId = this.state.get('quiz.subject');
+    if (!subjectId) { this.showScreen('subjects'); return; }
+    this.lesson = { list: DB.lessons[subjectId] || [], index: 0 };
+    if (!this.lesson.list.length) { this.retry(); return; }
+    this.showScreen('lesson');
+    this._renderLesson({ speak: true });
+  }
+
+  _renderLesson({ speak = false } = {}) {
+    const { list, index } = this.lesson;
+    if (!list.length) return;
+    const lesson = DB.localizeLesson(list[index], this.language);
+    const $ = id => document.getElementById(id);
+    $('lc').textContent = this.t('lessonPage', { current: index + 1, total: list.length });
+    const pct = Math.round(((index + 1) / list.length) * 100);
+    $('lpf').style.width = `${pct}%`;
+    $('lprog').setAttribute('aria-valuenow', String(pct));
+    // Lesson bodies come from our own DB (trusted HTML with <span class="lhl"> highlights).
+    $('lbox').innerHTML = `<h1 class="ltit" id="ltit" tabindex="-1">${this.esc(lesson.title)}</h1><div class="lp">${lesson.body}</div>`;
+    const prev = index > 0 ? `<button type="button" class="lbtn" data-a="prev">${this.esc(this.t('lessonPrev'))}</button>` : '';
+    const next = index < list.length - 1
+      ? `<button type="button" class="lbtn pri" data-a="next">${this.esc(this.t('lessonNext'))}</button>`
+      : `<button type="button" class="lbtn pri" data-a="quiz">${this.icon('edit')}<span>${this.esc(this.t('lessonQuizButton'))}</span></button>`;
+    $('lnav').innerHTML = `${prev}<div class="lsep"></div>${next}`;
+    $('lnav').querySelectorAll('.lbtn').forEach(b => b.addEventListener('click', () => {
+      const a = b.dataset.a;
+      if (a === 'next' || a === 'prev') {
+        this.lesson.index += a === 'next' ? 1 : -1;
+        this._renderLesson({ speak: true });
+        DwellController.disarm();
+        $('ltit').focus({ preventScroll: true });
       } else {
-        this.dwell = null;
+        this._prepareQuiz();
+        this.showQuestion();
       }
-    };
-    
-    showLessonPage(0);
+    }));
+    if (speak) this.speak(`${lesson.title}. ${lesson.body}`);
   }
 
-  /* ── Recalibration ── */
-  recalibrate() {
-    if (this.tracker && this.tracker.reset) {
-      this.tracker.reset();
-    }
-    if (typeof VoiceManager !== 'undefined') {
-      VoiceManager.speak(this.t('voiceRecalibrating'));
-    }
-  }
-
-  /* ── SOS System ── */
-  _checkSOS(x, y) {
-    const sosBtn = document.getElementById('sos');
-    if (!sosBtn || !sosBtn.classList.contains('show')) return;
-    
-    const rect = sosBtn.getBoundingClientRect();
-    const distance = Math.hypot(
-      x - (rect.left + rect.width / 2),
-      y - (rect.top + rect.height / 2)
-    );
-    
-    if (distance < 40) {
-      if (!this.state.get('sos.startTime')) {
-        this.state.set('sos.startTime', performance.now());
-      }
-      const elapsed = performance.now() - this.state.get('sos.startTime');
-      const progress = Math.min(1, elapsed / 3000);
-      const sosc = document.getElementById('sosc');
-      if (sosc) sosc.style.strokeDashoffset = 164 * (1 - progress);
-      
-      if (progress >= 1) {
-        this.state.set('sos.startTime', null);
-        this.triggerSOS();
-      }
-    } else {
-      this.state.set('sos.startTime', null);
-      const sosc = document.getElementById('sosc');
-      if (sosc) sosc.style.strokeDashoffset = 164;
-    }
-  }
-
-  triggerSOS() {
-    const sosm = document.getElementById('sosm');
-    if (sosm) {
-      sosm.style.display = 'flex';
-      sosm.classList.add('on');
-    }
-    if (typeof VoiceManager !== 'undefined') VoiceManager.speak(this.t('voiceSOSActive'));
-    this.dwell = null;
-    this.state.set('sos.active', true);
-  }
-
-  closeSOS() {
-    const sosm = document.getElementById('sosm');
-    if (sosm) {
-      sosm.classList.remove('on');
-      setTimeout(() => { sosm.style.display = 'none'; }, 300);
-    }
-    this.state.set('sos.active', false);
-  }
-
-  /* ── Navigation ── */
   home() {
-    if (this.dwell && this.dwell.destroy) this.dwell.destroy();
-    if (typeof VoiceManager !== 'undefined') VoiceManager.stop();
-    clearTimeout(this.hesitationTimeout);
+    VoiceManager.stop();
+    this.hesitation.stop();
     this._hideHint();
     this.showScreen('welcome');
   }
 
   retry() {
-    if (!this.state.get('quiz.subject')) return;
-    if (typeof DB === 'undefined') return;
-    
-    const questions = DB.getQuestions(this.state.get('quiz.subject'), CONFIG.QUIZ.QUESTIONS_PER_ROUND, this.language);
-    
-    this.state.set('quiz.questions', questions);
-    this.state.set('quiz.index', 0);
-    this.state.set('quiz.score', 0);
-    this.state.set('quiz.hesitations', 0);
-    this.state.set('quiz.startTime', Date.now());
-    
+    if (!this.state.get('quiz.subject')) { this.showScreen('subjects'); return; }
+    this._prepareQuiz();
     this.showQuestion();
   }
 
-  adjustDwell(delta) {
-    const newTime = this.state.get('dwell.ms') + delta;
-    const clamped = Math.max(CONFIG.DWELL.MIN_MS, Math.min(CONFIG.DWELL.MAX_MS, newTime));
-    this.state.set('dwell.ms', clamped);
-    
-    if (this.dwell && this.dwell.setDwellTime) {
-      this.dwell.setDwellTime(clamped);
-    }
-    
-    const dv = document.getElementById('dv');
-    if (dv) dv.textContent = (clamped / 1000).toFixed(1) + 's';
-  }
+  // Kept for backward compatibility with inline handlers / older code.
+  adjustDwell(delta) { Settings.step('dwellMs', delta > 0 ? 1 : -1); }
 }
 
-// Initialize app when DOM is ready
 const App = new EnsafApp();
+window.App = App;
 
-async function initializeApp() {
-  if (window.SCREENS_READY) {
-    await window.SCREENS_READY;
-  }
+(async function initializeApp() {
+  if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  if (window.SCREENS_READY) await window.SCREENS_READY;
   App.init();
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-  initializeApp();
-}
+})();

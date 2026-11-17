@@ -1,4 +1,4 @@
-<div class="scr on" id="sw">
+<div class="scr on" id="sw" role="region" aria-labelledby="sw-title">
 
 <style>
 /* ── ENSAF Landing — Complete Redesign ─────────────────────────── */
@@ -13,7 +13,7 @@
   justify-content: flex-start;
   min-height: 100vh;
   background: var(--bg);
-  padding-top: 52px; /* account for topbar */
+  padding: 64px 0 0; /* account for topbar */
 }
 
 /* RTL support for Arabic */
@@ -33,7 +33,7 @@ html[dir="rtl"] #sw {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -114,7 +114,7 @@ html[dir="rtl"] #sw {
   font-weight: 900;
   letter-spacing: -6px;
   line-height: .9;
-  background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #f59e0b 100%);
+  background: var(--grad-logo);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -123,7 +123,7 @@ html[dir="rtl"] #sw {
 }
 
 .lnd-logo-sub {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 5px;
   text-transform: uppercase;
   color: var(--vi2);
@@ -160,8 +160,8 @@ html[dir="rtl"] #sw {
 .lnd-btn-primary {
   padding: 16px 40px;
   border-radius: 100px;
-  background: linear-gradient(135deg, #7c3aed, #0ea5e9);
-  color: #fff;
+  background: var(--grad-primary);
+  color: var(--on-primary);
   font-size: 16px;
   font-weight: 600;
   border: none;
@@ -189,8 +189,8 @@ html[dir="rtl"] #sw {
   backdrop-filter: blur(8px);
 }
 .lnd-btn-ghost:hover {
-  background: rgba(255,255,255,.07);
-  border-color: rgba(255,255,255,.25);
+  background: var(--surface);
+  border-color: var(--hover-border);
 }
 
 body.theme-light .lnd-btn-ghost {
@@ -214,9 +214,9 @@ body.theme-light .lnd-btn-ghost:hover {
   gap: 8px;
   padding: 8px 16px;
   border-radius: 100px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-  font-size: 13px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px;
   color: var(--t2);
   backdrop-filter: blur(8px);
 }
@@ -266,14 +266,14 @@ body.theme-light .lnd-pill {
   right: 20px;
   padding: 10px 18px;
   border-radius: 16px;
-  background: #9333ea88;
+  background: var(--grad-primary);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
-  color: #fff;
+  font-size: 14px;
+  color: var(--on-primary);
 }
 
 .lnd-badge-dot {
@@ -295,27 +295,27 @@ body.theme-light .lnd-pill {
   position: absolute;
   padding: 12px 16px;
   border-radius: 16px;
-  background: #9333ea88;
+  background: var(--grad-primary);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   box-shadow: 0 12px 40px rgba(0,0,0,.3);
   min-width: 130px;
   z-index: 10;
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .lnd-stat-float-1 {
   top: -18px;
   left: -32px;
   animation: lnd-float1 6s ease-in-out infinite;
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .lnd-stat-float-2 {
   bottom: 60px;
   left: -40px;
   animation: lnd-float2 7s ease-in-out infinite;
-  color: #fff;
+  color: var(--on-primary);
 }
 
 html[dir="rtl"] .lnd-stat-float-1 {
@@ -338,19 +338,19 @@ html[dir="rtl"] .lnd-stat-float-2 {
   50% { transform: translateY(8px); }
 }
 
-.lnd-stat-label { font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;  }
-.lnd-stat-value { font-size: 22px; font-weight: 700; color: #fff; font-family: 'Playfair Display', serif; }
-.lnd-stat-sub { font-size: 11px; color: #fff; margin-top: 2px; }
+.lnd-stat-label { font-size: 14px; color: var(--on-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;  }
+.lnd-stat-value { font-size: 22px; font-weight: 700; color: var(--on-primary); font-family: 'Playfair Display', serif; }
+.lnd-stat-sub { font-size: 14px; color: var(--on-primary); margin-top: 2px; }
 
 /* ═══════════════════════════════════════════
    DIVIDER / MARQUEE BAND
 ══════════════════════════════════════════ */
 .lnd-band {
   padding: 20px 0;
-  border-top: 1px solid rgba(255,255,255,.05);
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   overflow: hidden;
-  background: rgba(255,255,255,.01);
+  background: var(--surface);
 }
 
 body.theme-light .lnd-band {
@@ -375,7 +375,7 @@ body.theme-light .lnd-band {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--t3);
   letter-spacing: .5px;
@@ -410,8 +410,8 @@ body.theme-light .lnd-band {
 .lnd-fcard {
   padding: 32px 24px;
   border-radius: 24px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.06);
+  background: var(--surface);
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   transition: transform .3s, border-color .3s, box-shadow .3s;
@@ -436,7 +436,7 @@ body.theme-light .lnd-fcard {
   transition: transform .4s ease;
 }
 
-.lnd-fcard:hover { transform: translateY(-6px); border-color: rgba(255,255,255,.12); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.lnd-fcard:hover { transform: translateY(-6px); border-color: var(--hover-border); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 .lnd-fcard:hover::before { transform: scaleX(1); }
 
 body.theme-light .lnd-fcard:hover { box-shadow: 0 20px 60px rgba(11,33,48,.1); }
@@ -461,10 +461,10 @@ body.theme-light .lnd-fcard:hover { box-shadow: 0 20px 60px rgba(11,33,48,.1); }
   font-size: 26px;
   margin: 0;
 }
-.lnd-fcard-icon-1 .material-symbols-outlined { color: #a78bfa; }
-.lnd-fcard-icon-2 .material-symbols-outlined { color: #38bdf8; }
-.lnd-fcard-icon-3 .material-symbols-outlined { color: #34d399; }
-.lnd-fcard-icon-4 .material-symbols-outlined { color: #fbbf24; }
+.lnd-fcard-icon-1 .material-symbols-outlined { color: var(--primary); }
+.lnd-fcard-icon-2 .material-symbols-outlined { color: var(--accent); }
+.lnd-fcard-icon-3 .material-symbols-outlined { color: var(--correct); }
+.lnd-fcard-icon-4 .material-symbols-outlined { color: var(--amber); }
 
 .lnd-fcard h4 {
   font-family: 'Playfair Display', serif;
@@ -484,9 +484,9 @@ body.theme-light .lnd-fcard:hover { box-shadow: 0 20px 60px rgba(11,33,48,.1); }
    HOW IT WORKS
 ══════════════════════════════════════════ */
 .lnd-how {
-  background: rgba(255,255,255,.015);
-  border-top: 1px solid rgba(255,255,255,.04);
-  border-bottom: 1px solid rgba(255,255,255,.04);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 body.theme-light .lnd-how {
@@ -512,7 +512,7 @@ body.theme-light .lnd-how {
   gap: 20px;
   align-items: flex-start;
   padding: 24px 0;
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  border-bottom: 1px solid var(--border);
   position: relative;
 }
 
@@ -553,9 +553,9 @@ body.theme-light .lnd-how-step { border-color: rgba(11,33,48,.06); }
 .lnd-how-visual {
   border-radius: 28px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.07);
+  border: 1px solid var(--border);
   box-shadow: 0 40px 100px rgba(0,0,0,.35);
-  background: rgba(7,12,24,.6);
+  background: var(--surface);
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -573,7 +573,7 @@ body.theme-light .lnd-how-visual {
   align-items: center;
   gap: 8px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
 }
 
@@ -585,7 +585,7 @@ body.theme-light .lnd-mockup-bar { border-color: rgba(11,33,48,.06); }
 .lnd-mockup-dot:nth-child(3) { background: #28c840; }
 
 .lnd-mockup-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--t3);
   margin-right: auto;
 }
@@ -608,7 +608,7 @@ html[dir="rtl"] .lnd-mockup-label {
 }
 
 .lnd-mock-sub-name {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--t2);
   min-width: 80px;
 }
@@ -616,7 +616,7 @@ html[dir="rtl"] .lnd-mockup-label {
 .lnd-mock-bar-wrap {
   flex: 1;
   height: 6px;
-  background: rgba(255,255,255,.06);
+  background: var(--surface);
   border-radius: 100px;
   overflow: hidden;
 }
@@ -629,7 +629,7 @@ body.theme-light .lnd-mock-bar-wrap { background: rgba(11,33,48,.08); }
 }
 
 .lnd-mock-pct {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--t3);
   min-width: 32px;
   text-align: left;
@@ -649,8 +649,8 @@ html[dir="rtl"] .lnd-mock-pct {
   flex: 1;
   padding: 14px;
   border-radius: 14px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.05);
+  background: var(--surface);
+  border: 1px solid var(--border);
   text-align: center;
 }
 
@@ -660,7 +660,7 @@ body.theme-light .lnd-mock-stat {
 }
 
 .lnd-mock-stat-val { font-size: 22px; font-weight: 700; color: var(--t1); font-family: 'Playfair Display', serif; }
-.lnd-mock-stat-lbl { font-size: 11px; color: var(--t3); margin-top: 2px; }
+.lnd-mock-stat-lbl { font-size: 14px; color: var(--t3); margin-top: 2px; }
 
 /* ═══════════════════════════════════════════
    ACCESSIBILITY
@@ -681,8 +681,8 @@ body.theme-light .lnd-mock-stat {
 .lnd-acc-card {
   padding: 24px 20px;
   border-radius: 20px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.06);
+  background: var(--surface);
+  border: 1px solid var(--border);
   transition: all .25s;
 }
 
@@ -719,7 +719,7 @@ body.theme-light .lnd-acc-card {
 }
 
 .lnd-acc-card p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
   color: var(--t3);
 }
@@ -741,8 +741,8 @@ body.theme-light .lnd-acc-card {
 .lnd-quote {
   padding: 32px;
   border-radius: 24px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--surface);
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
 }
@@ -794,12 +794,12 @@ html[dir="rtl"] .lnd-quote::before {
   justify-content: center;
   font-size: 15px;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-primary);
   flex-shrink: 0;
 }
 
 .lnd-quote-name { font-size: 14px; font-weight: 600; color: var(--t1); }
-.lnd-quote-role { font-size: 12px; color: var(--t3); margin-top: 1px; }
+.lnd-quote-role { font-size: 14px; color: var(--t3); margin-top: 1px; }
 
 /* ═══════════════════════════════════════════
    FAQ
@@ -820,7 +820,7 @@ html[dir="rtl"] .lnd-quote::before {
 .lnd-faq-item {
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.06);
+  border: 1px solid var(--border);
   transition: border-color .2s;
 }
 
@@ -832,7 +832,7 @@ body.theme-light .lnd-faq-item { border-color: rgba(11,33,48,.07); }
   width: 100%;
   text-align: left;
   padding: 18px 20px;
-  background: rgba(255,255,255,.02);
+  background: var(--surface);
   border: none;
   color: var(--t1);
   font-size: 15px;
@@ -882,8 +882,8 @@ body.theme-light .lnd-faq-q { background: rgba(11,33,48,.02); }
 .lnd-contact-card {
   padding: 36px;
   border-radius: 28px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 body.theme-light .lnd-contact-card {
@@ -918,7 +918,7 @@ body.theme-light .lnd-contact-card {
   padding: 14px 18px;
   border-radius: 14px;
   border: 1.5px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
+  background: var(--surface);
   color: var(--t1);
   font-size: 14px;
   outline: none;
@@ -946,7 +946,7 @@ html[dir="rtl"] .lnd-cform button {
    FOOTER
 ══════════════════════════════════════════ */
 .lnd-footer {
-  border-top: 1px solid rgba(255,255,255,.05);
+  border-top: 1px solid var(--border);
   padding: 48px 0 36px;
   background: rgba(0,0,0,.08);
 }
@@ -971,7 +971,7 @@ body.theme-light .lnd-footer {
 
 .lnd-footer-brand .lnd-logo-sub {
   margin-bottom: 0;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .lnd-footer-links {
@@ -989,7 +989,7 @@ body.theme-light .lnd-footer {
 .lnd-footer-links a:hover { color: var(--t1); }
 
 .lnd-footer-legal {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--t3);
 }
 
@@ -1017,6 +1017,21 @@ body.theme-light .lnd-footer {
   .lnd-hero-ctas { flex-direction: column; }
   .lnd-btn-primary, .lnd-btn-ghost { width: 100%; text-align: center; }
 }
+
+/* ── Accessibility pass additions ── */
+.lnd-btn-primary, .lnd-btn-ghost { min-height: 60px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.lnd-btn-ghost { border: 2px solid var(--border-strong) !important; }
+.lnd-faq-q { min-height: 60px; }
+.lnd-faq-q > span[data-i18n] { flex: 1; text-align: start; }
+.lnd-cinput { min-height: 52px; border: 2px solid var(--border-strong) !important; font-size: 16px !important; }
+.lnd-cstatus { min-height: 1.5em; font-weight: 600; color: var(--correct); }
+.lnd-footer-links a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 8px; text-decoration: underline; text-underline-offset: 4px; color: var(--text-2); }
+.lnd-section-lead, .lnd-hero-lead, .lnd-fcard p, .lnd-acc-card p, .lnd-step-body p, .lnd-faq-a { color: var(--text-2) !important; }
+.lnd-pill, .lnd-band-item { color: var(--text-2); }
+body.theme-contrast .lnd-hero::before, body.theme-contrast .lnd-hero::after { display: none; }
+body.theme-contrast .lnd-fcard, body.theme-contrast .lnd-acc-card, body.theme-contrast .lnd-quote,
+body.theme-contrast .lnd-contact-card, body.theme-contrast .lnd-how-visual, body.theme-contrast .lnd-faq-item { border: 2px solid #fff; }
+body.theme-contrast .lnd-logo-word { -webkit-text-fill-color: #ffff00; }
 </style>
 
 <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
@@ -1026,21 +1041,21 @@ body.theme-light .lnd-footer {
 
       <!-- Copy -->
       <div class="lnd-hero-copy">
-        <span class="lnd-logo-word">ENSAF</span>
+        <span class="lnd-logo-word" id="sw-title" lang="en">ENSAF</span>
         <span class="lnd-logo-sub" data-i18n="landingLogoSub">منصة التعلم التكيّفي</span>
 
         <h1 class="lnd-hero-h1" data-i18n="landingHeroTitle">واجهة تعليمية ذكية  تتكيّف مع كل متعلّم</h1>
         <p class="lnd-hero-lead" data-i18n="landingHeroLead">تحكّم في بيئة التعلم بالكامل عبر تتبّع الرأس والعين — تجربة مخصصة، خصوصية محكمة، ووصول شامل لجميع المستخدمين.</p>
 
         <div class="lnd-hero-ctas">
-          <button class="lnd-btn-primary" onclick="App.start()" data-i18n="landingStartBtn">ابدأ التعلم الآن</button>
-          <button class="lnd-btn-ghost" onclick="App.showLogin()" data-i18n="landingLoginBtn">تسجيل الدخول</button>
+          <button type="button" class="lnd-btn-primary" onclick="App.start()" data-i18n="landingStartBtn">ابدأ التعلم الآن</button>
+          <button type="button" class="lnd-btn-ghost" onclick="App.showLogin()" data-i18n="landingLoginBtn">تسجيل الدخول</button>
         </div>
 
         <div class="lnd-pills">
-          <span class="lnd-pill" data-i18n="landingPill1"><span class="material-symbols-outlined">bolt</span>تفاعل بدون لمس</span>
-          <span class="lnd-pill" data-i18n="landingPill2"><span class="material-symbols-outlined">insights</span>مسار مخصص</span>
-          <span class="lnd-pill" data-i18n="landingPill3"><span class="material-symbols-outlined">security</span>بيانات آمنة</span>
+          <span class="lnd-pill"><span class="material-symbols-outlined" aria-hidden="true">bolt</span><span data-i18n="landingPill1">تفاعل بدون لمس</span></span>
+          <span class="lnd-pill"><span class="material-symbols-outlined" aria-hidden="true">insights</span><span data-i18n="landingPill2">مسار مخصص</span></span>
+          <span class="lnd-pill"><span class="material-symbols-outlined" aria-hidden="true">security</span><span data-i18n="landingPill3">بيانات آمنة</span></span>
         </div>
       </div>
 
@@ -1058,7 +1073,7 @@ body.theme-light .lnd-footer {
         </div>
 
         <div class="lnd-hero-card">
-          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1000&q=80" alt="واجهة التعلم التكيّفي"/>
+          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1000&q=80" alt="" data-i18n-alt="landingHeroImgAlt"/>
           <div class="lnd-hero-badge">
             <div class="lnd-badge-dot"></div>
             <div>
@@ -1076,23 +1091,23 @@ body.theme-light .lnd-footer {
 <!-- ═══ SCROLLING BAND ═════════════════════════════════════════ -->
 <div class="lnd-band">
   <div class="lnd-band-track">
-    <span class="lnd-band-item" data-i18n="band1"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
-    <span class="lnd-band-item" data-i18n="band2"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
-    <span class="lnd-band-item" data-i18n="band3"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
-    <span class="lnd-band-item" data-i18n="band4"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
-    <span class="lnd-band-item" data-i18n="band5"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
-    <span class="lnd-band-item" data-i18n="band6"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
-    <span class="lnd-band-item" data-i18n="band7"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
-    <span class="lnd-band-item" data-i18n="band8"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="band1">تتبع العين</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">face</span><span data-i18n="band2">تتبع الرأس</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">auto_fix_high</span><span data-i18n="band3">تعلم تكيفي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">accessible</span><span data-i18n="band4">وصول شامل</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">cloud_done</span><span data-i18n="band5">حفظ في السحابة</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">record_voice_over</span><span data-i18n="band6">دعم صوتي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">psychology</span><span data-i18n="band7">ذكاء اصطناعي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">shield</span><span data-i18n="band8">خصوصية تامة</span></span>
     <!-- Repeat for seamless loop -->
-    <span class="lnd-band-item" data-i18n="band1"><span class="material-symbols-outlined">visibility</span>تتبع العين</span>
-    <span class="lnd-band-item" data-i18n="band2"><span class="material-symbols-outlined">face</span>تتبع الرأس</span>
-    <span class="lnd-band-item" data-i18n="band3"><span class="material-symbols-outlined">auto_fix_high</span>تعلم تكيفي</span>
-    <span class="lnd-band-item" data-i18n="band4"><span class="material-symbols-outlined">accessible</span>وصول شامل</span>
-    <span class="lnd-band-item" data-i18n="band5"><span class="material-symbols-outlined">cloud_done</span>حفظ في السحابة</span>
-    <span class="lnd-band-item" data-i18n="band6"><span class="material-symbols-outlined">record_voice_over</span>دعم صوتي</span>
-    <span class="lnd-band-item" data-i18n="band7"><span class="material-symbols-outlined">psychology</span>ذكاء اصطناعي</span>
-    <span class="lnd-band-item" data-i18n="band8"><span class="material-symbols-outlined">shield</span>خصوصية تامة</span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="band1">تتبع العين</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">face</span><span data-i18n="band2">تتبع الرأس</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">auto_fix_high</span><span data-i18n="band3">تعلم تكيفي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">accessible</span><span data-i18n="band4">وصول شامل</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">cloud_done</span><span data-i18n="band5">حفظ في السحابة</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">record_voice_over</span><span data-i18n="band6">دعم صوتي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">psychology</span><span data-i18n="band7">ذكاء اصطناعي</span></span>
+    <span class="lnd-band-item"><span class="material-symbols-outlined" aria-hidden="true">shield</span><span data-i18n="band8">خصوصية تامة</span></span>
   </div>
 </div>
 
@@ -1100,7 +1115,7 @@ body.theme-light .lnd-footer {
 <section class="lnd-section lnd-features" id="features">
   <div class="lnd-maxw">
     <div class="lnd-features-header">
-      <div class="lnd-eyebrow" data-i18n="featuresEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">star</span>مزايا المنصة</div>
+      <div class="lnd-eyebrow"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:13px;margin:0">star</span><span data-i18n="featuresEyebrow">مزايا المنصة</span></div>
       <h2 class="lnd-section-title" data-i18n="featuresTitle">مصمَّم لكل متعلّم</h2>
       <p class="lnd-section-lead" data-i18n="featuresLead">من تتبع الحركة إلى التعلم المخصص — كل أداة مبنية على احتياجات حقيقية.</p>
     </div>
@@ -1108,28 +1123,28 @@ body.theme-light .lnd-footer {
     <div class="lnd-features-grid">
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-1">
-          <span class="material-symbols-outlined">visibility</span>
+          <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
         </div>
         <h4 data-i18n="feature1Title">تتبع العين والرأس</h4>
         <p data-i18n="feature1Desc">تحكّم طبيعي ودقيق عبر الكاميرا دون أي أجهزة إضافية.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-2">
-          <span class="material-symbols-outlined">auto_fix_high</span>
+          <span class="material-symbols-outlined" aria-hidden="true">auto_fix_high</span>
         </div>
         <h4 data-i18n="feature2Title">تخصيص ذكي</h4>
         <p data-i18n="feature2Desc">المحتوى يتكيّف لحظياً مع مستواك وسرعة تقدمك.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-3">
-          <span class="material-symbols-outlined">people</span>
+          <span class="material-symbols-outlined" aria-hidden="true">people</span>
         </div>
         <h4 data-i18n="feature3Title">وصول شامل</h4>
         <p data-i18n="feature3Desc">أدوات موجهة لذوي الاحتياجات الخاصة بمعايير عالمية.</p>
       </div>
       <div class="lnd-fcard">
         <div class="lnd-fcard-icon lnd-fcard-icon-4">
-          <span class="material-symbols-outlined">cloud</span>
+          <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
         </div>
         <h4 data-i18n="feature4Title">حفظ آمن</h4>
         <p data-i18n="feature4Desc">احفظ تقدمك وتفضيلاتك عبر حساب مشفّر في السحابة.</p>
@@ -1145,7 +1160,7 @@ body.theme-light .lnd-footer {
 
       <!-- Steps -->
       <div>
-        <div class="lnd-eyebrow" data-i18n="howEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">route</span>كيف يعمل</div>
+        <div class="lnd-eyebrow"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:13px;margin:0">route</span><span data-i18n="howEyebrow">كيف يعمل</span></div>
         <h2 class="lnd-section-title" data-i18n="howTitle">ثلاث خطوات  للبدء</h2>
         <p class="lnd-section-lead" style="margin-bottom:40px" data-i18n="howLead">جاهز في دقيقة واحدة، بدون إعداد معقد.</p>
 
@@ -1217,15 +1232,15 @@ body.theme-light .lnd-footer {
 
         <div class="lnd-mock-stat-row">
           <div class="lnd-mock-stat">
-            <div class="lnd-mock-stat-val" style="color:#a78bfa">٤٧</div>
+            <div class="lnd-mock-stat-val" style="color:var(--primary)">٤٧</div>
             <div class="lnd-mock-stat-lbl" data-i18n="statLessons">درس مكتمل</div>
           </div>
           <div class="lnd-mock-stat">
-            <div class="lnd-mock-stat-val" style="color:#38bdf8">١٢</div>
+            <div class="lnd-mock-stat-val" style="color:var(--accent)">١٢</div>
             <div class="lnd-mock-stat-lbl" data-i18n="statStreak">يوم متواصل</div>
           </div>
           <div class="lnd-mock-stat">
-            <div class="lnd-mock-stat-val" style="color:#34d399">٩٤٪</div>
+            <div class="lnd-mock-stat-val" style="color:var(--correct)">٩٤٪</div>
             <div class="lnd-mock-stat-lbl" data-i18n="statAccuracy">متوسط الدقة</div>
           </div>
         </div>
@@ -1241,29 +1256,29 @@ body.theme-light .lnd-footer {
     <div class="lnd-access-grid">
 
       <div>
-        <div class="lnd-eyebrow" data-i18n="accessEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">accessible</span>إمكانية الوصول</div>
+        <div class="lnd-eyebrow"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:13px;margin:0">accessible</span><span data-i18n="accessEyebrow">إمكانية الوصول</span></div>
         <h2 class="lnd-section-title" data-i18n="accessTitle">مصمَّم ليصل للجميع</h2>
         <p class="lnd-section-lead" data-i18n="accessLead">نؤمن بأن التعلم حق للجميع — لذا بنينا كل ميزة مع مراعاة الاحتياجات المتنوعة.</p>
       </div>
 
       <div class="lnd-access-cards">
         <div class="lnd-acc-card">
-          <div class="lnd-acc-icon"><span class="material-symbols-outlined">text_increase</span></div>
+          <div class="lnd-acc-icon"><span class="material-symbols-outlined" aria-hidden="true">text_increase</span></div>
           <h4 data-i18n="access1Title">تكبير النص</h4>
           <p data-i18n="access1Desc">تحكم كامل في الحجم والتباين.</p>
         </div>
         <div class="lnd-acc-card">
-          <div class="lnd-acc-icon"><span class="material-symbols-outlined">volume_up</span></div>
+          <div class="lnd-acc-icon"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span></div>
           <h4 data-i18n="access2Title">دعم صوتي</h4>
           <p data-i18n="access2Desc">قراءة المحتوى وإرشادات مسموعة.</p>
         </div>
         <div class="lnd-acc-card">
-          <div class="lnd-acc-icon"><span class="material-symbols-outlined">keyboard_voice</span></div>
+          <div class="lnd-acc-icon"><span class="material-symbols-outlined" aria-hidden="true">keyboard_voice</span></div>
           <h4 data-i18n="access3Title">تحكم بديل</h4>
           <p data-i18n="access3Desc">لوحات مفاتيح خاصة وإدخال صوتي.</p>
         </div>
         <div class="lnd-acc-card">
-          <div class="lnd-acc-icon"><span class="material-symbols-outlined">contrast</span></div>
+          <div class="lnd-acc-icon"><span class="material-symbols-outlined" aria-hidden="true">contrast</span></div>
           <h4 data-i18n="access4Title">ألوان التباين</h4>
           <p data-i18n="access4Desc">أوضاع متعددة للرؤية المريحة.</p>
         </div>
@@ -1276,7 +1291,7 @@ body.theme-light .lnd-footer {
 <!-- ═══ TESTIMONIALS ══════════════════════════════════════════ -->
 <section class="lnd-section lnd-testi">
   <div class="lnd-maxw">
-    <div class="lnd-eyebrow" data-i18n="testiEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">format_quote</span>آراء مستخدمين</div>
+    <div class="lnd-eyebrow"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:13px;margin:0">format_quote</span><span data-i18n="testiEyebrow">آراء مستخدمين</span></div>
     <h2 class="lnd-section-title" data-i18n="testiTitle">ماذا يقول المجتمع</h2>
 
     <div class="lnd-testi-grid">
@@ -1311,24 +1326,24 @@ body.theme-light .lnd-footer {
 
       <!-- FAQ -->
       <div>
-        <div class="lnd-eyebrow" data-i18n="faqEyebrow"><span class="material-symbols-outlined" style="font-size:13px;margin:0">help</span>أسئلة شائعة</div>
+        <div class="lnd-eyebrow"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:13px;margin:0">help</span><span data-i18n="faqEyebrow">أسئلة شائعة</span></div>
         <h2 class="lnd-section-title" style="margin-bottom:32px" data-i18n="faqTitle">إجابات سريعة</h2>
 
         <div class="lnd-faq-list">
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q" data-i18n="faq1Q">هل أحتاج جهازاً خاصاً؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <button class="lnd-faq-q" type="button"><span data-i18n="faq1Q">هل أحتاج جهازاً خاصاً؟</span><span class="lnd-faq-arrow material-symbols-outlined" aria-hidden="true">expand_more</span></button>
             <div class="lnd-faq-a" data-i18n="faq1A">لا، تعمل المنصة باستخدام كاميرا الويب العادية الموجودة في حاسوبك أو هاتفك.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q" data-i18n="faq2Q">كيف تحمي بياناتي؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <button class="lnd-faq-q" type="button"><span data-i18n="faq2Q">كيف تحمي بياناتي؟</span><span class="lnd-faq-arrow material-symbols-outlined" aria-hidden="true">expand_more</span></button>
             <div class="lnd-faq-a" data-i18n="faq2A">يمكنك الاختيار بين الحفظ المحلي الكامل أو السحابة المشفّرة عبر Firebase — أنت المتحكم.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q" data-i18n="faq3Q">هل تعمل على الأجهزة اللوحية؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <button class="lnd-faq-q" type="button"><span data-i18n="faq3Q">هل تعمل على الأجهزة اللوحية؟</span><span class="lnd-faq-arrow material-symbols-outlined" aria-hidden="true">expand_more</span></button>
             <div class="lnd-faq-a" data-i18n="faq3A">نعم، المنصة متجاوبة بالكامل وتدعم الشاشات اللوحية واللمس.</div>
           </div>
           <div class="lnd-faq-item">
-            <button class="lnd-faq-q" data-i18n="faq4Q">هل يمكن استخدامها بدون انترنت؟<span class="lnd-faq-arrow material-symbols-outlined">expand_more</span></button>
+            <button class="lnd-faq-q" type="button"><span data-i18n="faq4Q">هل يمكن استخدامها بدون انترنت؟</span><span class="lnd-faq-arrow material-symbols-outlined" aria-hidden="true">expand_more</span></button>
             <div class="lnd-faq-a" data-i18n="faq4A">وضع الحفظ المحلي يعمل دون اتصال. بعض الميزات السحابية تحتاج اتصالاً.</div>
           </div>
         </div>
@@ -1339,14 +1354,15 @@ body.theme-light .lnd-footer {
         <div class="lnd-contact-card">
           <h3 data-i18n="contactTitle">تواصل معنا</h3>
           <p data-i18n="contactDesc">للمؤسسات أو الدعم التقني، أرسل لنا رسالة وسنرد في أقرب وقت.</p>
-          <form class="lnd-cform" onsubmit="event.preventDefault(); alert(this.querySelector('[data-i18n]')?.getAttribute('data-i18n') === 'contactSubmitMsg' ? 'شكراً! سنرد قريباً.' : 'Thank you! We will respond shortly.')">
-            <input class="lnd-cinput" type="text" placeholder="" data-i18n-placeholder="contactNamePlaceholder" aria-label="Name" required />
-            <input class="lnd-cinput" type="email" placeholder="" data-i18n-placeholder="contactEmailPlaceholder" aria-label="Email" required />
-            <textarea class="lnd-cinput" placeholder="" data-i18n-placeholder="contactMsgPlaceholder" aria-label="Message" rows="4" required style="resize:vertical"></textarea>
+          <form class="lnd-cform" data-i18n-aria-label="contactFormLabel" aria-label="Contact form">
+            <input class="lnd-cinput" type="text" placeholder="" data-i18n-placeholder="contactNamePlaceholder" data-i18n-aria-label="contactNamePlaceholder" aria-label="Name" required autocomplete="name" />
+            <input class="lnd-cinput" type="email" placeholder="" data-i18n-placeholder="contactEmailPlaceholder" data-i18n-aria-label="contactEmailPlaceholder" aria-label="Email" required autocomplete="email" />
+            <textarea class="lnd-cinput" placeholder="" data-i18n-placeholder="contactMsgPlaceholder" data-i18n-aria-label="contactMsgPlaceholder" aria-label="Message" rows="4" required style="resize:vertical"></textarea>
             <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
               <button class="lnd-btn-ghost" type="button" onclick="App.showLogin()" style="font-size:14px;padding:12px 22px" data-i18n="contactLoginBtn">تسجيل الدخول</button>
               <button class="lnd-btn-primary" type="submit" style="font-size:14px;padding:12px 28px" data-i18n="contactSendBtn">إرسال</button>
             </div>
+            <p class="lnd-cstatus" role="status" aria-live="polite"></p>
           </form>
         </div>
       </div>
@@ -1363,48 +1379,15 @@ body.theme-light .lnd-footer {
         <span class="lnd-logo-word">ENSAF</span>
         <span class="lnd-logo-sub" data-i18n="footerSub">تعلم تفاعلي للجميع</span>
       </div>
-      <div class="lnd-footer-links">
+      <nav class="lnd-footer-links" data-i18n-aria-label="landingNavLabel" aria-label="Page links">
         <a href="#features" data-i18n="footerFeatures">المزايا</a>
         <a href="#how" data-i18n="footerHow">كيف يعمل</a>
         <a href="#faq" data-i18n="footerFaq">الأسئلة</a>
         <a href="#accessibility" data-i18n="footerAccess">الوصول</a>
-      </div>
+      </nav>
       <div class="lnd-footer-legal" data-i18n="footerCopyright">© 2026 إنصاف — جميع الحقوق محفوظة</div>
     </div>
   </div>
 </footer>
 
-<script>
-// FAQ accordion
-(function(){
-  document.querySelectorAll('.lnd-faq-q').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.parentElement;
-      const isOpen = item.classList.contains('open');
-      // Close all
-      document.querySelectorAll('.lnd-faq-item.open').forEach(el => {
-        el.classList.remove('open');
-        el.querySelector('.lnd-faq-a').style.maxHeight = null;
-      });
-      // Open clicked
-      if (!isOpen) {
-        item.classList.add('open');
-        const a = item.querySelector('.lnd-faq-a');
-        a.style.maxHeight = a.scrollHeight + 'px';
-      }
-    });
-  });
-})();
-
-// Handle placeholder translations
-(function updatePlaceholders() {
-  const elements = document.querySelectorAll('[data-i18n-placeholder]');
-  elements.forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    if (App && App.t) {
-      el.placeholder = App.t(key);
-    }
-  });
-})();
-</script>
 </div>

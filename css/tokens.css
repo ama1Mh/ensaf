@@ -1,0 +1,190 @@
+/* ════════════════════════════════════════════════════════════════════
+   ENSAF design tokens — the ONLY place colours are defined.
+   Identity: violet → sky gradient, amber spark, rounded glassy cards.
+
+   Contrast targets (WCAG 2.2 AA): text ≥ 4.5:1, large text / UI ≥ 3:1.
+   Values below were checked against their own --bg and --surface
+   (ratios in comments are against --surface unless noted).
+   Themes: body.theme-light (default) · body.theme-dark · body.theme-contrast
+   ════════════════════════════════════════════════════════════════════ */
+
+:root,
+body.theme-light {
+  color-scheme: light;
+  --bg:            #f4f6fb;
+  --bg-tint-1:     rgba(109, 40, 217, .07);
+  --bg-tint-2:     rgba(3, 105, 161, .07);
+  --surface:       #ffffff;
+  --surface-2:     #eef1f8;
+  --surface-glass: rgba(255, 255, 255, .94);
+  --bar-bg:        rgba(255, 255, 255, .97);
+
+  --text:          #0b1b2b;   /* 17.4:1 */
+  --text-2:        #2c3a4b;   /* 11.6:1 */
+  --text-muted:    #4a5568;   /*  7.5:1 (6.9:1 on --bg) */
+
+  --border:        rgba(11, 27, 43, .14);   /* decorative separators */
+  --border-strong: #6b7686;                 /*  4.6:1 — inputs, buttons (UI ≥ 3:1) */
+
+  --primary:       #5b21b6;   /* violet-800  9.3:1 — text/links/icons */
+  --primary-soft:  rgba(91, 33, 182, .10);
+  --accent:        #0369a1;   /* sky-700     5.9:1 */
+  --accent-soft:   rgba(3, 105, 161, .10);
+  --amber:         #92400e;   /* amber-800   7.1:1 — text */
+  --amber-bright:  #f59e0b;   /* decorative only (logo gradient) */
+
+  --grad-primary:  linear-gradient(135deg, #6d28d9 0%, #0369a1 100%); /* white text ≥ 5.9:1 on both stops */
+  --grad-logo:     linear-gradient(135deg, #0369a1 0%, #6d28d9 50%, #b45309 100%);
+  --on-primary:    #ffffff;
+
+  --focus:         #b45309;   /* amber-700 5.0:1 on white, 4.6:1 on --bg — visible next to violet */
+  --focus-halo:    #ffffff;
+  --hover-bg:      rgba(91, 33, 182, .08);
+  --hover-border:  #5b21b6;
+
+  --dwell:         #0369a1;
+  --dwell-track:   rgba(3, 105, 161, .20);
+  --cursor:        #0369a1;
+  --cursor-ring:   #ffffff;
+
+  --correct:       #166534;   /* 7.1:1 */
+  --correct-bg:    #dcfce7;
+  --wrong:         #b91c1c;   /* 6.5:1 */
+  --wrong-bg:      #fee2e2;
+  --warn:          #92400e;
+  --warn-bg:       #fef3c7;
+  --info:          #075985;
+  --info-bg:       #e0f2fe;
+  --danger:        #b91c1c;   /* SOS background, white text 6.5:1 */
+  --on-danger:     #ffffff;
+
+  --shadow-1:      0 4px 24px rgba(16, 24, 32, .08);
+  --shadow-2:      0 18px 50px rgba(16, 24, 32, .14);
+
+  /* Legacy aliases used by the landing page (screens/sw.html) */
+  --t1: var(--text);  --t2: var(--text-2);  --t3: var(--text-muted);
+  --c: var(--surface); --c2: var(--surface-2);
+  --b: var(--border);  --b2: var(--border);
+  --vi: #6d28d9; --vi2: var(--primary); --vi3: var(--primary-soft);
+  --cy: var(--accent); --cy2: var(--accent-soft); --cy3: var(--accent-soft);
+  --go: var(--amber); --gr: var(--correct); --gr2: var(--correct-bg);
+  --re: var(--wrong); --re2: var(--wrong-bg);
+  --surface-soft: var(--surface-2);
+
+  /* Type & shape */
+  --ff: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --fh: 'Syne', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
+  --r: 14px; --r2: 24px; --r3: 30px;
+  --text-scale: 1;
+  --target: 64px;        /* main buttons & answers */
+  --target-min: 48px;    /* never below 44px */
+  --gap-target: 16px;    /* space between dwell targets */
+}
+
+body.theme-dark {
+  color-scheme: dark;
+  --bg:            #0b1220;
+  --bg-tint-1:     rgba(139, 92, 246, .12);
+  --bg-tint-2:     rgba(56, 189, 248, .07);
+  --surface:       #131c2e;
+  --surface-2:     #1b2740;
+  --surface-glass: rgba(19, 28, 46, .96);
+  --bar-bg:        rgba(11, 18, 32, .97);
+
+  --text:          #f1f5ff;   /* 16.0:1 */
+  --text-2:        #d3dbeb;   /* 12.0:1 */
+  --text-muted:    #aab6cc;   /*  8.0:1 */
+
+  --border:        rgba(255, 255, 255, .14);
+  --border-strong: #8090aa;   /*  5.0:1 */
+
+  --primary:       #c4b5fd;   /* violet-300 9.6:1 */
+  --primary-soft:  rgba(196, 181, 253, .14);
+  --accent:        #7dd3fc;   /* sky-300   10.3:1 */
+  --accent-soft:   rgba(125, 211, 252, .14);
+  --amber:         #fcd34d;
+  --amber-bright:  #fbbf24;
+
+  --grad-primary:  linear-gradient(135deg, #6d28d9 0%, #0369a1 100%);
+  --grad-logo:     linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #f59e0b 100%);
+  --on-primary:    #ffffff;
+
+  --focus:         #fbbf24;   /* 10.9:1 on --bg */
+  --focus-halo:    #0b1220;
+  --hover-bg:      rgba(196, 181, 253, .12);
+  --hover-border:  #c4b5fd;
+
+  --dwell:         #7dd3fc;
+  --dwell-track:   rgba(125, 211, 252, .22);
+  --cursor:        #7dd3fc;
+  --cursor-ring:   #0b1220;
+
+  --correct:       #4ade80;   /* 9.7:1 */
+  --correct-bg:    rgba(74, 222, 128, .14);
+  --wrong:         #fca5a5;   /* 9.0:1 */
+  --wrong-bg:      rgba(252, 165, 165, .14);
+  --warn:          #fcd34d;
+  --warn-bg:       rgba(252, 211, 77, .14);
+  --info:          #7dd3fc;
+  --info-bg:       rgba(125, 211, 252, .12);
+  --danger:        #b91c1c;
+  --on-danger:     #ffffff;
+
+  --shadow-1:      0 4px 24px rgba(0, 0, 0, .35);
+  --shadow-2:      0 18px 50px rgba(0, 0, 0, .45);
+  --vi: #8b5cf6;
+}
+
+body.theme-contrast {
+  color-scheme: dark;
+  --bg:            #000000;
+  --bg-tint-1:     transparent;
+  --bg-tint-2:     transparent;
+  --surface:       #000000;
+  --surface-2:     #000000;
+  --surface-glass: #000000;
+  --bar-bg:        #000000;
+
+  --text:          #ffffff;   /* 21:1 */
+  --text-2:        #ffffff;
+  --text-muted:    #ffffff;
+
+  --border:        #ffffff;
+  --border-strong: #ffffff;
+
+  --primary:       #ffff00;   /* 19.6:1 */
+  --primary-soft:  #000000;
+  --accent:        #00ffff;   /* 16.7:1 */
+  --accent-soft:   #000000;
+  --amber:         #ffff00;
+  --amber-bright:  #ffff00;
+
+  --grad-primary:  linear-gradient(#ffff00, #ffff00);
+  --grad-logo:     linear-gradient(#ffff00, #ffff00);
+  --on-primary:    #000000;
+
+  --focus:         #00ffff;
+  --focus-halo:    #000000;
+  --hover-bg:      #1a1a00;
+  --hover-border:  #ffff00;
+
+  --dwell:         #ffff00;
+  --dwell-track:   #444400;
+  --cursor:        #ffff00;
+  --cursor-ring:   #000000;
+
+  --correct:       #00ff66;
+  --correct-bg:    #000000;
+  --wrong:         #ff8080;   /* 8.6:1 */
+  --wrong-bg:      #000000;
+  --warn:          #ffff00;
+  --warn-bg:       #000000;
+  --info:          #00ffff;
+  --info-bg:       #000000;
+  --danger:        #c00000;   /* white text 7.4:1 */
+  --on-danger:     #ffffff;
+
+  --shadow-1:      none;
+  --shadow-2:      none;
+  --vi: #ffff00;
+}

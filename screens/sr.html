@@ -1,15 +1,16 @@
-<div class="scr" id="sr">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2;padding:20px;text-align:center;">
-    <div class="rbadge" id="rb"><span class="material-symbols-outlined icon icon-lg">emoji_events</span></div>
-    <div class="rscore" id="rs">80%</div>
-    <div class="rlbl" id="rl">Excellent!</div>
-    <div class="rsub" id="ru">You answered 4 of 5 correctly</div>
+<section class="scr" id="sr" aria-labelledby="sr-title">
+  <div class="rwrap">
+    <h1 class="sr-only" id="sr-title" data-i18n="resultHeading">Session report</h1>
+    <div class="rbadge" id="rb" aria-hidden="true"></div>
+    <div class="rscore" id="rs">0%</div>
+    <div class="rlbl" id="rl"></div>
+    <p class="rsub" id="ru"></p>
     <div class="rstats" id="rst"></div>
     <div class="rrep" id="rrep"></div>
     <div class="racts">
-      <button class="bpri" onclick="App.retry()">Retry <span class="material-symbols-outlined icon icon-sm">refresh</span></button>
-      <button class="bout" onclick="App.home()">Home <span class="material-symbols-outlined icon icon-sm">home</span></button>
-      <button class="bout" onclick="App.showLesson()">Study content <span class="material-symbols-outlined icon icon-sm">menu_book</span></button>
+      <button type="button" class="bpri" data-ra="retry"><span class="material-symbols-outlined" aria-hidden="true">refresh</span><span data-i18n="resultRetry">Retry</span></button>
+      <button type="button" class="bout" data-ra="study"><span class="material-symbols-outlined" aria-hidden="true">menu_book</span><span data-i18n="resultStudy">Study content</span></button>
+      <button type="button" class="bout" data-ra="home"><span class="material-symbols-outlined" aria-hidden="true">home</span><span data-i18n="home">Home</span></button>
     </div>
   </div>
-</div>
+</section>

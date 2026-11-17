@@ -62,15 +62,7 @@ function fail(e) {
     console.warn('[Firebase] setPersistence failed', e)
   );
 
-  // Analytics is optional and throws on localhost / blocked cookies / some
-  // browsers — load it in isolation so it can never take auth down with it.
-  if (fbConfig.analytics !== false && fbConfig.config?.measurementId) {
-    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js')
-      .then(async ({ getAnalytics, isSupported }) => {
-        if (await isSupported()) getAnalytics(app);
-      })
-      .catch(e => console.info('[Firebase] analytics unavailable', e?.message || e));
-  }
+  // No analytics: ENSAF does not track students (Google Analytics was removed).
 
   window.FirebaseAuthApi = {
     async signIn(email, password) {

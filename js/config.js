@@ -77,8 +77,9 @@ EYE_TRACKING: {
   // Firebase optional settings — fill this with your Firebase config if you want real auth
   FIREBASE: {
     enabled: true,
-    // If true, local fallback auth is disabled and Firebase is required
-    requireAuth: true,
+    // If true, guest mode is hidden and Firebase sign-in is required.
+    // Kept false: guest mode is the fully hands-free way into ENSAF.
+    requireAuth: false,
     config: {
       apiKey: "AIzaSyBD_Mby6Jv6t7Z--vZEeQPkEXA9ULyX638",
       authDomain: "ensaf-134dc.firebaseapp.com",

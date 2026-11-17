@@ -1,17 +1,35 @@
-<div class="scr" id="sp">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;z-index:2;">
-    <div class="pico">📷</div>
-    <div class="ptit" data-i18n="permissionTitle">Camera permission required</div>
-    <div class="pdesc" data-i18n="permissionDesc">
-      Tracking uses the camera to follow your head or eye movement. No video is stored.
+<section class="scr" id="sp" aria-labelledby="sp-title">
+  <div class="perm-wrap">
+    <h1 class="screen-title" id="sp-title" data-i18n="modeChooseTitle">Choose how to control ENSAF</h1>
+    <p class="screen-sub" data-i18n="modeChooseHint">You can change this any time in Settings.</p>
+
+    <div class="mode-cards" role="group" aria-labelledby="sp-title">
+      <button type="button" class="mbtn" data-mode="head">
+        <span class="material-symbols-outlined" aria-hidden="true">face</span>
+        <span class="mtitle" data-i18n="modeHeadShort">Head tracking</span>
+        <span class="mdesc" data-i18n="modeHeadDesc">Move your head to steer the cursor — needs a camera</span>
+      </button>
+      <button type="button" class="mbtn" data-mode="eye">
+        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        <span class="mtitle" data-i18n="modeEyeShort">Eye tracking</span>
+        <span class="mdesc" data-i18n="modeEyeDesc">Move your eyes to steer the cursor — needs a camera and good light</span>
+      </button>
+      <button type="button" class="mbtn" data-mode="mouse">
+        <span class="material-symbols-outlined" aria-hidden="true">mouse</span>
+        <span class="mtitle" data-i18n="modeMouseShort">Mouse</span>
+        <span class="mdesc" data-i18n="modeMouseDesc">Use a mouse, trackpad, touch or keyboard</span>
+      </button>
     </div>
-    <div class="psteps">
-      <div class="pstep"><div class="psn">1</div><span data-i18n="permissionStep1">Click "Allow" in the browser permission window</span></div>
-      <div class="pstep"><div class="psn">2</div><span data-i18n="permissionStep2">Good lighting — your face should be clearly visible</span></div>
-      <div class="pstep"><div class="psn">3</div><span data-i18n="permissionStep3">Sit 50–70 cm from the screen</span></div>
-      <div class="pstep"><div class="psn">4</div><span data-i18n="permissionStep4">Move your head or eyes to steer the cursor</span></div>
-    </div>
-    <button class="cta" onclick="App.requestCamera()" data-i18n="permissionAllow">Allow camera</button>
-    <button class="bout" onclick="App.useMouse()" data-i18n="permissionUseMouse">Use mouse instead</button>
+
+    <p class="perm-status" id="perm-status" role="status" aria-live="polite"></p>
+
+    <h2 class="screen-sub" data-i18n="cameraTipsTitle">Before you start the camera</h2>
+    <p class="pdesc" data-i18n="permissionDesc">Tracking uses the camera to follow your head or eye movement. No video is stored.</p>
+    <ol class="psteps">
+      <li class="pstep"><span class="psn" aria-hidden="true">1</span><span data-i18n="permissionStep1">Click "Allow" in the browser permission window</span></li>
+      <li class="pstep"><span class="psn" aria-hidden="true">2</span><span data-i18n="permissionStep2">Good lighting — your face should be clearly visible</span></li>
+      <li class="pstep"><span class="psn" aria-hidden="true">3</span><span data-i18n="permissionStep3">Sit 50–70 cm from the screen</span></li>
+      <li class="pstep"><span class="psn" aria-hidden="true">4</span><span data-i18n="permissionStep4">Move your head or eyes to steer the cursor</span></li>
+    </ol>
   </div>
-</div>
+</section>

@@ -1,61 +1,46 @@
-<style>
-  #profile .profile-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
-  #profile .profile-close-btn {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    color: inherit;
-    opacity: 0.5;
-    padding: 0 0.25rem;
-    transition: opacity 0.2s;
-  }
-  #profile .profile-close-btn:hover {
-    opacity: 1;
-  }
-</style>
-<div class="scr" id="profile">
+<section class="scr" id="profile" aria-labelledby="profile-title">
   <div class="profile-card">
     <div class="profile-head">
       <div>
-        <div class="profile-title" data-i18n="authProfileTitle">Profile</div>
-        <div id="profile-welcome" class="profile-welcome"></div>
+        <h1 class="profile-title" id="profile-title" data-i18n="authProfileTitle">Profile</h1>
+        <p id="profile-welcome" class="profile-welcome"></p>
       </div>
-      <button id="profile-close-btn" class="profile-close-btn" aria-label="Close profile" onclick="App.home()">&times;</button>
+      <button id="profile-close-btn" type="button" class="close-btn" data-i18n-aria-label="authProfileClose" aria-label="Close profile">×</button>
     </div>
 
+    <div id="profile-status" class="auth-status" role="status" aria-live="polite"></div>
+
     <div class="profile-info">
-      <div class="profile-row"><span data-i18n="authProfileEmail">Email</span><span id="profile-email"></span></div>
-      <div class="profile-row"><span data-i18n="authProfileModeLabel">Interaction mode</span>
-        <select id="profile-mode" class="auth-input">
-          <option value="head" data-i18n="modeHeadOption">Head tracking (faster)</option>
-          <option value="eye" data-i18n="modeEyeOption">Eye tracking (more accurate)</option>
-          <option value="mouse" data-i18n="modeMouseOption">Mouse (fallback)</option>
-        </select>
+      <div class="profile-row"><span class="label" data-i18n="authProfileEmail">Email</span><span id="profile-email" dir="ltr"></span></div>
+      <div class="profile-row">
+        <span class="label" id="pf-mode-l" data-i18n="authProfileModeLabel">Interaction mode</span>
+        <div class="seg" role="group" aria-labelledby="pf-mode-l" data-profile="mode">
+          <button type="button" data-value="head" data-i18n="modeHeadShort">Head tracking</button>
+          <button type="button" data-value="eye" data-i18n="modeEyeShort">Eye tracking</button>
+          <button type="button" data-value="mouse" data-i18n="modeMouseShort">Mouse</button>
+        </div>
       </div>
-      <div class="profile-row"><span data-i18n="authProfileThemeLabel">Theme</span>
-        <select id="profile-theme" class="auth-input">
-          <option value="default" data-i18n="themeLight">Light mode</option>
-          <option value="warm" data-i18n="themeDark">Dark mode</option>
-        </select>
+      <div class="profile-row">
+        <span class="label" id="pf-theme-l" data-i18n="authProfileThemeLabel">Theme</span>
+        <div class="seg" role="group" aria-labelledby="pf-theme-l" data-profile="theme">
+          <button type="button" data-value="light" data-i18n="themeLight">Light</button>
+          <button type="button" data-value="dark" data-i18n="themeDark">Dark</button>
+          <button type="button" data-value="contrast" data-i18n="themeContrast">High contrast</button>
+        </div>
       </div>
-      <div class="profile-row"><span data-i18n="authProfileLangLabel">Language</span>
-        <select id="profile-language" class="auth-input">
-          <option value="ar">العربية</option>
-          <option value="en">English</option>
-          <option value="zh">中文</option>
-        </select>
+      <div class="profile-row">
+        <span class="label" id="pf-lang-l" data-i18n="authProfileLangLabel">Language</span>
+        <div class="seg" role="group" aria-labelledby="pf-lang-l" data-profile="lang">
+          <button type="button" data-value="ar" lang="ar">العربية</button>
+          <button type="button" data-value="en" lang="en">English</button>
+          <button type="button" data-value="zh" lang="zh">中文</button>
+        </div>
       </div>
     </div>
 
     <div class="profile-actions">
-      <button id="profile-save-btn" class="cta" data-i18n="authProfileSave">Save preferences</button>
-      <button id="profile-signout-btn" class="bhome" data-i18n="authProfileSignOut">Sign out</button>
+      <button id="profile-save-btn" type="button" class="cta"><span class="spinner-inline" aria-hidden="true"></span><span data-i18n="authProfileSave">Save preferences</span></button>
+      <button id="profile-signout-btn" type="button" class="cta secondary" data-i18n="authProfileSignOut">Sign out</button>
     </div>
   </div>
-</div>
+</section>
