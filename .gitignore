@@ -26,3 +26,6 @@ build/
 # Temporary files
 *.tmp
 .temp/
+# Test output
+test-results/
+playwright-report/

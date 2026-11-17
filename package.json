@@ -28,5 +28,10 @@
   "homepage": "https://github.com/ama1Mh/ensaf-head-tracker#readme",
   "dependencies": {
     "firebase": "^12.13.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.49.1",
+    "http-server": "^14.1.1"
   }
 }
