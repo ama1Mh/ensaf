@@ -176,7 +176,7 @@ class AuthManager {
       if (ok) {
         this._attachFirebaseListener();
       } else {
-        console.warn('[Auth] Firebase did not load — check your network or the config in js/config.js');
+        console.info('[Auth] Firebase did not load — check your network or the config in js/config.js');
         if (this.requireAuth && this.user) this._setUser(null, 'firebase-unavailable');
         this._resolveReady();
       }

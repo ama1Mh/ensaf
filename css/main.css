@@ -79,9 +79,9 @@ img { max-width: 100%; }
   font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;
   font-variation-settings: 'FILL' 0, 'wght' 450, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle; flex-shrink: 0;
-  color: transparent;
+  visibility: hidden;
 }
-html.icons-ready .material-symbols-outlined { color: inherit; }
+html.icons-ready .material-symbols-outlined { visibility: inherit; }
 html.icons-failed .material-symbols-outlined { display: none !important; }
 .icon { margin-inline-end: 6px; }
 .icon-sm { font-size: 1.2em; }

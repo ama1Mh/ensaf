@@ -35,6 +35,7 @@
       this.cooldownUntil = 0;
       this.armed = true;
       this.disarmPoint = null;
+      this.movedAway = false;
     }
 
     /** Disarm without selecting (e.g. after a screen change or a click). */
@@ -42,6 +43,7 @@
       this.target = null;
       this.lostAt = null;
       this.armed = false;
+      this.movedAway = false;
       this.disarmPoint = (x === undefined || x === null) ? null : { x, y };
       if (now !== undefined) this.cooldownUntil = now + this.cooldownMs;
     }
@@ -58,11 +60,16 @@
     update(targetId, x, y, now) {
       // ── Re-arm check ──
       if (!this.armed) {
-        const moved = !this.disarmPoint || targetId === null ||
-          Math.hypot(x - this.disarmPoint.x, y - this.disarmPoint.y) >= this.rearmDistance;
-        if (moved && now >= this.cooldownUntil) {
+        // Remember that the pointer has left, even if it comes back before the
+        // cooldown ends (a quick "away and back" must not leave it stuck).
+        if (!this.disarmPoint || targetId === null ||
+            Math.hypot(x - this.disarmPoint.x, y - this.disarmPoint.y) >= this.rearmDistance) {
+          this.movedAway = true;
+        }
+        if (this.movedAway && now >= this.cooldownUntil) {
           this.armed = true;
           this.disarmPoint = null;
+          this.movedAway = false;
         }
       }
 

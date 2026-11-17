@@ -225,7 +225,7 @@
     return { pipeline, lag90Ms: Infinity };
   }
 
-  const api = { mulberry32, gaussian, makeGrid, pickTargetSticky, pickTargetLegacy, runSimulation, measureRestJitter, measureStepLag };
+  const api = { mulberry32, gaussian, makeGrid, pickTargetSticky, pickTargetLegacy, LegacyDwell, runSimulation, measureRestJitter, measureStepLag };
   if (isNode) module.exports = api;
   else root.PointerSim = api;
 })(typeof window !== 'undefined' ? window : globalThis);

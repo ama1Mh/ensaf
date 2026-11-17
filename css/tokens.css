@@ -26,7 +26,7 @@ body.theme-light {
   --border:        rgba(11, 27, 43, .14);   /* decorative separators */
   --border-strong: #6b7686;                 /*  4.6:1 — inputs, buttons (UI ≥ 3:1) */
 
-  --primary:       #5b21b6;   /* violet-800  9.3:1 — text/links/icons */
+  --primary:       #5b21b6;   /* violet-800  9.0:1 — text/links/icons */
   --primary-soft:  rgba(91, 33, 182, .10);
   --accent:        #0369a1;   /* sky-700     5.9:1 */
   --accent-soft:   rgba(3, 105, 161, .10);
@@ -36,6 +36,7 @@ body.theme-light {
   --grad-primary:  linear-gradient(135deg, #6d28d9 0%, #0369a1 100%); /* white text ≥ 5.9:1 on both stops */
   --grad-logo:     linear-gradient(135deg, #0369a1 0%, #6d28d9 50%, #b45309 100%);
   --on-primary:    #ffffff;
+  --vi-base:       #6d28d9;
 
   --focus:         #b45309;   /* amber-700 5.0:1 on white, 4.6:1 on --bg — visible next to violet */
   --focus-halo:    #ffffff;
@@ -61,16 +62,6 @@ body.theme-light {
   --shadow-1:      0 4px 24px rgba(16, 24, 32, .08);
   --shadow-2:      0 18px 50px rgba(16, 24, 32, .14);
 
-  /* Legacy aliases used by the landing page (screens/sw.html) */
-  --t1: var(--text);  --t2: var(--text-2);  --t3: var(--text-muted);
-  --c: var(--surface); --c2: var(--surface-2);
-  --b: var(--border);  --b2: var(--border);
-  --vi: #6d28d9; --vi2: var(--primary); --vi3: var(--primary-soft);
-  --cy: var(--accent); --cy2: var(--accent-soft); --cy3: var(--accent-soft);
-  --go: var(--amber); --gr: var(--correct); --gr2: var(--correct-bg);
-  --re: var(--wrong); --re2: var(--wrong-bg);
-  --surface-soft: var(--surface-2);
-
   /* Type & shape */
   --ff: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
   --fh: 'Syne', 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
@@ -91,9 +82,9 @@ body.theme-dark {
   --surface-glass: rgba(19, 28, 46, .96);
   --bar-bg:        rgba(11, 18, 32, .97);
 
-  --text:          #f1f5ff;   /* 16.0:1 */
-  --text-2:        #d3dbeb;   /* 12.0:1 */
-  --text-muted:    #aab6cc;   /*  8.0:1 */
+  --text:          #f1f5ff;   /* 15.6:1 */
+  --text-2:        #d3dbeb;   /* 12.3:1 */
+  --text-muted:    #aab6cc;   /*  8.3:1 */
 
   --border:        rgba(255, 255, 255, .14);
   --border-strong: #8090aa;   /*  5.0:1 */
@@ -132,7 +123,7 @@ body.theme-dark {
 
   --shadow-1:      0 4px 24px rgba(0, 0, 0, .35);
   --shadow-2:      0 18px 50px rgba(0, 0, 0, .45);
-  --vi: #8b5cf6;
+  --vi-base: #8b5cf6;
 }
 
 body.theme-contrast {
@@ -181,10 +172,25 @@ body.theme-contrast {
   --warn-bg:       #000000;
   --info:          #00ffff;
   --info-bg:       #000000;
-  --danger:        #c00000;   /* white text 7.4:1 */
+  --danger:        #c00000;   /* white text 6.5:1 */
   --on-danger:     #ffffff;
 
   --shadow-1:      none;
   --shadow-2:      none;
-  --vi: #ffff00;
+  --vi-base: #ffff00;
+}
+
+/* Legacy aliases used by the landing page (screens/sw.html).
+   Declared on body (where the theme classes live) so they resolve to the
+   ACTIVE theme's colours — custom properties resolve where they are declared. */
+:root, body {
+  --t1: var(--text);  --t2: var(--text-2);  --t3: var(--text-muted);
+  --c: var(--surface); --c2: var(--surface-2);
+  --b: var(--border);  --b2: var(--border);
+  --vi: var(--vi-base); --vi2: var(--primary); --vi3: var(--primary-soft);
+  --cy: var(--accent); --cy2: var(--accent-soft); --cy3: var(--accent-soft);
+  --go: var(--amber); --gr: var(--correct); --gr2: var(--correct-bg);
+  --re: var(--wrong); --re2: var(--wrong-bg);
+  --surface-soft: var(--surface-2);
+
 }

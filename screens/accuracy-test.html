@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENSAF — Tracking accuracy test</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0..200&display=block">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/main.css">
+<style>
+  body { min-height: 100vh; }
+  .acc-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  .acc-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .acc-head h1 { font-family: var(--fh); font-size: 1.9rem; }
+  .acc-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; background: var(--surface); border: 2px solid var(--border); border-radius: 24px; padding: 18px; }
+  .acc-actions { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .arena { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, 1fr); height: min(560px, calc(100vh - 32px)); gap: 24px; padding: 24px; background: var(--surface-2); border-radius: 24px; border: 2px solid var(--border); }
+  .tgt { min-height: 64px; border-radius: 20px; border: 3px solid var(--border-strong); background: var(--surface); color: var(--text-muted); font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .tgt.active { border-color: var(--primary); border-width: 5px; color: var(--primary); background: var(--primary-soft); }
+  .tgt.active::before { content: '★'; font-size: 1.6rem; }
+  .tgt.flash-ok { background: var(--correct-bg); border-color: var(--correct); }
+  .tgt.flash-no { background: var(--wrong-bg); border-color: var(--wrong); border-style: dashed; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 16px; overflow: hidden; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: start; }
+  th { background: var(--surface-2); }
+  .acc-status { font-size: 1.15rem; font-weight: 700; min-height: 1.6em; }
+  #acc-cursor { position: fixed; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none; z-index: 50; display: none; --p: 0;
+    background: conic-gradient(var(--dwell) calc(var(--p) * 1turn), var(--dwell-track) 0); -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px); mask: radial-gradient(circle, transparent 12px, #000 13px); }
+  #acc-dot { position: fixed; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--cursor); box-shadow: 0 0 0 3px var(--cursor-ring); pointer-events: none; z-index: 51; display: none; }
+  video { position: fixed; bottom: 16px; inset-inline-start: 16px; width: 160px; border-radius: 16px; transform: scaleX(-1); opacity: .9; }
+</style>
+</head>
+<body class="theme-light">
+<script>
+  try { var s = JSON.parse(localStorage.getItem('ensaf-settings') || '{}'); document.body.className = 'theme-' + (s.theme || 'light'); } catch (e) {}
+</script>
+<main class="acc-wrap">
+  <div class="acc-head">
+    <h1 data-i18n="accTitle">Tracking accuracy test</h1>
+    <a class="cta secondary" href="../index.html" data-i18n="accBackToApp">Back to ENSAF</a>
+  </div>
+  <p class="screen-sub" style="text-align:start" data-i18n="accIntro"></p>
+
+  <section class="acc-controls" aria-labelledby="acc-title-controls">
+    <h2 id="acc-title-controls" class="sr-only" data-i18n="settings">Settings</h2>
+    <div class="set-row">
+      <span class="label" id="acc-mode-l" data-i18n="accMode">Input mode</span>
+      <div class="seg" role="group" aria-labelledby="acc-mode-l" id="acc-mode">
+        <button type="button" data-value="mouse" aria-pressed="true" data-i18n="modeMouseShort">Mouse</button>
+        <button type="button" data-value="head" aria-pressed="false" data-i18n="modeHeadShort">Head</button>
+        <button type="button" data-value="eye" aria-pressed="false" data-i18n="modeEyeShort">Eye</button>
+        <button type="button" data-value="sim" aria-pressed="false" data-i18n="accSimulate">Simulated</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="label" id="acc-filter-l" data-i18n="accFilter">Smoothing filter</span>
+      <div class="seg" role="group" aria-labelledby="acc-filter-l" id="acc-filter">
+        <button type="button" data-value="new" aria-pressed="true" data-i18n="accFilterNew">New</button>
+        <button type="button" data-value="legacy" aria-pressed="false" data-i18n="accFilterLegacy">Old</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="label" id="acc-trials-l" data-i18n="accTrials">Number of trials</span>
+      <div class="stepper" role="group" aria-labelledby="acc-trials-l">
+        <button type="button" id="trials-m" aria-label="−">−</button><output id="trials-v">12</output><button type="button" id="trials-p" aria-label="+">+</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <span class="label" id="acc-dwell-l" data-i18n="accDwell">Dwell</span>
+      <div class="stepper" role="group" aria-labelledby="acc-dwell-l">
+        <button type="button" id="dwell-m" aria-label="−">−</button><output id="dwell-v">2.0</output><button type="button" id="dwell-p" aria-label="+">+</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="acc-actions">
+    <button type="button" class="cta" id="acc-start" data-i18n="accStart">Start test</button>
+    <button type="button" class="cta secondary" id="acc-stop" data-i18n="accStop" disabled>Stop</button>
+    <p class="acc-status" id="acc-status" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="arena" id="arena" aria-label="Targets"></div>
+
+  <section aria-labelledby="acc-hist-title">
+    <div class="acc-head">
+      <h2 id="acc-hist-title" data-i18n="accHistory">Previous runs</h2>
+      <div class="acc-actions">
+        <button type="button" class="cta secondary" id="acc-export" data-i18n="accExport">Download JSON</button>
+        <button type="button" class="cta secondary" id="acc-clear" data-i18n="accClear">Clear results</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th data-i18n="accDate">Date</th><th data-i18n="accMode">Mode</th><th data-i18n="accFilter">Filter</th><th data-i18n="accDwell">Dwell</th>
+        <th data-i18n="accHitRate">Hit rate</th><th data-i18n="accMeanTime">Mean time</th><th data-i18n="accFalse">False</th><th data-i18n="accTimeouts">Timeouts</th>
+      </tr></thead>
+      <tbody id="acc-rows"></tbody>
+    </table>
+  </section>
+</main>
+<div id="acc-cursor" aria-hidden="true"></div><div id="acc-dot" aria-hidden="true"></div>
+<video id="acc-video" autoplay playsinline muted hidden></video>
+
+<script src="../js/config.js"></script>
+<script src="../js/i18n/translations.js"></script>
+<script src="../js/core/i18n.js"></script>
+<script src="../js/core/settings.js"></script>
+<script src="../js/core/filters.js"></script>
+<script src="../js/core/dwell-core.js"></script>
+<script src="../js/core/pointer-sim.js"></script>
+<script src="../js/tracking/face-tracker.js"></script>
+<script>
+/* Accuracy test: one target lights up at a time; the student selects it by
+   dwelling. Measures hit rate (first selection correct), time to select,
+   false selections and timeouts, per input mode and filter. Results are kept
+   in this browser only (localStorage) and can be downloaded as JSON. */
+(function () {
+  const S = Settings.load();
+  I18N.setLang(S.lang);
+  I18N.apply(document);
+  document.title = `ENSAF — ${I18N.t('accTitle')}`;
+  const t = (k, v) => I18N.t(k, v);
+  const $ = id => document.getElementById(id);
+  const KEY = 'ensaf-accuracy-runs';
+  const COLS = 4, ROWS = 3, TIMEOUT = 15000;
+  let trials = 12, dwellMs = 2000, mode = 'mouse', filter = 'new';
+  let run = null, tracker = null, stream = null;
+
+  // Targets
+  const arena = $('arena');
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tgt'; b.dataset.id = String(i);
+    b.textContent = t('accTarget', { n: i + 1 });
+    b.addEventListener('click', e => { if (run && e.isTrusted) onSelect(String(i)); });
+    arena.appendChild(b);
+  }
+  const targets = [...arena.children];
+  const rects = () => targets.map(el => { const r = el.getBoundingClientRect(); return { id: el.dataset.id, left: r.left, top: r.top, right: r.right, bottom: r.bottom }; });
+
+  function seg(id, cb) {
+    $(id).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      cb(b.dataset.value);
+    }));
+  }
+  seg('acc-mode', v => { mode = v; });
+  seg('acc-filter', v => { filter = v; });
+  const renderSteppers = () => { $('trials-v').textContent = trials; $('dwell-v').textContent = `${(dwellMs / 1000).toFixed(1)}s`; };
+  $('trials-m').onclick = () => { trials = Math.max(4, trials - 4); renderSteppers(); };
+  $('trials-p').onclick = () => { trials = Math.min(60, trials + 4); renderSteppers(); };
+  $('dwell-m').onclick = () => { dwellMs = Math.max(1000, dwellMs - 500); renderSteppers(); };
+  $('dwell-p').onclick = () => { dwellMs = Math.min(8000, dwellMs + 500); renderSteppers(); };
+  renderSteppers();
+
+  // ── Pointer pipeline (mirrors the app: new = sticky + DwellCore, legacy = original dwell) ──
+  let core, legacy, current = null;
+  function resetPipeline() {
+    core = new DwellCore({ dwellMs, cooldownMs: 900, rearmDistance: 40, graceMs: 150 });
+    legacy = new PointerSim.LegacyDwell(dwellMs);
+    current = null;
+  }
+  function onPointer(x, y) {
+    $('acc-cursor').style.display = $('acc-dot').style.display = 'block';
+    $('acc-cursor').style.transform = $('acc-dot').style.transform = `translate(${x}px, ${y}px)`;
+    if (!run) return;
+    const now = performance.now();
+    let selected = null, progress = 0;
+    if (filter === 'legacy') {
+      const id = PointerSim.pickTargetLegacy(x, y, rects());
+      selected = legacy.update(id, now);
+      progress = id !== null && legacy.active === id ? Math.min(1, (now - legacy.start) / dwellMs) : 0;
+    } else {
+      current = PointerSim.pickTargetSticky(x, y, rects(), current);
+      const res = core.update(current, x, y, now);
+      selected = res.selected; progress = res.progress;
+      if (selected) current = null;
+    }
+    $('acc-cursor').style.setProperty('--p', progress.toFixed(3));
+    if (selected !== null) onSelect(selected);
+  }
+  let lastMouse = null;
+  document.addEventListener('mousemove', e => { if (mode === 'mouse') { lastMouse = { x: e.clientX, y: e.clientY }; onPointer(e.clientX, e.clientY); } });
+  // A resting mouse sends no events; keep feeding its position so dwell completes.
+  setInterval(() => { if (mode === 'mouse' && lastMouse && run) onPointer(lastMouse.x, lastMouse.y); }, 33);
+
+  // ── Trials ──
+  function nextTarget() {
+    targets.forEach(el => el.classList.remove('active'));
+    if (run.k >= trials) return finish();
+    let idx;
+    do { idx = Math.floor(Math.random() * targets.length); } while (idx === run.last);
+    run.last = idx; run.target = String(idx); run.onset = performance.now(); run.wrong = false;
+    targets[idx].classList.add('active');
+    $('acc-status').textContent = t('accRunning', { n: run.k + 1, total: trials });
+    clearTimeout(run.timer);
+    run.timer = setTimeout(() => { run.timeouts++; run.k++; nextTarget(); }, TIMEOUT);
+  }
+  function flash(id, cls) { const el = targets[Number(id)]; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 400); }
+  function onSelect(id) {
+    if (!run || !run.target) return;
+    if (id === run.target) {
+      if (!run.wrong) run.hits++;
+      run.times.push(performance.now() - run.onset);
+      flash(id, 'flash-ok');
+      run.k++; clearTimeout(run.timer); run.target = null;
+      setTimeout(() => run && nextTarget(), 500);
+    } else {
+      run.falseSel++; run.wrong = true; flash(id, 'flash-no');
+    }
+  }
+
+  async function start() {
+    if (mode === 'sim') return simulate();
+    resetPipeline();
+    arena.scrollIntoView({ block: 'center', behavior: 'instant' });
+    run = { k: 0, hits: 0, falseSel: 0, timeouts: 0, times: [], last: -1, target: null };
+    $('acc-start').disabled = true; $('acc-stop').disabled = false;
+    if (mode === 'head' || mode === 'eye') {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        const v = $('acc-video'); v.hidden = false; v.srcObject = stream; await v.play().catch(() => {});
+        tracker = new FaceTracker({ mode, filter, getSettings: () => Settings.get(), onPoint: (x, y, info) => info.face && onPointer(x, y) });
+        await tracker.start(v);
+      } catch (e) {
+        $('acc-status').textContent = t(e && e.name === 'NotAllowedError' ? 'cameraDenied' : 'trackerLoadFailed');
+        stop(); return;
+      }
+    }
+    nextTarget();
+  }
+  function stop() {
+    if (run) clearTimeout(run.timer);
+    run = null;
+    targets.forEach(el => el.classList.remove('active'));
+    if (tracker) { tracker.stop(); tracker = null; }
+    if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; $('acc-video').hidden = true; }
+    $('acc-start').disabled = false; $('acc-stop').disabled = true;
+  }
+  function save(result) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+    list.unshift(result);
+    try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 100))); } catch (e) {}
+    renderRows();
+  }
+  function finish() {
+    const r = run;
+    const mean = r.times.length ? r.times.reduce((a, b) => a + b, 0) / r.times.length : 0;
+    save({ date: new Date().toISOString(), mode, filter, dwellMs, trials, hitRate: r.hits / trials, meanTimeMs: Math.round(mean), falseSelections: r.falseSel, timeouts: r.timeouts });
+    stop();
+    $('acc-status').textContent = t('accDone');
+  }
+  function simulate() {
+    ['legacy', 'new'].forEach(p => {
+      const res = PointerSim.runSimulation({ pipeline: p, trials, dwellMs, seed: Date.now() % 100000,
+        grid: { cols: 6, rows: 4, tw: 120, th: 80, gap: 16 }, noise: { white: 20, tremorAmp: 16, glitchRate: 0.04, aimSigma: 22 } });
+      save({ date: new Date().toISOString(), mode: 'sim', filter: p, dwellMs, trials, hitRate: res.hitRate, meanTimeMs: res.meanTimeMs, falseSelections: res.falseSelections, timeouts: res.timeouts });
+    });
+    $('acc-status').textContent = t('accDone');
+  }
+  function renderRows() {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+    const modeName = { mouse: 'modeMouseShort', head: 'modeHeadShort', eye: 'modeEyeShort', sim: 'accSimulate' };
+    $('acc-rows').innerHTML = list.length ? list.map(r => `<tr>
+      <td>${new Date(r.date).toLocaleString(I18N.lang)}</td><td>${t(modeName[r.mode] || r.mode)}</td>
+      <td>${t(r.filter === 'legacy' ? 'accFilterLegacy' : 'accFilterNew')}</td><td>${(r.dwellMs / 1000).toFixed(1)}s</td>
+      <td>${(r.hitRate * 100).toFixed(0)}%</td><td>${(r.meanTimeMs / 1000).toFixed(2)}s</td><td>${r.falseSelections}</td><td>${r.timeouts}</td></tr>`).join('')
+      : `<tr><td colspan="8">${t('accNoRuns')}</td></tr>`;
+  }
+  $('acc-start').onclick = start;
+  $('acc-stop').onclick = stop;
+  $('acc-clear').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} renderRows(); };
+  $('acc-export').onclick = () => {
+    const blob = new Blob([localStorage.getItem(KEY) || '[]'], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'ensaf-accuracy-results.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  renderRows();
+  // Icons font readiness (same rule as the app: no raw ligature text).
+  if (document.fonts) document.fonts.load('24px "Material Symbols Outlined"', 'home').then(f => f.length && document.documentElement.classList.add('icons-ready')).catch(() => {});
+})();
+</script>
+</body>
+</html>

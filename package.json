@@ -1,15 +1,19 @@
 {
-  "name": "ensaf-head-tracker",
+  "name": "ensaf",
   "version": "3.0.0",
   "description": "Accessible e-learning platform with head tracking for motor-impaired students",
   "main": "index.html",
   "scripts": {
-    "start": "npx serve .",
-    "test": "echo \"No tests configured\""
+    "start": "http-server -p 8000 -c-1 .",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test a11y",
+    "bench": "node tests/bench/accuracy-sim.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ama1Mh/ensaf-head-tracker.git"
+    "url": "git+https://github.com/ama1Mh/ensaf.git"
   },
   "keywords": [
     "accessibility",
@@ -23,9 +27,9 @@
   "author": "ENSAF Contributors",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ama1Mh/ensaf-head-tracker/issues"
+    "url": "https://github.com/ama1Mh/ensaf/issues"
   },
-  "homepage": "https://github.com/ama1Mh/ensaf-head-tracker#readme",
+  "homepage": "https://ama1mh.github.io/ensaf/",
   "dependencies": {
     "firebase": "^12.13.0"
   },

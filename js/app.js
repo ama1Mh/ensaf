@@ -176,7 +176,12 @@ class EnsafApp {
     if (name !== 'question') { this.hesitation.stop(); this._hideHint(); }
     document.getElementById('sos')?.classList.toggle('show', SOS_SCREENS.has(domId));
     if (name === 'login') this._onLoginShown();
-    if (name === 'subjects' && !document.querySelector('#sgrid .scard')) this.buildSubjectsGrid();
+    // If the language changed while this screen was on its way in, re-render it.
+    const stale = id => { const el = document.getElementById(id); return el && el.dataset.lang !== this.language; };
+    if (name === 'subjects' && (!document.querySelector('#sgrid .scard') || stale('sgrid'))) this.buildSubjectsGrid();
+    if (name === 'question' && stale('agrid')) this.showQuestion({ rerender: true });
+    if (name === 'lesson' && stale('lbox')) this._renderLesson();
+    if (name === 'result' && stale('rrep')) this.showResult({ rerender: true });
     if (name === 'profile') this._populateProfile();
     // Move focus to the screen heading so keyboard / screen-reader users start at the top.
     const scr = document.getElementById(domId);
@@ -195,12 +200,20 @@ class EnsafApp {
   // ═══ 2. Input: tracker / mouse → cursor → dwell ═══════════════
   _bindPointer() {
     this.cursor = document.getElementById('cursor');
+    this._mouse = null;
     document.addEventListener('mousemove', e => {
       if (this.tracker) return;   // head/eye mode owns the cursor
       if (!Settings.get('mouseDwell')) return;
+      this._mouse = { x: e.clientX, y: e.clientY };
       this._pointer(e.clientX, e.clientY);
     }, { passive: true });
-    document.addEventListener('mouseleave', () => { if (!this.tracker) DwellController.update(-1, -1); });
+    document.documentElement.addEventListener('mouseleave', () => { this._mouse = null; if (!this.tracker) DwellController.update(-1, -1); });
+    // A resting mouse sends no events, but dwell must keep counting: re-feed the
+    // last position ~30×/s (head/eye trackers already stream positions).
+    setInterval(() => {
+      if (this.tracker || !this._mouse || !Settings.get('mouseDwell') || document.hidden) return;
+      DwellController.update(this._mouse.x, this._mouse.y);
+    }, 33);
   }
 
   _pointer(x, y) {
@@ -277,7 +290,8 @@ class EnsafApp {
       const key = (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) ? 'cameraDenied'
         : (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError' || err.name === 'TypeError')) ? 'cameraMissing'
         : (err && err.name === 'NotReadableError') ? 'cameraBusy' : 'cameraMissing';
-      console.warn('[ENSAF] camera error', err && err.name);
+      console.info('[ENSAF] camera unavailable:', err && err.name);
+      if (quiet) { this._quietFail(); return; }
       this._fallbackToMouse(key, { navigate, quiet });
       return;
     }
@@ -295,10 +309,11 @@ class EnsafApp {
     try {
       await tracker.start(video);
     } catch (err) {
-      console.warn('[ENSAF] tracker failed to load', err && err.message);
+      console.info('[ENSAF] tracker failed to load:', err && err.message);
       tracker.stop();
       this._cameraStarting = false;
       this.stopTracking();
+      if (quiet) { this._quietFail(); return; }
       this._fallbackToMouse('trackerLoadFailed', { navigate, quiet });
       return;
     }
@@ -320,6 +335,13 @@ class EnsafApp {
     const video = document.getElementById('vcam');
     if (video) { video.classList.remove('show'); video.srcObject = null; }
     this._renderMode();
+  }
+
+  /** Silent auto-resume failed: leave the saved mode alone; the student picks a mode as usual. */
+  _quietFail() {
+    const permStatus = document.getElementById('perm-status');
+    if (permStatus) permStatus.textContent = '';
+    this._setStatus('statusTrackingOff', 'off');
   }
 
   _fallbackToMouse(messageKey, { navigate = true, quiet = false } = {}) {
@@ -982,6 +1004,7 @@ class EnsafApp {
         <span class="sct">${this.esc(this.t('questionsCount', { n }))}</span>
       </button>`;
     }).join('');
+    grid.dataset.lang = this.language;
     grid.querySelectorAll('.scard').forEach(card => card.addEventListener('click', () => this.selectSubject(card.dataset.id)));
   }
 
@@ -1047,6 +1070,7 @@ class EnsafApp {
         <span class="atxt">${this.esc(opt)}</span>
         <span class="afb" aria-hidden="true"></span>
       </button>`).join('');
+    $('agrid').dataset.lang = this.language;
     $('agrid').querySelectorAll('.abtn').forEach(btn => btn.addEventListener('click', () => this.selectAnswer(Number(btn.dataset.i))));
 
     const answered = this.state.get('quiz.answered');
@@ -1159,6 +1183,7 @@ class EnsafApp {
       <div class="rrow"><span class="rlb">${this.esc(this.t('resultScoreLabel'))}</span><span class="rvl ${r.passed ? 'g' : 'w'}">${r.passed ? '✓' : '!'} ${r.percent}% — ${this.esc(this.t(r.passed ? 'resultPassed' : 'resultNotPassed'))}</span></div>
       <div class="rrow"><span class="rlb">${this.esc(this.t('resultAvgPerQuestion'))}</span><span class="rvl">${r.avgSec}${this.esc(sec)}</span></div>
       <div class="rrow"><span class="rlb">${this.esc(this.t('resultInteraction'))}</span><span class="rvl">${this.esc(this.t(modeKey))}</span></div>`;
+    $('rrep').dataset.lang = this.language;
     if (!rerender) {
       Sounds.play(r.passed ? 'correct' : 'hint');
       this.speak(this.t('voiceTestComplete', { percent: r.percent, message: this.t(msg) }));
@@ -1200,6 +1225,7 @@ class EnsafApp {
       ? `<button type="button" class="lbtn pri" data-a="next">${this.esc(this.t('lessonNext'))}</button>`
       : `<button type="button" class="lbtn pri" data-a="quiz">${this.icon('edit')}<span>${this.esc(this.t('lessonQuizButton'))}</span></button>`;
     $('lnav').innerHTML = `${prev}<div class="lsep"></div>${next}`;
+    $('lbox').dataset.lang = this.language;
     $('lnav').querySelectorAll('.lbtn').forEach(b => b.addEventListener('click', () => {
       const a = b.dataset.a;
       if (a === 'next' || a === 'prev') {
