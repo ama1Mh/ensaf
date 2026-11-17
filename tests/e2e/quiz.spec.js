@@ -22,6 +22,7 @@ test('complete quiz with dwell selection, hint, feedback and session report', as
 
   // Dwell progress is visible on the element and the cursor, and leaving cancels.
   const first = page.locator('.abtn').first();
+  await page.waitForTimeout(1000);               // let the post-selection cooldown pass
   const box = await first.boundingBox();
   await page.mouse.move(box.x + 30, box.y + 30);
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 3 });

@@ -256,6 +256,8 @@ class EnsafApp {
   /** Entry point for the mode cards on the permission screen. */
   chooseMode(mode) {
     if (mode === 'mouse') { this.useMouse(); return; }
+    // Already tracking in this mode (e.g. auto-resumed on load): just continue.
+    if (this.tracker && this.tracker.mode === mode) { this.showScreen('subjects'); return; }
     this.requestCamera(mode, { navigate: true });
   }
 
@@ -272,8 +274,24 @@ class EnsafApp {
   }
 
   async requestCamera(mode, { navigate = true, quiet = false } = {}) {
-    if (this._cameraStarting) return;
+    if (this._cameraStarting) {
+      // A start is already in progress (e.g. the silent auto-resume): remember
+      // that the student now wants to continue when it is ready.
+      if (mode === Settings.get('mode')) { if (navigate) this._navigateWhenReady = true; if (!quiet) this._quietStart = false; return; }
+      await this._cameraStartPromise;
+    }
     this._cameraStarting = true;
+    this._navigateWhenReady = navigate;
+    this._quietStart = quiet;
+    let done;
+    this._cameraStartPromise = new Promise(r => { done = r; });
+    try { await this._startCamera(mode); } finally { this._cameraStarting = false; done(); }
+  }
+
+  async _startCamera(mode) {
+    // Read at the end, because a mode card may be pressed while we are starting.
+    const navigate = () => this._navigateWhenReady;
+    const quiet = () => this._quietStart;
     const permStatus = document.getElementById('perm-status');
     if (permStatus) permStatus.textContent = this.t('cameraStarting');
     this._setStatus('cameraStarting', 'wn');
@@ -286,13 +304,12 @@ class EnsafApp {
         audio: false
       });
     } catch (err) {
-      this._cameraStarting = false;
       const key = (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) ? 'cameraDenied'
         : (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError' || err.name === 'TypeError')) ? 'cameraMissing'
         : (err && err.name === 'NotReadableError') ? 'cameraBusy' : 'cameraMissing';
       console.info('[ENSAF] camera unavailable:', err && err.name);
-      if (quiet) { this._quietFail(); return; }
-      this._fallbackToMouse(key, { navigate, quiet });
+      if (quiet()) { this._quietFail(); return; }
+      this._fallbackToMouse(key, { navigate: navigate() });
       return;
     }
 
@@ -311,22 +328,20 @@ class EnsafApp {
     } catch (err) {
       console.info('[ENSAF] tracker failed to load:', err && err.message);
       tracker.stop();
-      this._cameraStarting = false;
       this.stopTracking();
-      if (quiet) { this._quietFail(); return; }
-      this._fallbackToMouse('trackerLoadFailed', { navigate, quiet });
+      if (quiet()) { this._quietFail(); return; }
+      this._fallbackToMouse('trackerLoadFailed', { navigate: navigate() });
       return;
     }
     this.tracker = tracker;
-    this._cameraStarting = false;
     this.inputReady = true;
     video.classList.add('show');
     this.cursor.classList.add('on');
     if (permStatus) permStatus.textContent = '';
     this._setStatus('statusActive', 'ok');
     this._renderMode();
-    if (!quiet) this.speak(this.t('voiceReady'));
-    if (navigate) this.showScreen('subjects');
+    if (!quiet()) this.speak(this.t('voiceReady'));
+    if (navigate()) this.showScreen('subjects');
   }
 
   stopTracking() {
