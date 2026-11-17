@@ -25,6 +25,9 @@ class ScreenRouter {
     this.previousScreen = null;
     this.transitioning  = false;
     this._skipNextHash  = false;
+    this._started       = false;
+    // Optional guard: (screenName) => screenName to show instead (or same).
+    this.guard          = null;
 
     // Short name → DOM element id
     this.screenMap = {
@@ -108,7 +111,15 @@ class ScreenRouter {
     // Hide again now that fragments are in DOM
     this._hideAll();
 
-    // Navigate to whatever the current URL says
+    // If the app is present it calls ROUTER.start() once auth is initialised,
+    // so the guard sees the real session. Otherwise start on our own.
+    if (typeof App === 'undefined') this.start();
+  }
+
+  /** Performs the first navigation from the current URL. Safe to call twice. */
+  start() {
+    if (this._started) return;
+    this._started = true;
     this._navigateFromHash();
   }
 
@@ -143,6 +154,15 @@ class ScreenRouter {
    */
   navigate(screenId, params = {}) {
     if (this.transitioning) return;
+
+    // Let the app redirect (e.g. protected screen while signed out)
+    if (typeof this.guard === 'function') {
+      const name = Object.keys(this.screenMap).find(k => this.screenMap[k] === screenId) || screenId;
+      const redirect = this.guard(name, params);
+      if (redirect && redirect !== name) {
+        return this.navigate(redirect, { ...params, _fromHash: false, _redirectedFrom: name });
+      }
+    }
 
     // Resolve to DOM element id
     const mappedId = this.screenMap[screenId] || screenId;
@@ -228,22 +248,6 @@ class ScreenRouter {
     setTimeout(callback, 50);
   }
 
-  // ── Transition engine ──────────────────────────────────────────
-
-  _transition(from, to, callback) {
-    // Hide ALL — class AND inline style — so nothing stacks
-    document.querySelectorAll('.scr').forEach(el => {
-      el.classList.remove('on');
-      el.style.display = 'none';
-    });
-
-    if (to?.element) {
-      to.element.style.display = '';   // hand back to CSS for layout
-      to.element.classList.add('on');
-    }
-
-    setTimeout(callback, 50);
-  }
 }
 
 const ROUTER = new ScreenRouter();

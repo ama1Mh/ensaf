@@ -1,85 +1,185 @@
+/**
+ * AuthManager — wraps Firebase Auth (via window.FirebaseAuthApi from
+ * firebase-init.js) with a localStorage fallback when Firebase is disabled.
+ *
+ * - The last signed-in user is cached in localStorage so the UI can render
+ *   immediately on reload; Firebase's onAuthStateChanged then confirms or
+ *   clears it.
+ * - Subscribers registered with onChange(cb) are notified whenever the user
+ *   changes (sign in, sign out, profile loaded, session expired…).
+ * - Failed calls return { success:false, errorKey, message } where errorKey is
+ *   an i18n key the app can translate.
+ */
+
+const AUTH_ERROR_KEYS = {
+  'auth/invalid-email': 'authErrInvalidEmail',
+  'auth/missing-email': 'authErrInvalidEmail',
+  'auth/user-not-found': 'authErrInvalidCredentials',
+  'auth/wrong-password': 'authErrInvalidCredentials',
+  'auth/invalid-credential': 'authErrInvalidCredentials',
+  'auth/invalid-login-credentials': 'authErrInvalidCredentials',
+  'auth/email-already-in-use': 'authErrEmailInUse',
+  'auth/weak-password': 'authErrWeakPassword',
+  'auth/missing-password': 'authErrMissingFields',
+  'auth/too-many-requests': 'authErrTooManyRequests',
+  'auth/network-request-failed': 'authErrNetwork',
+  'auth/user-disabled': 'authErrUserDisabled',
+  'auth/operation-not-allowed': 'authErrNotEnabled',
+  'auth/configuration-not-found': 'authErrNotEnabled',
+  'auth/unauthorized-domain': 'authErrUnauthorizedDomain',
+  'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'authErrConfig',
+  'permission-denied': 'authErrPermission',
+  'unavailable': 'authErrNetwork'
+};
+
 class AuthManager {
   constructor() {
     this.userKey = 'user';
     this.usersKey = 'auth_users';
     this.user = null;
+    this._listeners = [];
+    this._unsubscribe = null;
+    this._resolveReady = null;
+    // Resolves once we know the real auth state (first Firebase callback,
+    // or immediately when Firebase is disabled/unavailable).
+    this.ready = new Promise(resolve => { this._resolveReady = resolve; });
   }
 
-  async _waitForFirebaseAuthApi(timeoutMs = 3000) {
-    if (!window.CONFIG || !window.CONFIG.FIREBASE || !window.CONFIG.FIREBASE.enabled) {
-      return false;
-    }
+  // ── Config helpers ──────────────────────────────────────────
+  get firebaseEnabled() {
+    return !!(window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled);
+  }
 
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      if (window.FirebaseAuthApi) return true;
-      await new Promise(resolve => setTimeout(resolve, 50));
+  get requireAuth() {
+    return !!(window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth);
+  }
+
+  get usingFirebase() {
+    return this.firebaseEnabled && !!window.FirebaseAuthApi;
+  }
+
+  // ── Subscription ────────────────────────────────────────────
+  onChange(cb) {
+    this._listeners.push(cb);
+    return () => { this._listeners = this._listeners.filter(l => l !== cb); };
+  }
+
+  _emit(reason) {
+    this._listeners.forEach(cb => {
+      try { cb(this.user, reason); } catch (e) { console.error('[Auth] listener error', e); }
+    });
+  }
+
+  _setUser(user, reason) {
+    this.user = user;
+    this._persistUser();
+    this._emit(reason);
+  }
+
+  // ── Firebase bootstrap ──────────────────────────────────────
+  _waitForFirebaseAuthApi(timeoutMs = 15000) {
+    if (!this.firebaseEnabled) return Promise.resolve(false);
+    if (window.FirebaseAuthApi) return Promise.resolve(true);
+
+    return new Promise(resolve => {
+      const done = (ok) => {
+        clearTimeout(timer);
+        clearInterval(poll);
+        window.removeEventListener('firebase-ready', onReady);
+        resolve(ok);
+      };
+      const onReady = (e) => done(!!(e.detail && e.detail.ok) && !!window.FirebaseAuthApi);
+      const poll = setInterval(() => { if (window.FirebaseAuthApi) done(true); }, 100);
+      const timer = setTimeout(() => done(!!window.FirebaseAuthApi), timeoutMs);
+      window.addEventListener('firebase-ready', onReady);
+    });
+  }
+
+  _defaultPreferences() {
+    return {
+      mode: CONFIG.APP.DEFAULT_MODE,
+      theme: localStorage.getItem('ensaf-theme') || 'default',
+      language: localStorage.getItem('ensaf-lang') || 'ar'
+    };
+  }
+
+  _userFromFirebase(fbUser, preferences) {
+    return {
+      id: fbUser.uid,
+      name: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'User'),
+      email: fbUser.email || '',
+      preferences: preferences || {},
+      isGuest: false
+    };
+  }
+
+  /** Loads users/{uid}; creates it with defaults if missing. Returns preferences. */
+  async _loadOrCreateProfile(fbUser, nameHint) {
+    const api = window.FirebaseAuthApi;
+    let profile = await api.getUserProfile(fbUser.uid);
+    if (!profile) {
+      const preferences = this._defaultPreferences();
+      const res = await api.saveUserProfile(fbUser.uid, {
+        name: nameHint || fbUser.displayName || '',
+        email: fbUser.email || '',
+        preferences
+      }, { isNew: true });
+      if (!res.success) console.warn('[Auth] Could not create Firestore profile:', res.code, res.message);
+      profile = { preferences };
     }
-    return !!window.FirebaseAuthApi;
+    return { ...this._defaultPreferences(), ...(profile.preferences || {}) };
   }
 
   _attachFirebaseListener() {
-    if (!window.FirebaseAuthApi) return;
-    console.log('[Auth] Firebase is enabled, attaching auth state listener');
-    try {
-      window.FirebaseAuthApi.onAuthStateChanged((fbUser) => {
-        console.log('[Auth] Firebase auth state changed:', fbUser);
-        if (fbUser) {
-          window.FirebaseAuthApi.getUserProfile(fbUser.uid).then(profile => {
-            if (!profile) {
-              console.warn('[Auth] Firestore profile not found for uid', fbUser.uid);
-            }
-            const prefs = (profile && profile.preferences) ? profile.preferences : (this.user ? this.user.preferences || {} : {});
-            this.user = {
-              id: fbUser.uid,
-              name: fbUser.displayName || fbUser.email || fbUser.uid,
-              email: fbUser.email || '',
-              preferences: prefs
-            };
-            this._persistUser();
-          }).catch((err) => {
-            console.warn('[Auth] Failed to load Firestore profile', err);
-            this.user = {
-              id: fbUser.uid,
-              name: fbUser.displayName || fbUser.email || fbUser.uid,
-              email: fbUser.email || '',
-              preferences: this.user ? this.user.preferences || {} : {}
-            };
-            this._persistUser();
-          });
-        } else {
-          // keep local guest or null
+    if (this._unsubscribe || !window.FirebaseAuthApi) return;
+    let first = true;
+
+    this._unsubscribe = window.FirebaseAuthApi.onAuthStateChanged(async (fbUser) => {
+      if (fbUser) {
+        const cachedPrefs = (this.user && this.user.id === fbUser.uid) ? this.user.preferences : null;
+        // Render immediately with what we have, then refine with Firestore.
+        if (!this.user || this.user.id !== fbUser.uid) {
+          this._setUser(this._userFromFirebase(fbUser, cachedPrefs || this._defaultPreferences()), 'session');
         }
-      });
-    } catch (e) {
-      console.warn('[Auth] Firebase listener failed', e);
-    }
+        try {
+          const prefs = await this._loadOrCreateProfile(fbUser);
+          if (this.user && this.user.id === fbUser.uid) {
+            this._setUser(this._userFromFirebase(fbUser, prefs), 'profile');
+          }
+        } catch (e) {
+          console.warn('[Auth] Failed to load Firestore profile', e);
+        }
+      } else if (this.user && !(this.user.isGuest && !this.requireAuth)) {
+        // Session ended (signed out elsewhere, token revoked, or cached user is stale).
+        this._setUser(null, 'signed-out');
+      }
+
+      if (first) { first = false; this._resolveReady(); }
+    });
   }
 
   init() {
     this.user = utils.loadFromStorage(this.userKey, null);
-    console.log('[Auth] init local user:', this.user);
-
-    // If Firebase is enabled, wait for its API and listen for auth state changes
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled) {
-      console.log('[Auth] Firebase enabled, waiting for FirebaseAuthApi');
-      this._waitForFirebaseAuthApi().then(ready => {
-        if (ready) {
-          this._attachFirebaseListener();
-        } else {
-          console.warn('[Auth] FirebaseAuthApi not available after wait');
-          if (window.CONFIG.FIREBASE.requireAuth) {
-            this.user = null;
-            this._persistUser();
-          }
-        }
-      });
-    }
-    // If Firebase is required but not available, clear user
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth && (!window.FirebaseAuthApi || !window.CONFIG.FIREBASE.enabled)) {
+    if (this.user && this.user.isGuest && this.requireAuth) {
       this.user = null;
       this._persistUser();
     }
+
+    if (!this.firebaseEnabled) {
+      this._resolveReady();
+      return this.ready;
+    }
+
+    this._waitForFirebaseAuthApi().then(ok => {
+      if (ok) {
+        this._attachFirebaseListener();
+      } else {
+        console.warn('[Auth] Firebase did not load — check your network or the config in js/config.js');
+        if (this.requireAuth && this.user) this._setUser(null, 'firebase-unavailable');
+        this._resolveReady();
+      }
+    });
+    return this.ready;
   }
 
   isSignedIn() {
@@ -91,235 +191,168 @@ class AuthManager {
   }
 
   continueAsGuest() {
-    this.user = {
+    this._setUser({
       id: 'guest',
       name: 'Guest',
       email: '',
-      preferences: {
-        mode: CONFIG.APP.DEFAULT_MODE,
-        theme: localStorage.getItem('ensaf-theme') || 'default',
-        language: localStorage.getItem('ensaf-lang') || 'ar'
-      },
+      preferences: this._defaultPreferences(),
       isGuest: true
-    };
-    this._persistUser();
+    }, 'guest');
     return this.user;
+  }
+
+  _error(code, fallbackMessage) {
+    return {
+      success: false,
+      code,
+      errorKey: AUTH_ERROR_KEYS[code] || null,
+      message: fallbackMessage || code
+    };
+  }
+
+  async _requireFirebaseApi() {
+    if (!this.firebaseEnabled) return false;
+    if (!window.FirebaseAuthApi) await this._waitForFirebaseAuthApi();
+    return !!window.FirebaseAuthApi;
   }
 
   async signIn(email, password) {
     const normalizedEmail = this._normalizeEmail(email);
-    if (!normalizedEmail || !password) {
-      return { success: false, message: 'Email and password are required.' };
+    if (!normalizedEmail || !password) return this._error('missing-fields', 'Email and password are required.');
+    if (!this._isValidEmail(normalizedEmail)) return this._error('auth/invalid-email');
+
+    if (await this._requireFirebaseApi()) {
+      const res = await window.FirebaseAuthApi.signIn(normalizedEmail, password);
+      if (!res.success) return this._error(res.code, res.message);
+
+      let prefs = this._defaultPreferences();
+      try { prefs = await this._loadOrCreateProfile(res.user); }
+      catch (e) { console.warn('[Auth] profile load after sign in failed', e); }
+      this._attachFirebaseListener();
+      this._setUser(this._userFromFirebase(res.user, prefs), 'signed-in');
+      return { success: true };
     }
 
-    // If Firebase is enabled, wait for its API before delegating
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled) {
-      if (!window.FirebaseAuthApi) {
-        console.log('[Auth] waiting for FirebaseAuthApi before signIn');
-        await this._waitForFirebaseAuthApi();
-      }
-      if (window.FirebaseAuthApi) {
-        console.log('[Auth] signing in with Firebase:', normalizedEmail);
-        const res = await window.FirebaseAuthApi.signIn(normalizedEmail, password);
-        if (!res.success) {
-          console.warn('[Auth] Firebase signIn failed:', res.message);
-          return { success: false, message: res.message };
-        }
+    if (this.firebaseEnabled || this.requireAuth) return this._error('firebase-unavailable');
 
-        const fb = res.user;
-        let profile = null;
-        try {
-          profile = await window.FirebaseAuthApi.getUserProfile(fb.uid);
-          if (!profile) {
-            console.warn('[Auth] No Firestore profile for uid', fb.uid, '- creating default profile');
-            const initialPrefs = {
-              mode: CONFIG.APP.DEFAULT_MODE,
-              theme: localStorage.getItem('ensaf-theme') || 'default',
-              language: localStorage.getItem('ensaf-lang') || 'ar'
-            };
-            const createRes = await window.FirebaseAuthApi.saveUserProfile(fb.uid, { preferences: initialPrefs });
-            if (!createRes.success) {
-              console.warn('[Auth] Failed to create Firestore profile on login:', createRes.message);
-            } else {
-              profile = { preferences: initialPrefs };
-            }
-          }
-        } catch (err) {
-          console.warn('[Auth] Failed to load Firestore profile after sign in', err);
-        }
-
-        const prefs = (profile && profile.preferences) ? profile.preferences : {};
-        this.user = { id: fb.uid, name: fb.displayName || fb.email, email: fb.email, preferences: prefs };
-        this._persistUser();
-        return { success: true, message: 'Signed in (firebase).' };
-      }
-    }
-
-    // If requireAuth is true, do not allow local auth
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
-      return { success: false, message: 'Authentication requires Firebase. Local auth is disabled.' };
-    }
-
+    // Local fallback (Firebase disabled) — demo only, stored in this browser.
     const users = this._loadUsers();
-    const user = users.find(u => u.email === normalizedEmail && u.password === password);
-    if (!user) {
-      return { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' };
-    }
-
-    this.user = { ...user, isGuest: false };
-    delete this.user.password;
-    this._persistUser();
-    return { success: true, message: 'Signed in successfully.' };
+    const hash = await this._hash(password);
+    const user = users.find(u => u.email === normalizedEmail && (u.passwordHash === hash || u.password === password));
+    if (!user) return this._error('auth/invalid-credential');
+    const { password: _p, passwordHash: _h, ...safe } = user;
+    this._setUser({ ...safe, isGuest: false }, 'signed-in');
+    return { success: true };
   }
 
   async signUp(name, email, password) {
     const normalizedEmail = this._normalizeEmail(email);
-    if (!name || !normalizedEmail || !password) {
-      return { success: false, message: 'Name, email and password are required.' };
+    const cleanName = (name || '').trim();
+    if (!cleanName || !normalizedEmail || !password) return this._error('missing-fields', 'Name, email and password are required.');
+    if (!this._isValidEmail(normalizedEmail)) return this._error('auth/invalid-email');
+    if (password.length < 6) return this._error('auth/weak-password');
+
+    if (await this._requireFirebaseApi()) {
+      const res = await window.FirebaseAuthApi.signUp(cleanName, normalizedEmail, password);
+      if (!res.success) return this._error(res.code, res.message);
+
+      const preferences = this._defaultPreferences();
+      const saveRes = await window.FirebaseAuthApi.saveUserProfile(res.user.uid, {
+        name: cleanName,
+        email: normalizedEmail,
+        preferences
+      }, { isNew: true });
+      this._attachFirebaseListener();
+      this._setUser({ ...this._userFromFirebase(res.user, preferences), name: cleanName }, 'signed-up');
+      return { success: true, synced: !!saveRes.success, syncError: saveRes.success ? null : this._error(saveRes.code, saveRes.message) };
     }
 
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled) {
-      if (!window.FirebaseAuthApi) {
-        console.log('[Auth] waiting for FirebaseAuthApi before signUp');
-        await this._waitForFirebaseAuthApi();
-      }
-      if (window.FirebaseAuthApi) {
-        console.log('[Auth] signing up with Firebase:', normalizedEmail);
-        const res = await window.FirebaseAuthApi.signUp(name, normalizedEmail, password);
-        if (!res.success) {
-          console.warn('[Auth] Firebase signUp failed:', res.message);
-          return { success: false, message: res.message };
-        }
-        const fb = res.user;
-        console.log('[Auth] Firebase signUp success, uid:', fb?.uid);
-        const initialPrefs = {
-          mode: CONFIG.APP.DEFAULT_MODE,
-          theme: localStorage.getItem('ensaf-theme') || 'default',
-          language: localStorage.getItem('ensaf-lang') || 'ar'
-        };
-        this.user = { id: fb.uid, name: fb.displayName || name, email: fb.email, preferences: initialPrefs };
-        try {
-          const saveRes = await window.FirebaseAuthApi.saveUserProfile(fb.uid, { preferences: initialPrefs });
-          this._persistUser();
-          return { success: true, message: 'Account created (firebase).', synced: !!(saveRes && saveRes.success) };
-        } catch (e) {
-          this._persistUser();
-          return { success: true, message: 'Account created (firebase).', synced: false };
-        }
-      }
-    }
-
-    // If requireAuth is true, do not allow local signup
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.requireAuth) {
-      return { success: false, message: 'Account creation requires Firebase. Local signup is disabled.' };
-    }
+    if (this.firebaseEnabled || this.requireAuth) return this._error('firebase-unavailable');
 
     const users = this._loadUsers();
-    if (users.some(u => u.email === normalizedEmail)) {
-      return { success: false, message: 'هذا البريد الإلكتروني مستخدم بالفعل.' };
-    }
-
+    if (users.some(u => u.email === normalizedEmail)) return this._error('auth/email-already-in-use');
     const newUser = {
       id: `u_${Date.now()}`,
-      name: name.trim(),
+      name: cleanName,
       email: normalizedEmail,
-      password: password,
-      preferences: {
-        mode: CONFIG.APP.DEFAULT_MODE,
-        theme: localStorage.getItem('ensaf-theme') || 'default',
-        language: localStorage.getItem('ensaf-lang') || 'ar'
-      }
+      passwordHash: await this._hash(password),
+      preferences: this._defaultPreferences()
     };
-
     users.push(newUser);
     this._saveUsers(users);
-    this.user = { ...newUser, isGuest: false };
-    delete this.user.password;
-    this._persistUser();
-    return { success: true, message: 'Account created successfully.' };
+    const { passwordHash: _h, ...safe } = newUser;
+    this._setUser({ ...safe, isGuest: false }, 'signed-up');
+    return { success: true, synced: true };
   }
 
   async sendPasswordReset(email) {
     const normalizedEmail = this._normalizeEmail(email);
-    if (!normalizedEmail) {
-      return { success: false, message: 'Please enter an email address.' };
-    }
+    if (!normalizedEmail) return this._error('auth/missing-email');
+    if (!this._isValidEmail(normalizedEmail)) return this._error('auth/invalid-email');
 
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled) {
-      if (!window.FirebaseAuthApi) {
-        console.log('[Auth] waiting for FirebaseAuthApi before sendPasswordReset');
-        await this._waitForFirebaseAuthApi();
-      }
-      if (window.FirebaseAuthApi) {
-        const res = await window.FirebaseAuthApi.sendPasswordReset(normalizedEmail);
-        if (!res.success) return { success: false, message: res.message };
-        return { success: true, message: 'Password reset sent (firebase).' };
-      }
+    if (await this._requireFirebaseApi()) {
+      const res = await window.FirebaseAuthApi.sendPasswordReset(normalizedEmail);
+      // Firebase may not reveal whether the account exists (email enumeration
+      // protection), so treat success uniformly.
+      return res.success ? { success: true } : this._error(res.code, res.message);
     }
-
-    const users = this._loadUsers();
-    const user = users.find(u => u.email === normalizedEmail);
-    if (!user) {
-      return { success: false, message: 'لم يتم العثور على حساب لهذا البريد الإلكتروني.' };
-    }
-
-    return {
-      success: true,
-      message: 'An email would be sent with password reset instructions in a real Firebase setup.'
-    };
+    if (this.firebaseEnabled || this.requireAuth) return this._error('firebase-unavailable');
+    return this._error('reset-unavailable', 'Password reset needs Firebase.');
   }
 
-  signOut() {
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled && window.FirebaseAuthApi) {
-      return window.FirebaseAuthApi.signOut().then(() => {
-        this.user = null;
-        this._persistUser();
-        return { success: true };
-      }).catch(e => ({ success: false, message: e.message }));
+  async signOut() {
+    if (this.usingFirebase && this.user && !this.user.isGuest) {
+      const res = await window.FirebaseAuthApi.signOut();
+      if (!res.success) return this._error(res.code, res.message);
     }
-
-    this.user = null;
-    this._persistUser();
+    this._setUser(null, 'signed-out');
     return { success: true };
   }
 
-  updateProfile(profile) {
-    if (!this.user) return null;
-    this.user = {
-      ...this.user,
-      ...profile,
-      preferences: {
-        ...this.user.preferences,
-        ...(profile.preferences || {})
-      }
-    };
+  async savePreferences(preferences) {
+    if (!this.user) return { success: false, message: 'Not signed in' };
+    this.user = { ...this.user, preferences: { ...this.user.preferences, ...preferences } };
     this._persistUser();
-    return this.user;
+
+    if (this.usingFirebase && !this.user.isGuest) {
+      const res = await window.FirebaseAuthApi.saveUserProfile(this.user.id, { preferences: this.user.preferences });
+      if (!res.success) return this._error(res.code, res.message);
+    }
+    return { success: true };
   }
 
-  savePreferences(preferences) {
-    if (!this.user) return null;
-    this.user.preferences = {
-      ...this.user.preferences,
-      ...preferences
-    };
-    // persist to Firestore when available
-    if (window.CONFIG && window.CONFIG.FIREBASE && window.CONFIG.FIREBASE.enabled && window.FirebaseAuthApi && this.user.id && this.user.id !== 'guest') {
-      console.log('[Auth] saving preferences to Firestore for uid', this.user.id, this.user.preferences);
-      return window.FirebaseAuthApi.saveUserProfile(this.user.id, { preferences: this.user.preferences }).then(res => {
-        this._persistUser();
-        if (!res.success) {
-          console.warn('[Auth] saveUserProfile failed:', res.message);
-        }
-        return res;
-      }).catch(err => {
-        this._persistUser();
-        console.warn('[Auth] saveUserProfile exception:', err);
-        return { success: false, message: err?.message || String(err) };
-      });
+  /** Saves a finished quiz to Firestore (signed-in users) or localStorage. */
+  async saveQuizResult(result) {
+    if (!this.user) return { success: false };
+    if (this.usingFirebase && !this.user.isGuest) {
+      const res = await window.FirebaseAuthApi.saveQuizResult(this.user.id, result);
+      return res.success ? res : this._error(res.code, res.message);
     }
-    this._persistUser();
+    const key = `results_${this.user.id}`;
+    const list = utils.loadFromStorage(key, []);
+    list.unshift({ ...result, createdAt: new Date().toISOString() });
+    utils.saveToStorage(key, list.slice(0, 50));
     return { success: true };
+  }
+
+  async getQuizResults(max = 10) {
+    if (!this.user) return [];
+    if (this.usingFirebase && !this.user.isGuest) {
+      return window.FirebaseAuthApi.getQuizResults(this.user.id, max);
+    }
+    return utils.loadFromStorage(`results_${this.user.id}`, [])
+      .slice(0, max)
+      .map(r => ({ ...r, createdAt: r.createdAt ? new Date(r.createdAt) : null }));
+  }
+
+  // ── Internals ───────────────────────────────────────────────
+  async _hash(text) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+      return text; // crypto.subtle unavailable (non-secure context)
+    }
   }
 
   _loadUsers() {
@@ -336,5 +369,9 @@ class AuthManager {
 
   _normalizeEmail(email) {
     return (email || '').trim().toLowerCase();
+  }
+
+  _isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 }

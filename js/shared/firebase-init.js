@@ -1,107 +1,178 @@
-// Firebase initializer (module) - sets up Firebase and exposes simple auth helpers
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOut, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+// Firebase initializer (ES module).
+// Sets up Firebase Auth + Firestore and exposes a small promise-based API on
+// window.FirebaseAuthApi for the classic (non-module) scripts to use.
+// Dispatches a `firebase-ready` event on window once the API is available
+// (detail: { ok: boolean }).
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut as fbSignOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-(function() {
-  if (!window.CONFIG || !window.CONFIG.FIREBASE || !window.CONFIG.FIREBASE.enabled) {
+function announce(ok) {
+  window.dispatchEvent(new CustomEvent('firebase-ready', { detail: { ok } }));
+}
+
+function fail(e) {
+  return { success: false, code: e?.code || 'unknown', message: e?.message || String(e) };
+}
+
+(function () {
+  const fbConfig = window.CONFIG && window.CONFIG.FIREBASE;
+  if (!fbConfig || !fbConfig.enabled) {
     window.FirebaseAuthApi = null;
+    announce(false);
     return;
   }
 
-  const cfg = window.CONFIG.FIREBASE.config || {};
+  let app, auth, db;
   try {
-    const app = initializeApp(cfg);
-    const analytics = (typeof getAnalytics === 'function') ? getAnalytics(app) : null;
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-
-    window.FirebaseAuthApi = {
-      async signIn(email, password) {
-        console.log('[Firebase] signIn', email);
-        try {
-          const cred = await signInWithEmailAndPassword(auth, email, password);
-          return { success: true, user: cred.user };
-        } catch (e) {
-          console.warn('[Firebase] signIn error', e);
-          return { success: false, message: e.message || String(e) };
-        }
-      },
-
-      async signUp(name, email, password) {
-        console.log('[Firebase] signUp', email, 'name:', name);
-        try {
-          const cred = await createUserWithEmailAndPassword(auth, email, password);
-          if (name && cred.user && typeof updateProfile === 'function') {
-            await updateProfile(cred.user, { displayName: name });
-          }
-          return { success: true, user: cred.user };
-        } catch (e) {
-          console.warn('[Firebase] signUp error', e);
-          return { success: false, message: e.message || String(e) };
-        }
-      },
-
-      async sendPasswordReset(email) {
-        console.log('[Firebase] sendPasswordReset', email);
-        try {
-          await sendPasswordResetEmail(auth, email);
-          return { success: true };
-        } catch (e) {
-          console.warn('[Firebase] sendPasswordReset error', e);
-          return { success: false, message: e.message || String(e) };
-        }
-      },
-
-      async signOut() {
-        console.log('[Firebase] signOut');
-        try {
-          await fbSignOut(auth);
-          return { success: true };
-        } catch (e) {
-          console.warn('[Firebase] signOut error', e);
-          return { success: false, message: e.message || String(e) };
-        }
-      },
-
-      onAuthStateChanged(cb) {
-        return onAuthStateChanged(auth, (user) => cb(user));
-      }
-      ,
-
-      async getUserProfile(uid) {
-        console.log('[Firebase] getUserProfile', uid);
-        try {
-          const ref = doc(firestore, 'users', uid);
-          const snap = await getDoc(ref);
-          if (!snap.exists()) {
-            console.log('[Firebase] getUserProfile: no document found for uid', uid);
-            return null;
-          }
-          return snap.data();
-        } catch (e) {
-          console.warn('[Firebase] getUserProfile error', e);
-          return null;
-        }
-      },
-
-      async saveUserProfile(uid, data) {
-        console.log('[Firebase] saveUserProfile', uid, data);
-        try {
-          const ref = doc(firestore, 'users', uid);
-          await setDoc(ref, data, { merge: true });
-          return { success: true };
-        } catch (e) {
-          console.warn('[Firebase] saveUserProfile error', e);
-          return { success: false, message: e.message || String(e) };
-        }
-      }
-    };
-
-    console.log('[Firebase] initialized');
+    app = initializeApp(fbConfig.config || {});
+    auth = getAuth(app);
+    db = getFirestore(app);
   } catch (err) {
     console.error('[Firebase] init error', err);
     window.FirebaseAuthApi = null;
+    announce(false);
+    return;
   }
+
+  // Keep the session across reloads (default for web, but be explicit).
+  setPersistence(auth, browserLocalPersistence).catch(e =>
+    console.warn('[Firebase] setPersistence failed', e)
+  );
+
+  // Analytics is optional and throws on localhost / blocked cookies / some
+  // browsers — load it in isolation so it can never take auth down with it.
+  if (fbConfig.analytics !== false && fbConfig.config?.measurementId) {
+    import('https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js')
+      .then(async ({ getAnalytics, isSupported }) => {
+        if (await isSupported()) getAnalytics(app);
+      })
+      .catch(e => console.info('[Firebase] analytics unavailable', e?.message || e));
+  }
+
+  window.FirebaseAuthApi = {
+    async signIn(email, password) {
+      try {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        return { success: true, user: cred.user };
+      } catch (e) {
+        return fail(e);
+      }
+    },
+
+    async signUp(name, email, password) {
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) {
+          try { await updateProfile(cred.user, { displayName: name }); }
+          catch (e) { console.warn('[Firebase] updateProfile failed', e); }
+        }
+        return { success: true, user: cred.user };
+      } catch (e) {
+        return fail(e);
+      }
+    },
+
+    async sendPasswordReset(email) {
+      try {
+        await sendPasswordResetEmail(auth, email);
+        return { success: true };
+      } catch (e) {
+        return fail(e);
+      }
+    },
+
+    async signOut() {
+      try {
+        await fbSignOut(auth);
+        return { success: true };
+      } catch (e) {
+        return fail(e);
+      }
+    },
+
+    onAuthStateChanged(cb) {
+      return onAuthStateChanged(auth, user => cb(user));
+    },
+
+    currentUser() {
+      return auth.currentUser;
+    },
+
+    // ── Firestore: users/{uid} ────────────────────────────────
+    async getUserProfile(uid) {
+      try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        return snap.exists() ? snap.data() : null;
+      } catch (e) {
+        console.warn('[Firebase] getUserProfile error', e);
+        return null;
+      }
+    },
+
+    async saveUserProfile(uid, data, { isNew = false } = {}) {
+      try {
+        const payload = { ...data, updatedAt: serverTimestamp() };
+        if (isNew) payload.createdAt = serverTimestamp();
+        await setDoc(doc(db, 'users', uid), payload, { merge: true });
+        return { success: true };
+      } catch (e) {
+        console.warn('[Firebase] saveUserProfile error', e);
+        return fail(e);
+      }
+    },
+
+    // ── Firestore: users/{uid}/results/{autoId} ───────────────
+    async saveQuizResult(uid, result) {
+      try {
+        const ref = await addDoc(collection(db, 'users', uid, 'results'), {
+          ...result,
+          createdAt: serverTimestamp()
+        });
+        return { success: true, id: ref.id };
+      } catch (e) {
+        console.warn('[Firebase] saveQuizResult error', e);
+        return fail(e);
+      }
+    },
+
+    async getQuizResults(uid, max = 20) {
+      try {
+        const q = query(collection(db, 'users', uid, 'results'), orderBy('createdAt', 'desc'), limit(max));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => {
+          const data = d.data();
+          return { id: d.id, ...data, createdAt: data.createdAt?.toDate?.() || null };
+        });
+      } catch (e) {
+        console.warn('[Firebase] getQuizResults error', e);
+        return [];
+      }
+    }
+  };
+
+  console.log('[Firebase] initialized');
+  announce(true);
 })();
